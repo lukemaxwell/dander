@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dander — Explore What's Hidden</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0e17;
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: #fff;
+    overflow: hidden;
+    width: 1200px;
+    height: 630px;
+    position: relative;
+  }
+
+  /* Faux map grid underneath */
+  .map-layer {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(rgba(45, 85, 65, 0.15) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(45, 85, 65, 0.15) 1px, transparent 1px),
+      linear-gradient(rgba(45, 85, 65, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(45, 85, 65, 0.08) 1px, transparent 1px);
+    background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
+  }
+
+  /* Revealed area — warm golden glow */
+  .revealed-area {
+    position: absolute;
+    width: 380px;
+    height: 380px;
+    top: 50%;
+    left: 58%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: radial-gradient(
+      circle,
+      rgba(255, 200, 87, 0.18) 0%,
+      rgba(255, 170, 50, 0.12) 25%,
+      rgba(200, 130, 40, 0.06) 50%,
+      transparent 70%
+    );
+    z-index: 1;
+  }
+
+  /* Faux streets in revealed area */
+  .street {
+    position: absolute;
+    background: rgba(255, 200, 87, 0.25);
+    border-radius: 2px;
+    z-index: 2;
+  }
+  .street-h1 { width: 200px; height: 3px; top: 48%; left: 48%; transform: translateX(-50%); }
+  .street-h2 { width: 140px; height: 2px; top: 42%; left: 52%; transform: translateX(-50%); }
+  .street-h3 { width: 160px; height: 2px; top: 55%; left: 50%; transform: translateX(-50%); }
+  .street-v1 { width: 3px; height: 180px; top: 38%; left: 55%; }
+  .street-v2 { width: 2px; height: 120px; top: 42%; left: 48%; }
+  .street-v3 { width: 2px; height: 100px; top: 44%; left: 62%; }
+  .street-h4 { width: 90px; height: 2px; top: 38%; left: 55%; }
+  .street-v4 { width: 2px; height: 70px; top: 55%; left: 44%; }
+
+  /* Discovery pins */
+  .pin {
+    position: absolute;
+    z-index: 5;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 12px rgba(255, 200, 87, 0.6), 0 0 4px rgba(255, 255, 255, 0.3);
+  }
+  .pin-gold { background: #FFB800; top: 44%; left: 56%; }
+  .pin-silver { background: #A8C4D4; top: 50%; left: 52%; width: 11px; height: 11px; }
+  .pin-bronze { background: #CD7F32; top: 46%; left: 60%; width: 10px; height: 10px; }
+  .pin-gold2 { background: #FFB800; top: 53%; left: 58%; width: 12px; height: 12px; }
+  .pin-silver2 { background: #A8C4D4; top: 40%; left: 54%; width: 10px; height: 10px; }
+  .pin-diamond {
+    background: #E0F0FF;
+    top: 48%;
+    left: 55%;
+    width: 16px;
+    height: 16px;
+    border-color: #fff;
+    box-shadow: 0 0 20px rgba(180, 220, 255, 0.8), 0 0 40px rgba(180, 220, 255, 0.3), 0 0 6px rgba(255, 255, 255, 0.5);
+    animation: legendaryPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes legendaryPulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(180, 220, 255, 0.8), 0 0 40px rgba(180, 220, 255, 0.3); }
+    50% { box-shadow: 0 0 30px rgba(180, 220, 255, 1), 0 0 60px rgba(180, 220, 255, 0.5); }
+  }
+
+  /* Dense fog layer */
+  .fog {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    background: radial-gradient(
+      ellipse 320px 320px at 58% 50%,
+      transparent 0%,
+      transparent 25%,
+      rgba(12, 16, 28, 0.3) 35%,
+      rgba(12, 16, 28, 0.65) 45%,
+      rgba(12, 16, 28, 0.88) 55%,
+      rgba(12, 16, 28, 0.97) 65%,
+      #0c101c 75%
+    );
+  }
+
+  /* Fog texture overlay */
+  .fog-texture {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    opacity: 0.5;
+    background:
+      radial-gradient(ellipse 600px 200px at 20% 30%, rgba(40, 55, 80, 0.4), transparent),
+      radial-gradient(ellipse 400px 300px at 80% 70%, rgba(35, 50, 75, 0.3), transparent),
+      radial-gradient(ellipse 300px 400px at 15% 75%, rgba(30, 45, 70, 0.35), transparent),
+      radial-gradient(ellipse 500px 250px at 90% 20%, rgba(25, 40, 65, 0.3), transparent);
+  }
+
+  /* Question marks in the fog */
+  .mystery {
+    position: absolute;
+    z-index: 5;
+    font-size: 22px;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.07);
+    font-family: 'Inter', sans-serif;
+  }
+  .m1 { top: 20%; left: 15%; font-size: 28px; transform: rotate(-15deg); }
+  .m2 { top: 70%; left: 25%; font-size: 18px; transform: rotate(10deg); }
+  .m3 { top: 30%; left: 82%; font-size: 24px; transform: rotate(-5deg); }
+  .m4 { top: 75%; left: 78%; font-size: 20px; transform: rotate(20deg); }
+  .m5 { top: 15%; left: 70%; font-size: 16px; transform: rotate(-25deg); }
+  .m6 { top: 85%; left: 50%; font-size: 26px; transform: rotate(8deg); }
+  .m7 { top: 25%; left: 35%; font-size: 15px; transform: rotate(-10deg); }
+  .m8 { top: 60%; left: 85%; font-size: 19px; transform: rotate(15deg); }
+
+  /* Content overlay */
+  .content {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    padding: 60px;
+  }
+
+  .left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    max-width: 480px;
+  }
+
+  .logo-mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .logo-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #FFB800, #FF8C00);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 20px rgba(255, 140, 0, 0.4);
+  }
+
+  .logo-text {
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #fff, #ccd6e0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  h1 {
+    font-size: 46px;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -1.5px;
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, #ffffff, #a8b8c8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .tagline {
+    font-size: 18px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.55);
+    line-height: 1.6;
+    margin-bottom: 36px;
+    max-width: 380px;
+  }
+
+  .stats-row {
+    display: flex;
+    gap: 32px;
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .stat-value {
+    font-size: 28px;
+    font-weight: 800;
+    color: #FFB800;
+    letter-spacing: -0.5px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: rgba(255, 255, 255, 0.35);
+  }
+
+  /* Phone mockup on right */
+  .phone-area {
+    position: absolute;
+    right: 60px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 11;
+  }
+
+  .phone {
+    width: 220px;
+    height: 440px;
+    border-radius: 28px;
+    border: 3px solid rgba(255, 255, 255, 0.15);
+    background: rgba(10, 14, 23, 0.9);
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(255, 184, 0, 0.08);
+    position: relative;
+  }
+
+  .phone-notch {
+    width: 80px;
+    height: 24px;
+    background: #0a0e17;
+    border-radius: 0 0 14px 14px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
+  }
+
+  .phone-screen {
+    position: absolute;
+    inset: 3px;
+    border-radius: 25px;
+    overflow: hidden;
+    background:
+      radial-gradient(circle 100px at 50% 45%, rgba(255, 200, 87, 0.15), transparent),
+      linear-gradient(rgba(30, 50, 40, 0.3) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(30, 50, 40, 0.3) 1px, transparent 1px);
+    background-size: 100% 100%, 30px 30px, 30px 30px;
+  }
+
+  /* Fog inside phone */
+  .phone-fog {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      circle 90px at 50% 45%,
+      transparent 0%,
+      transparent 30%,
+      rgba(12, 16, 28, 0.5) 50%,
+      rgba(12, 16, 28, 0.85) 65%,
+      #0c101c 80%
+    );
+  }
+
+  /* Mini pins in phone */
+  .phone-pin {
+    position: absolute;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255, 255, 255, 0.8);
+  }
+  .pp1 { width: 8px; height: 8px; background: #FFB800; top: 42%; left: 48%; box-shadow: 0 0 8px rgba(255, 184, 0, 0.5); }
+  .pp2 { width: 6px; height: 6px; background: #A8C4D4; top: 46%; left: 55%; }
+  .pp3 { width: 7px; height: 7px; background: #CD7F32; top: 39%; left: 53%; }
+  .pp4 { width: 9px; height: 9px; background: #E0F0FF; top: 44%; left: 51%; box-shadow: 0 0 12px rgba(180, 220, 255, 0.6); }
+
+  /* Phone bottom bar */
+  .phone-bar {
+    position: absolute;
+    bottom: 12px;
+    left: 16px;
+    right: 16px;
+    z-index: 5;
+  }
+
+  .phone-explored {
+    font-size: 9px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+
+  .phone-bar-track {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .phone-bar-fill {
+    width: 23%;
+    height: 100%;
+    background: linear-gradient(90deg, #FFB800, #FF8C00);
+    border-radius: 2px;
+    box-shadow: 0 0 8px rgba(255, 184, 0, 0.4);
+  }
+
+  .phone-percent {
+    font-size: 22px;
+    font-weight: 800;
+    color: #FFB800;
+    margin-top: 6px;
+    letter-spacing: -0.5px;
+  }
+
+  .phone-percent span {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.4);
+    letter-spacing: 0;
+  }
+
+  /* Subtle animated glow on the revealed area */
+  .glow-ring {
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    top: 50%;
+    left: 58%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    border: 1px solid rgba(255, 200, 87, 0.12);
+    z-index: 2;
+    animation: glowExpand 4s ease-in-out infinite;
+  }
+
+  @keyframes glowExpand {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+    50% { transform: translate(-50%, -50%) scale(1.15); opacity: 0; }
+  }
+
+  /* Bottom edge fade */
+  .bottom-fade {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    background: linear-gradient(transparent, rgba(10, 14, 23, 0.8));
+    z-index: 6;
+  }
+</style>
+</head>
+<body>
+
+  <!-- Map grid layer -->
+  <div class="map-layer"></div>
+
+  <!-- Revealed area glow -->
+  <div class="revealed-area"></div>
+  <div class="glow-ring"></div>
+
+  <!-- Faux streets -->
+  <div class="street street-h1"></div>
+  <div class="street street-h2"></div>
+  <div class="street street-h3"></div>
+  <div class="street street-h4"></div>
+  <div class="street street-v1"></div>
+  <div class="street street-v2"></div>
+  <div class="street street-v3"></div>
+  <div class="street street-v4"></div>
+
+  <!-- Discovery pins -->
+  <div class="pin pin-diamond"></div>
+  <div class="pin pin-gold"></div>
+  <div class="pin pin-silver"></div>
+  <div class="pin pin-bronze"></div>
+  <div class="pin pin-gold2"></div>
+  <div class="pin pin-silver2"></div>
+
+  <!-- Fog layers -->
+  <div class="fog"></div>
+  <div class="fog-texture"></div>
+  <div class="bottom-fade"></div>
+
+  <!-- Mystery markers in fog -->
+  <div class="mystery m1">?</div>
+  <div class="mystery m2">?</div>
+  <div class="mystery m3">?</div>
+  <div class="mystery m4">?</div>
+  <div class="mystery m5">?</div>
+  <div class="mystery m6">?</div>
+  <div class="mystery m7">?</div>
+  <div class="mystery m8">?</div>
+
+  <!-- Main content -->
+  <div class="content">
+    <div class="left">
+      <div class="logo-mark">
+        <div class="logo-icon">D</div>
+        <div class="logo-text">dander</div>
+      </div>
+      <h1>How well do you really know where you live?</h1>
+      <p class="tagline">Your neighbourhood is full of hidden discoveries. The fog lifts with every step. Explore. Collect. Compete.</p>
+      <div class="stats-row">
+        <div class="stat">
+          <div class="stat-value">43</div>
+          <div class="stat-label">Discoveries waiting</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">2%</div>
+          <div class="stat-label">Explored</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">98%</div>
+          <div class="stat-label">Still hidden</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phone mockup -->
+  <div class="phone-area">
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="phone-pin pp1"></div>
+        <div class="phone-pin pp2"></div>
+        <div class="phone-pin pp3"></div>
+        <div class="phone-pin pp4"></div>
+        <div class="phone-fog"></div>
+        <div class="phone-bar">
+          <div class="phone-explored">EXPLORED</div>
+          <div class="phone-bar-track">
+            <div class="phone-bar-fill"></div>
+          </div>
+          <div class="phone-percent">23% <span>of Hackney</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
