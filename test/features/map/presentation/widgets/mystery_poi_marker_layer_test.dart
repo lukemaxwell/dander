@@ -92,6 +92,7 @@ MysteryPoi _revealed({String id = 'p1'}) => MysteryPoi(
       position: _center,
       category: 'pub',
       name: 'The Red Lion',
+      state: PoiState.revealed,
     );
 
 // ---------------------------------------------------------------------------

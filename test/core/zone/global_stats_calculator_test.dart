@@ -33,6 +33,7 @@ void main() {
         position: centre,
         category: 'pub',
         name: revealed ? 'The Pub' : null,
+        state: revealed ? PoiState.revealed : PoiState.unrevealed,
       );
 
   Badge makeBadge(BadgeId badgeId, String name) => Badge(

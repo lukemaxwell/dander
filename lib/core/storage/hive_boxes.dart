@@ -33,4 +33,7 @@ abstract final class HiveBoxes {
 
   /// Stores mystery POI data (unrevealed/revealed POIs per zone).
   static const String mysteryPois = 'mystery_pois';
+
+  /// Stores compass charge state (current charges and partial distance).
+  static const String compassCharges = 'compass_charges';
 }

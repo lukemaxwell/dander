@@ -1,5 +1,6 @@
 import 'package:get_it/get_it.dart';
 
+import '../compass/compass_charges_repository.dart';
 import '../discoveries/discovery_repository.dart';
 import '../discoveries/discovery_service.dart';
 import '../discoveries/overpass_client.dart';
@@ -71,6 +72,10 @@ Future<void> setupLocator() async {
 
   // Quiz
   sl.registerLazySingleton<QuizRepository>(HiveQuizRepository.new);
+
+  // Compass
+  sl.registerLazySingleton<CompassChargesRepository>(
+      HiveCompassChargesRepository.new);
 
   // Zones
   sl.registerLazySingleton<ZoneRepository>(HiveZoneRepository.new);

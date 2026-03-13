@@ -33,12 +33,14 @@ MysteryPoi makeMysteryPoi({
   double lng = -0.1278,
   String category = 'pub',
   String? name,
+  PoiState state = PoiState.unrevealed,
 }) =>
     MysteryPoi(
       id: id,
       position: LatLng(lat, lng),
       category: category,
       name: name,
+      state: state,
     );
 
 Discovery makeDiscovery({
@@ -98,9 +100,9 @@ void main() {
 
     test('returns only unrevealed pois', () async {
       final pois = [
-        makeMysteryPoi(id: 'poi_1', name: null),        // unrevealed
-        makeMysteryPoi(id: 'poi_2', name: 'The Crown'), // revealed
-        makeMysteryPoi(id: 'poi_3', name: null),        // unrevealed
+        makeMysteryPoi(id: 'poi_1'),                                                      // unrevealed
+        makeMysteryPoi(id: 'poi_2', name: 'The Crown', state: PoiState.revealed), // revealed
+        makeMysteryPoi(id: 'poi_3'),                                                      // unrevealed
       ];
       when(() => repo.loadPois('zone_1')).thenAnswer((_) async => pois);
 
@@ -132,8 +134,8 @@ void main() {
 
     test('returns empty list when all pois are revealed', () async {
       final pois = [
-        makeMysteryPoi(id: 'poi_1', name: 'Pub A'),
-        makeMysteryPoi(id: 'poi_2', name: 'Park B'),
+        makeMysteryPoi(id: 'poi_1', name: 'Pub A', state: PoiState.revealed),
+        makeMysteryPoi(id: 'poi_2', name: 'Park B', state: PoiState.revealed),
       ];
       when(() => repo.loadPois('zone_1')).thenAnswer((_) async => pois);
 
@@ -322,6 +324,7 @@ void main() {
         id: 'poi_revealed',
         lat: 51.5074 + _latOffset5m,
         name: 'Already Revealed',
+        state: PoiState.revealed,
       );
 
       final result = service.checkArrival(userPos, [revealedPoi]);

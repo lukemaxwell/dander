@@ -15,12 +15,14 @@ void main() {
     double lng = -0.1278,
     String category = 'pub',
     String? name,
+    PoiState state = PoiState.unrevealed,
   }) =>
       MysteryPoi(
         id: id,
         position: LatLng(lat, lng),
         category: category,
         name: name,
+        state: state,
       );
 
   setUp(() async {
@@ -67,7 +69,7 @@ void main() {
     });
 
     test('preserves revealed state across save/load', () async {
-      final pois = [makePoi(id: 'poi_1', name: 'The Crown')];
+      final pois = [makePoi(id: 'poi_1', name: 'The Crown', state: PoiState.revealed)];
       await repo.savePois('zone_1', pois);
 
       final loaded = await repo.loadPois('zone_1');

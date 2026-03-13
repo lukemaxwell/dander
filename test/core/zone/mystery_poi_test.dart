@@ -14,12 +14,14 @@ void main() {
     double lng = -0.1278,
     String category = 'pub',
     String? name,
+    PoiState state = PoiState.unrevealed,
   }) =>
       MysteryPoi(
         id: id,
         position: LatLng(lat, lng),
         category: category,
         name: name,
+        state: state,
       );
 
   // ---------------------------------------------------------------------------
@@ -62,18 +64,19 @@ void main() {
   // ---------------------------------------------------------------------------
 
   group('isRevealed', () {
-    test('returns false when name is null', () {
+    test('returns false when state is unrevealed', () {
       final poi = makePoi(name: null);
       expect(poi.isRevealed, isFalse);
     });
 
-    test('returns true when name is set', () {
+    test('returns false when name is set but state is still unrevealed', () {
+      // state drives disclosure, not name presence
       final poi = makePoi(name: 'The Crown');
-      expect(poi.isRevealed, isTrue);
+      expect(poi.isRevealed, isFalse);
     });
 
-    test('empty string name is treated as revealed', () {
-      final poi = makePoi(name: '');
+    test('returns true when state is revealed (regardless of name value)', () {
+      final poi = makePoi(name: 'The Crown', state: PoiState.revealed);
       expect(poi.isRevealed, isTrue);
     });
   });
@@ -144,7 +147,7 @@ void main() {
     });
 
     test('round-trips a revealed poi', () {
-      final poi = makePoi(name: 'The Red Lion');
+      final poi = makePoi(name: 'The Red Lion', state: PoiState.revealed);
       final json = poi.toJson();
       final restored = MysteryPoi.fromJson(json);
 
@@ -195,6 +198,192 @@ void main() {
 
       expect(restored.position.latitude, closeTo(48.8566, 0.00001));
       expect(restored.position.longitude, closeTo(2.3522, 0.00001));
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // PoiState enum
+  // ---------------------------------------------------------------------------
+
+  group('PoiState', () {
+    test('state defaults to unrevealed', () {
+      final poi = makePoi();
+      expect(poi.state, PoiState.unrevealed);
+    });
+
+    test('state can be set to hinted at construction', () {
+      final poi = MysteryPoi(
+        id: 'poi_1',
+        position: LatLng(51.5074, -0.1278),
+        category: 'pub',
+        state: PoiState.hinted,
+      );
+      expect(poi.state, PoiState.hinted);
+    });
+
+    test('state can be set to revealed at construction', () {
+      final poi = MysteryPoi(
+        id: 'poi_1',
+        position: LatLng(51.5074, -0.1278),
+        category: 'pub',
+        name: 'The Crown',
+        state: PoiState.revealed,
+      );
+      expect(poi.state, PoiState.revealed);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // hint()
+  // ---------------------------------------------------------------------------
+
+  group('hint()', () {
+    test('transitions unrevealed poi to hinted state', () {
+      final original = makePoi();
+      final hinted = original.hint();
+      expect(hinted.state, PoiState.hinted);
+    });
+
+    test('preserves all other fields', () {
+      final original = makePoi(id: 'poi_42', lat: 48.8566, lng: 2.3522, category: 'park');
+      final hinted = original.hint();
+      expect(hinted.id, 'poi_42');
+      expect(hinted.position.latitude, 48.8566);
+      expect(hinted.position.longitude, 2.3522);
+      expect(hinted.category, 'park');
+    });
+
+    test('does not mutate the original (immutability)', () {
+      final original = makePoi();
+      original.hint();
+      expect(original.state, PoiState.unrevealed);
+    });
+
+    test('returns a different object instance', () {
+      final original = makePoi();
+      final hinted = original.hint();
+      expect(hinted, isNot(same(original)));
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // isHinted getter
+  // ---------------------------------------------------------------------------
+
+  group('isHinted', () {
+    test('returns false for unrevealed state', () {
+      final poi = makePoi();
+      expect(poi.isHinted, isFalse);
+    });
+
+    test('returns true for hinted state', () {
+      final poi = makePoi().hint();
+      expect(poi.isHinted, isTrue);
+    });
+
+    test('returns false for revealed state', () {
+      final poi = makePoi().reveal('The Crown');
+      expect(poi.isHinted, isFalse);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // isRevealed (state-based)
+  // ---------------------------------------------------------------------------
+
+  group('isRevealed (state-based)', () {
+    test('returns false for unrevealed state', () {
+      final poi = makePoi();
+      expect(poi.isRevealed, isFalse);
+    });
+
+    test('returns false for hinted state', () {
+      final poi = makePoi().hint();
+      expect(poi.isRevealed, isFalse);
+    });
+
+    test('returns true only for revealed state', () {
+      final poi = makePoi().reveal('The Crown');
+      expect(poi.isRevealed, isTrue);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // reveal() sets state = revealed
+  // ---------------------------------------------------------------------------
+
+  group('reveal() state transitions', () {
+    test('reveal() sets state to revealed', () {
+      final original = makePoi();
+      final revealed = original.reveal('The Crown');
+      expect(revealed.state, PoiState.revealed);
+    });
+
+    test('reveal() from hinted state sets state to revealed', () {
+      final hinted = makePoi().hint();
+      final revealed = hinted.reveal('The Crown');
+      expect(revealed.state, PoiState.revealed);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // toJson / fromJson with state
+  // ---------------------------------------------------------------------------
+
+  group('toJson / fromJson with PoiState', () {
+    test('roundtrip preserves unrevealed state', () {
+      final poi = makePoi();
+      final restored = MysteryPoi.fromJson(poi.toJson());
+      expect(restored.state, PoiState.unrevealed);
+    });
+
+    test('roundtrip preserves hinted state', () {
+      final poi = makePoi().hint();
+      final restored = MysteryPoi.fromJson(poi.toJson());
+      expect(restored.state, PoiState.hinted);
+    });
+
+    test('roundtrip preserves revealed state', () {
+      final poi = makePoi().reveal('The Crown');
+      final restored = MysteryPoi.fromJson(poi.toJson());
+      expect(restored.state, PoiState.revealed);
+    });
+
+    test('toJson includes state key', () {
+      final poi = makePoi();
+      final json = poi.toJson();
+      expect(json.containsKey('state'), isTrue);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Legacy JSON backward-compatibility
+  // ---------------------------------------------------------------------------
+
+  group('legacy JSON backward-compatibility', () {
+    test('missing state field with null name infers unrevealed', () {
+      final map = <String, dynamic>{
+        'id': 'poi_legacy',
+        'lat': 51.5,
+        'lng': -0.1,
+        'category': 'pub',
+      };
+      final poi = MysteryPoi.fromJson(map);
+      expect(poi.state, PoiState.unrevealed);
+      expect(poi.isRevealed, isFalse);
+    });
+
+    test('missing state field with non-null name infers revealed', () {
+      final map = <String, dynamic>{
+        'id': 'poi_legacy',
+        'lat': 51.5,
+        'lng': -0.1,
+        'category': 'pub',
+        'name': 'The Crown',
+      };
+      final poi = MysteryPoi.fromJson(map);
+      expect(poi.state, PoiState.revealed);
+      expect(poi.isRevealed, isTrue);
     });
   });
 
