@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 
 import 'package:dander/core/location/location_service.dart';
 import 'package:dander/features/map/presentation/screens/map_screen.dart';
+import 'package:dander/features/map/presentation/widgets/compass_button.dart';
 
 class _StubLocationService implements LocationService {
   @override
@@ -53,6 +54,19 @@ void main() {
       await tester.pumpWidget(_screen(key: const Key('map_screen')));
       await tester.pump();
       expect(find.byKey(const Key('map_screen')), findsOneWidget);
+    });
+
+    testWidgets('renders CompassButton in the overlay', (tester) async {
+      await tester.pumpWidget(_screen());
+      await tester.pump();
+      expect(find.byType(CompassButton), findsOneWidget);
+    });
+
+    testWidgets('CompassButton shows zero charges initially', (tester) async {
+      await tester.pumpWidget(_screen());
+      await tester.pump();
+      final btn = tester.widget<CompassButton>(find.byType(CompassButton));
+      expect(btn.charges, 0);
     });
   });
 }

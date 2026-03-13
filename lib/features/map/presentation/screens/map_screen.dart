@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -8,6 +6,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:get_it/get_it.dart';
 import 'package:latlong2/latlong.dart';
 
+import 'package:dander/core/compass/compass_charges.dart';
+import 'package:dander/core/compass/compass_charges_repository.dart';
 import 'package:dander/core/discoveries/discovery.dart';
 import 'package:dander/core/fog/fog_grid.dart';
 import 'package:dander/core/location/location_service.dart';
@@ -21,9 +21,12 @@ import 'package:dander/core/zone/zone_detector.dart';
 import 'package:dander/core/zone/zone_repository.dart';
 import 'package:dander/core/zone/zone_service.dart';
 import 'package:dander/features/discoveries/presentation/widgets/discovery_notification.dart';
+import 'package:dander/features/map/presentation/widgets/compass_button.dart';
+import 'package:dander/features/map/presentation/widgets/discovery_burst_overlay.dart';
 import 'package:dander/features/map/presentation/widgets/exploration_badge.dart';
 import 'package:dander/features/map/presentation/widgets/fog_layer.dart';
 import 'package:dander/features/map/presentation/widgets/level_up_overlay.dart';
+import 'package:dander/features/map/presentation/widgets/location_dot_painter.dart';
 import 'package:dander/features/map/presentation/widgets/mystery_poi_marker_layer.dart';
 import 'package:dander/features/map/presentation/widgets/walk_control.dart';
 
@@ -46,12 +49,14 @@ class _MapScreenState extends State<MapScreen>
 
   late final ValueNotifier<FogGrid> _fogGridNotifier;
   late final ValueNotifier<List<MysteryPoi>> _mysteryPoisNotifier;
+  late final ValueNotifier<CompassCharges> _compassChargesNotifier;
   late final StreamController<LatLng> _locationStreamController;
   late final AnimationController _pulseController;
   late final Animation<double> _pulseAnimation;
 
   LatLng _currentCenter = _defaultCenter;
   LatLng? _userPosition;
+  LatLng? _prevPosition;
   StreamSubscription<Position>? _positionSub;
   WalkSession? _walkSession;
 
@@ -63,12 +68,17 @@ class _MapScreenState extends State<MapScreen>
   // POI discovery state
   Discovery? _pendingDiscovery;
 
+  // Burst animation state
+  Offset? _burstPosition;
+  String? _burstCategory;
+
   @override
   void initState() {
     super.initState();
 
     _fogGridNotifier = ValueNotifier(FogGrid(origin: _defaultCenter));
     _mysteryPoisNotifier = ValueNotifier(const []);
+    _compassChargesNotifier = ValueNotifier(const CompassCharges());
     _locationStreamController = StreamController<LatLng>.broadcast();
 
     _pulseController = AnimationController(
@@ -110,12 +120,23 @@ class _MapScreenState extends State<MapScreen>
       await _loadActiveZone(_userPosition!);
     }
 
+    // Load persisted compass charges.
+    try {
+      final repo = GetIt.instance<CompassChargesRepository>();
+      final saved = await repo.load();
+      if (mounted) _compassChargesNotifier.value = saved;
+    } catch (_) {
+      // Repository not registered in tests — use defaults.
+    }
+
     _positionSub = locationService.positionStream.listen((position) {
       final latLng = LatLng(position.latitude, position.longitude);
       if (mounted) setState(() => _userPosition = latLng);
       _locationStreamController.add(latLng);
       _checkZoneOnMove(latLng);
       _checkPoiArrival(latLng);
+      if (_walkSession != null) _earnChargesFromMove(latLng);
+      _prevPosition = latLng;
     });
   }
 
@@ -159,10 +180,25 @@ class _MapScreenState extends State<MapScreen>
           .toList();
       _mysteryPoisNotifier.value = updatedPois;
 
+      _triggerDiscoveryBurst(arrived);
       _showPoiDiscoveryNotification(revealed);
       _awardPoiXp();
     } catch (_) {
       // POI service not available — skip
+    }
+  }
+
+  void _triggerDiscoveryBurst(MysteryPoi poi) {
+    if (!mounted) return;
+    try {
+      final camera = _mapController.camera;
+      final screenPoint = camera.getOffsetFromOrigin(poi.position);
+      setState(() {
+        _burstPosition = screenPoint;
+        _burstCategory = poi.category;
+      });
+    } catch (_) {
+      // MapController camera not available — skip burst animation.
     }
   }
 
@@ -289,6 +325,68 @@ class _MapScreenState extends State<MapScreen>
     }
   }
 
+  void _earnChargesFromMove(LatLng newPosition) {
+    final prev = _prevPosition;
+    if (prev == null) return;
+    try {
+      final detector = GetIt.instance<ZoneDetector>();
+      final deltaMeters = detector.distanceBetween(prev, newPosition);
+      final updated = _compassChargesNotifier.value.earnFromDistance(deltaMeters);
+      _compassChargesNotifier.value = updated;
+      _saveCompassCharges(updated);
+    } catch (_) {
+      // ZoneDetector or repository not registered — skip.
+    }
+  }
+
+  Future<void> _saveCompassCharges(CompassCharges charges) async {
+    try {
+      final repo = GetIt.instance<CompassChargesRepository>();
+      await repo.save(charges);
+    } catch (_) {
+      // Repository not registered in tests — skip.
+    }
+  }
+
+  void _hintNearestUnrevealedPoi() {
+    final charges = _compassChargesNotifier.value;
+    if (!charges.canSpend) return;
+
+    final pois = _mysteryPoisNotifier.value;
+    final unrevealed = pois.where((p) => p.state == PoiState.unrevealed).toList();
+    if (unrevealed.isEmpty) return;
+
+    // Find the nearest unrevealed POI to the user's current position.
+    MysteryPoi? nearest;
+    double nearestDist = double.infinity;
+    try {
+      final detector = GetIt.instance<ZoneDetector>();
+      final userPos = _userPosition;
+      if (userPos == null) return;
+      for (final poi in unrevealed) {
+        final dist = detector.distanceBetween(userPos, poi.position);
+        if (dist < nearestDist) {
+          nearestDist = dist;
+          nearest = poi;
+        }
+      }
+    } catch (_) {
+      nearest = unrevealed.first;
+    }
+
+    if (nearest == null) return;
+
+    final hinted = nearest.hint();
+    final updatedPois = pois
+        .map((p) => p.id == nearest!.id ? hinted : p)
+        .toList();
+    _mysteryPoisNotifier.value = updatedPois;
+
+    final spentCharges = charges.spend();
+    _compassChargesNotifier.value = spentCharges;
+    _saveCompassCharges(spentCharges);
+  }
+
   int get _explorationPct {
     try {
       final pct = _fogGridNotifier.value
@@ -305,6 +403,7 @@ class _MapScreenState extends State<MapScreen>
     _locationStreamController.close();
     _fogGridNotifier.dispose();
     _mysteryPoisNotifier.dispose();
+    _compassChargesNotifier.dispose();
     _mapController.dispose();
     _pulseController.dispose();
     super.dispose();
@@ -343,6 +442,15 @@ class _MapScreenState extends State<MapScreen>
                   discovery: _pendingDiscovery!,
                   onDismiss: () => setState(() => _pendingDiscovery = null),
                 ),
+              ),
+            if (_burstPosition != null)
+              DiscoveryBurstOverlay(
+                position: _burstPosition!,
+                category: _burstCategory!,
+                onComplete: () => setState(() {
+                  _burstPosition = null;
+                  _burstCategory = null;
+                }),
               ),
             WalkControl(
               session: _walkSession,
@@ -417,7 +525,7 @@ class _MapScreenState extends State<MapScreen>
       child: AnimatedBuilder(
         animation: _pulseAnimation,
         builder: (context, _) => CustomPaint(
-          painter: _LocationDotPainter(pulseProgress: _pulseAnimation.value),
+          painter: LocationDotPainter(pulseProgress: _pulseAnimation.value),
         ),
       ),
     );
@@ -427,90 +535,29 @@ class _MapScreenState extends State<MapScreen>
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: ValueListenableBuilder<FogGrid>(
-          valueListenable: _fogGridNotifier,
-          builder: (context, _, __) => ExplorationBadge(
-            percentageExplored: _explorationPct,
-          ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Top-left: exploration badge.
+            ValueListenableBuilder<FogGrid>(
+              valueListenable: _fogGridNotifier,
+              builder: (context, _, __) => ExplorationBadge(
+                percentageExplored: _explorationPct,
+              ),
+            ),
+            const Spacer(),
+            // Top-right: compass charge button.
+            ValueListenableBuilder<CompassCharges>(
+              valueListenable: _compassChargesNotifier,
+              builder: (context, charges, _) => CompassButton(
+                charges: charges.currentCharges,
+                onPressed: _hintNearestUnrevealedPoi,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _LocationDotPainter extends CustomPainter {
-  const _LocationDotPainter({required this.pulseProgress});
-
-  final double pulseProgress;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-
-    // Pulsing ring
-    final ringRadius = 12.0 + pulseProgress * 16.0;
-    final ringOpacity = (1.0 - pulseProgress).clamp(0.0, 1.0);
-    canvas.drawCircle(
-      center,
-      ringRadius,
-      Paint()
-        ..color = DanderColors.onSurface.withValues(alpha: ringOpacity * 0.4)
-        ..style = PaintingStyle.fill,
-    );
-
-    // Accuracy halo
-    canvas.drawCircle(
-      center,
-      14,
-      Paint()
-        ..color = DanderColors.accent.withValues(alpha: 0.2)
-        ..style = PaintingStyle.fill,
-    );
-
-    // White border
-    canvas.drawCircle(
-      center,
-      9,
-      Paint()
-        ..color = DanderColors.onSurface
-        ..style = PaintingStyle.fill,
-    );
-
-    // Gradient inner dot
-    canvas.drawCircle(
-      center,
-      7,
-      Paint()
-        ..shader = RadialGradient(
-          colors: [DanderColors.accent, DanderColors.gradientEnd],
-        ).createShader(Rect.fromCircle(center: center, radius: 7))
-        ..style = PaintingStyle.fill,
-    );
-
-    // Specular highlight
-    canvas.drawCircle(
-      center + const Offset(-2, -2),
-      2,
-      Paint()
-        ..color = DanderColors.onSurface.withValues(alpha: 0.6)
-        ..style = PaintingStyle.fill,
-    );
-
-    // Direction indicator (chevron pointing up)
-    final chevronPaint = Paint()
-      ..color = DanderColors.onSurface.withValues(alpha: 0.9)
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-    final path = ui.Path()
-      ..moveTo(center.dx - 3, center.dy + 1)
-      ..lineTo(center.dx, center.dy - 2)
-      ..lineTo(center.dx + 3, center.dy + 1);
-    canvas.drawPath(path, chevronPaint);
-  }
-
-  @override
-  bool shouldRepaint(_LocationDotPainter old) =>
-      old.pulseProgress != pulseProgress;
-
-}
