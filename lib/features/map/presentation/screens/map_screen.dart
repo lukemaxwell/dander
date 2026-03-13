@@ -148,47 +148,51 @@ class _MapScreenState extends State<MapScreen>
 
   Future<void> _showNewZonePrompt(LatLng position) async {
     final nameController = TextEditingController(text: 'New Zone');
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: DanderColors.surfaceElevated,
-        title: Text("You're somewhere new!",
-            style: DanderTextStyles.titleMedium),
-        content: TextField(
-          controller: nameController,
-          style: DanderTextStyles.bodyMedium,
-          decoration: InputDecoration(
-            labelText: 'Zone name',
-            labelStyle: DanderTextStyles.bodySmall,
+    try {
+      final result = await showDialog<String>(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: DanderColors.surfaceElevated,
+          title: Text("You're somewhere new!",
+              style: DanderTextStyles.titleMedium),
+          content: TextField(
+            controller: nameController,
+            style: DanderTextStyles.bodyMedium,
+            decoration: InputDecoration(
+              labelText: 'Zone name',
+              labelStyle: DanderTextStyles.bodySmall,
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Not now',
+                  style: DanderTextStyles.labelMedium
+                      .copyWith(color: DanderColors.onSurfaceMuted)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, nameController.text),
+              child: Text('Start exploring!',
+                  style: DanderTextStyles.labelMedium
+                      .copyWith(color: DanderColors.accent)),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Not now',
-                style: DanderTextStyles.labelMedium
-                    .copyWith(color: DanderColors.onSurfaceMuted)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, nameController.text),
-            child: Text('Start exploring!',
-                style: DanderTextStyles.labelMedium
-                    .copyWith(color: DanderColors.accent)),
-          ),
-        ],
-      ),
-    );
-
-    if (result != null && result.isNotEmpty) {
-      final zoneRepo = GetIt.instance<ZoneRepository>();
-      final newZone = zone_model.Zone(
-        id: 'zone_${DateTime.now().millisecondsSinceEpoch}',
-        name: result,
-        centre: position,
-        createdAt: DateTime.now(),
       );
-      await zoneRepo.save(newZone);
-      if (mounted) setState(() => _activeZone = newZone);
+
+      if (result != null && result.isNotEmpty) {
+        final zoneRepo = GetIt.instance<ZoneRepository>();
+        final newZone = zone_model.Zone(
+          id: 'zone_${DateTime.now().millisecondsSinceEpoch}',
+          name: result,
+          centre: position,
+          createdAt: DateTime.now(),
+        );
+        await zoneRepo.save(newZone);
+        if (mounted) setState(() => _activeZone = newZone);
+      }
+    } finally {
+      nameController.dispose();
     }
     _zonePromptShown = false;
   }
@@ -419,6 +423,4 @@ class _LocationDotPainter extends CustomPainter {
   bool shouldRepaint(_LocationDotPainter old) =>
       old.pulseProgress != pulseProgress;
 
-  // ignore: unused_element
-  static double _toRad(double deg) => deg * math.pi / 180;
 }

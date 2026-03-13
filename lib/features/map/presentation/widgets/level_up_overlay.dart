@@ -91,7 +91,7 @@ class _LevelUpOverlayState extends State<LevelUpOverlay>
 
   void _runAnimation() {
     _controller.forward(from: 0.0).then((_) {
-      widget.onDismissed?.call();
+      if (mounted) widget.onDismissed?.call();
     });
   }
 

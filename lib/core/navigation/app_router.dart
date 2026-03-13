@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart' hide Badge;
 import 'package:go_router/go_router.dart';
 
-import 'package:dander/core/discoveries/discovery.dart';
+import 'package:dander/core/discoveries/discovery.dart' show Discovery;
 import 'package:dander/core/progress/badge.dart';
 import 'package:dander/core/progress/streak_tracker.dart';
 import 'package:get_it/get_it.dart';
-
-import 'package:dander/core/discoveries/discovery.dart' show Discovery;
 import 'package:dander/core/zone/zone_repository.dart';
 import 'package:dander/features/discoveries/presentation/screens/discoveries_screen.dart';
 import 'package:dander/features/map/presentation/screens/map_screen.dart';

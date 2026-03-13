@@ -84,6 +84,7 @@ class _ZonesScreenState extends State<ZonesScreen> {
 
     if (confirmed == true) {
       await widget.repository.delete(zone.id);
+      if (!mounted) return;
       _reload();
     }
   }

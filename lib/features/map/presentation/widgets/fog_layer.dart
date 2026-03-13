@@ -112,22 +112,9 @@ class _FogLayerState extends State<FogLayer> {
     }
   }
 
-  /// Copies explored cells from [src] into [dst] by replaying them.
-  ///
-  /// Uses the internal [FogGrid.addCell] escape-hatch so we avoid O(n) geo
-  /// math.  Falls back to serialisation-based copy if that is unavailable.
+  /// Copies explored cells from [src] into [dst] directly via [addCell].
   void _copyExploredCells(FogGrid src, FogGrid dst) {
-    final bytes = src.toBytes();
-    if (bytes.isEmpty) return;
-
-    // Use the public factory to restore the explored set in dst.
-    final restored = FogGrid.fromBytes(
-      bytes,
-      origin: src.origin,
-      cellSizeMeters: src.cellSizeMeters,
-    );
-    // Merge explored cells into dst.
-    for (final cell in restored.exploredCells) {
+    for (final cell in src.exploredCells) {
       dst.addCell(cell);
     }
   }
