@@ -8,6 +8,7 @@ import '../location/walk_repository.dart';
 import '../location/walk_service.dart';
 import '../progress/progress_repository.dart';
 import '../progress/progress_service.dart';
+import '../quiz/quiz_repository.dart';
 
 /// Global service locator instance.
 final GetIt serviceLocator = GetIt.instance;
@@ -52,4 +53,7 @@ Future<void> setupLocator() async {
   // Progress
   sl.registerLazySingleton<ProgressRepository>(HiveProgressRepository.new);
   sl.registerLazySingleton<ProgressService>(ProgressService.new);
+
+  // Quiz
+  sl.registerLazySingleton<QuizRepository>(HiveQuizRepository.new);
 }
