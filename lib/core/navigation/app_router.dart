@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:dander/core/discoveries/discovery.dart';
 import 'package:dander/features/discoveries/presentation/screens/discoveries_screen.dart';
 import 'package:dander/features/map/presentation/screens/map_screen.dart';
 import 'package:dander/features/profile/presentation/screens/profile_screen.dart';
@@ -33,13 +34,19 @@ final GoRouter router = GoRouter(
         ),
         GoRoute(
           path: AppRoutes.discoveries,
-          pageBuilder: (context, state) =>
-              const NoTransitionPage(child: DiscoveriesScreen()),
+          pageBuilder: (context, state) => const NoTransitionPage(
+            child: DiscoveriesScreen(
+              discoveries: <Discovery>[],
+            ),
+          ),
         ),
         GoRoute(
           path: AppRoutes.profile,
-          pageBuilder: (context, state) =>
-              const NoTransitionPage(child: ProfileScreen()),
+          pageBuilder: (context, state) => const NoTransitionPage(
+            child: ProfileScreen(
+              discoveries: <Discovery>[],
+            ),
+          ),
         ),
       ],
     ),
