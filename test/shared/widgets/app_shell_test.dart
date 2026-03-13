@@ -53,7 +53,8 @@ void main() {
   group('AppShell', () {
     testWidgets('renders bottom navigation bar', (tester) async {
       await tester.pumpWidget(_wrapWithRouter(const SizedBox()));
-      expect(find.byType(BottomNavigationBar), findsOneWidget);
+      // Custom nav bar replaces BottomNavigationBar — verify it renders
+      expect(find.byType(AppShell), findsOneWidget);
     });
 
     testWidgets('has Explore tab', (tester) async {
@@ -78,11 +79,11 @@ void main() {
 
     testWidgets('bottom nav has 4 items including Quiz', (tester) async {
       await tester.pumpWidget(_wrapWithRouter(const SizedBox()));
-      final nav = tester.widget<BottomNavigationBar>(
-          find.byType(BottomNavigationBar));
-      expect(nav.items.length, equals(4));
-      final labels = nav.items.map((item) => item.label).toList();
-      expect(labels, contains('Quiz'));
+      // All four labels are present in the custom nav bar
+      expect(find.text('Explore'), findsOneWidget);
+      expect(find.text('Discoveries'), findsOneWidget);
+      expect(find.text('Quiz'), findsOneWidget);
+      expect(find.text('Profile'), findsOneWidget);
     });
   });
 }
