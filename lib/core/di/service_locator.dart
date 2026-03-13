@@ -6,6 +6,8 @@ import '../discoveries/overpass_client.dart';
 import '../location/location_service.dart';
 import '../location/walk_repository.dart';
 import '../location/walk_service.dart';
+import '../progress/progress_repository.dart';
+import '../progress/progress_service.dart';
 
 /// Global service locator instance.
 final GetIt serviceLocator = GetIt.instance;
@@ -16,6 +18,16 @@ final GetIt sl = serviceLocator;
 /// Registers all application services with the dependency injection container.
 ///
 /// Call once at app startup before [runApp].
+///
+/// Registration strategy:
+/// - [GeolocatorLocationService] — singleton: one GPS stream for the app lifetime.
+/// - [HiveWalkRepository]        — singleton: single Hive box reference.
+/// - [WalkService]               — singleton: one active walk session at a time.
+/// - [HttpOverpassClient]        — singleton: shared HTTP client for Overpass queries.
+/// - [HiveDiscoveryRepository]   — singleton: single Hive box reference for POI cache.
+/// - [DiscoveryService]          — singleton: one discovery pipeline for the app lifetime.
+/// - [HiveProgressRepository]    — singleton: single Hive box reference for progress data.
+/// - [ProgressService]           — singleton: exploration %, badges, and streak logic.
 Future<void> setupLocator() async {
   // Infrastructure
   sl.registerLazySingleton<LocationService>(GeolocatorLocationService.new);
@@ -36,4 +48,8 @@ Future<void> setupLocator() async {
       repository: sl<DiscoveryRepository>(),
     ),
   );
+
+  // Progress
+  sl.registerLazySingleton<ProgressRepository>(HiveProgressRepository.new);
+  sl.registerLazySingleton<ProgressService>(ProgressService.new);
 }
