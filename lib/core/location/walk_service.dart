@@ -104,6 +104,17 @@ class WalkService {
     return completed;
   }
 
+  /// Releases all resources held by this service.
+  ///
+  /// Cancels any active position subscription and closes [sessionStream].
+  /// Must be called when the service is no longer needed to avoid resource
+  /// leaks.
+  Future<void> dispose() async {
+    await _positionSub?.cancel();
+    _positionSub = null;
+    await _sessionController.close();
+  }
+
   // ---------------------------------------------------------------------------
   // Private helpers
   // ---------------------------------------------------------------------------

@@ -32,12 +32,13 @@ class GeolocatorLocationService implements LocationService {
   late final Stream<Position> _positionStream;
 
   GeolocatorLocationService() {
-    // High-accuracy stream; distanceFilter 0 means purely time-based updates
-    // (interval determined by the platform).
+    // High-accuracy stream; distanceFilter 5 means a new update is only
+    // emitted after the device has moved at least 5 metres, preventing
+    // continuous GPS drain when stationary.
     _positionStream = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: 0,
+        distanceFilter: 5,
       ),
     ).asBroadcastStream();
   }

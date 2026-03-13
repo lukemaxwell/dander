@@ -271,4 +271,25 @@ void main() {
       expect(point.position.longitude, closeTo(-0.1000, 0.0001));
     });
   });
+
+  group('WalkService.dispose', () {
+    test('sessionStream is closed after dispose', () async {
+      final service = buildService();
+      await service.dispose();
+      final done = Completer<void>();
+      service.sessionStream.listen(
+        (_) {},
+        onDone: done.complete,
+      );
+      await expectLater(done.future, completes);
+    });
+
+    test('dispose cancels active position subscription without throwing',
+        () async {
+      when(() => mockLocation.hasPermission).thenAnswer((_) async => true);
+      final service = buildService();
+      await service.startWalk();
+      await expectLater(service.dispose(), completes);
+    });
+  });
 }
