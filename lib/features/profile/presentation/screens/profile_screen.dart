@@ -6,6 +6,7 @@ import 'package:dander/core/progress/badge.dart';
 import 'package:dander/core/progress/streak_tracker.dart';
 import 'package:dander/core/theme/app_theme.dart';
 import 'package:dander/core/theme/rarity_colors.dart';
+import 'package:dander/shared/widgets/dander_logo.dart';
 
 /// Profile screen showing exploration progress, streak, badges, and discoveries.
 class ProfileScreen extends StatelessWidget {
@@ -45,6 +46,13 @@ class ProfileScreen extends StatelessWidget {
       body: ListView(
         padding: DanderSpacing.pagePadding,
         children: [
+          // Logo header
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: DanderSpacing.xl),
+              child: DanderLogo(size: 72),
+            ),
+          ),
           _ExplorationRing(pct: explorationPct),
           const SizedBox(height: DanderSpacing.lg),
           _StreakCard(streak: streak),
