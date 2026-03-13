@@ -1,45 +1,33 @@
 name: dander
-description: "Fog-of-war neighbourhood explorer app — reveal your neighbourhood as you walk."
+description: Fog-of-war neighbourhood explorer app.
 publish_to: 'none'
-
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.11.1
+  sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
-
   cupertino_icons: ^1.0.8
-
-  # Navigation
-  go_router: ^14.0.0
-
-  # Dependency injection
-  get_it: ^8.0.0
-
-  # Map
-  flutter_map: ^7.0.0
-  latlong2: ^0.9.0
-
-  # Location
-  geolocator: ^13.0.0
-
-  # Local storage
+  flutter_map: ^8.1.1
+  latlong2: ^0.9.1
+  geolocator: ^13.0.4
   hive: ^2.2.3
   hive_flutter: ^1.1.0
-
-  # State management
+  path_provider: ^2.1.5
+  go_router: ^15.1.2
   provider: ^6.1.5
+  uuid: ^4.5.1
+  get_it: ^8.0.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^6.0.0
-  build_runner: ^2.4.0
+  flutter_lints: ^5.0.0
   hive_generator: ^2.0.1
-  mocktail: ^1.0.0
+  build_runner: ^2.4.13
+  mocktail: ^1.0.4
 
 flutter:
   uses-material-design: true
