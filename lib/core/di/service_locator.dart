@@ -1,12 +1,28 @@
 import 'package:get_it/get_it.dart';
 
+import '../location/location_service.dart';
+import '../location/walk_repository.dart';
+import '../location/walk_service.dart';
+
 /// Global service locator instance.
 final GetIt serviceLocator = GetIt.instance;
+
+/// Alias for [serviceLocator] for convenience.
+final GetIt sl = serviceLocator;
 
 /// Registers all application services with the dependency injection container.
 ///
 /// Call once at app startup before [runApp].
-void setupLocator() {
-  // Future services will be registered here as features are added.
-  // e.g. serviceLocator.registerLazySingleton<LocationService>(LocationServiceImpl.new);
+Future<void> setupLocator() async {
+  // Infrastructure
+  sl.registerLazySingleton<LocationService>(GeolocatorLocationService.new);
+  sl.registerLazySingleton<WalkRepository>(HiveWalkRepository.new);
+
+  // Domain services
+  sl.registerLazySingleton<WalkService>(
+    () => WalkService(
+      locationService: sl<LocationService>(),
+      repository: sl<WalkRepository>(),
+    ),
+  );
 }

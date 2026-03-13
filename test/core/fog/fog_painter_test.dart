@@ -29,8 +29,8 @@ void main() {
     group('shouldRepaint', () {
       test('returns true when fog grid changes', () {
         final grid1 = FogGrid(origin: origin, cellSizeMeters: 10.0);
-        final grid2 = FogGrid(origin: origin, cellSizeMeters: 10.0)
-            .markExplored(origin, 50.0);
+        final grid2 = FogGrid(origin: origin, cellSizeMeters: 10.0);
+        grid2.markExplored(origin, 50.0);
 
         final viewport = FogViewport(
           bounds: LatLngBounds(
@@ -45,8 +45,8 @@ void main() {
       });
 
       test('returns false when both grids are identical', () {
-        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0)
-            .markExplored(origin, 50.0);
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
+        grid.markExplored(origin, 50.0);
 
         final viewport = FogViewport(
           bounds: LatLngBounds(
@@ -110,8 +110,8 @@ void main() {
       });
 
       testWidgets('renders without error with explored cells', (tester) async {
-        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0)
-            .markExplored(origin, 50.0);
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
+        grid.markExplored(origin, 50.0);
 
         final viewport = FogViewport(
           bounds: LatLngBounds(
@@ -139,8 +139,8 @@ void main() {
 
       testWidgets('renders without error with large explored area',
           (tester) async {
-        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0)
-            .markExplored(origin, 600.0);
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
+        grid.markExplored(origin, 600.0);
         // Ensure 10k+ cells
 
         final viewport = FogViewport(

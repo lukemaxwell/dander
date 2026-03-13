@@ -12,7 +12,7 @@ Future<void> main() async {
   await Hive.initFlutter();
 
   // Dependency injection
-  setupLocator();
+  await setupLocator();
 
   runApp(const DanderApp());
 }
