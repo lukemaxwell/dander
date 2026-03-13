@@ -18,4 +18,10 @@ abstract final class HiveBoxes {
   /// Stores lightweight app-level state (last position, neighbourhood bounds,
   /// first-launch flag, etc.).
   static const String appState = 'app_state';
+
+  /// Stores street data and walked-state records.
+  static const String streets = 'streets';
+
+  /// Stores spaced-repetition memory records for the street quiz.
+  static const String quiz = 'quiz';
 }
