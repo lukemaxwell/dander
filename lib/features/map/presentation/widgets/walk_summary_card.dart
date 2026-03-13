@@ -13,6 +13,7 @@ class WalkSummaryCard extends StatelessWidget {
     required this.session,
     required this.fogClearedPercent,
     required this.discoveriesFound,
+    required this.discoveriesWaiting,
     required this.onDone,
     required this.onShare,
   });
@@ -25,6 +26,9 @@ class WalkSummaryCard extends StatelessWidget {
 
   /// Number of new discoveries found during this walk.
   final int discoveriesFound;
+
+  /// Number of unrevealed mystery POIs remaining in the current zone.
+  final int discoveriesWaiting;
 
   /// Called when the user taps "Done".
   final VoidCallback onDone;
@@ -88,6 +92,16 @@ class WalkSummaryCard extends StatelessWidget {
             children: [
               _StatTile(label: 'Fog Cleared', value: fogLabel),
               _StatTile(label: 'Discoveries', value: '$discoveriesFound'),
+            ],
+          ),
+          const SizedBox(height: DanderSpacing.lg),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _StatTile(
+                label: 'Still Waiting',
+                value: '$discoveriesWaiting',
+              ),
             ],
           ),
           const SizedBox(height: DanderSpacing.xxl),

@@ -19,7 +19,7 @@ class ExplorationBadge extends StatelessWidget {
         border: Border.all(color: DanderColors.accent.withValues(alpha: 0.4)),
       ),
       child: Text(
-        '$percentageExplored% explored',
+        '$percentageExplored% explored · ${100 - percentageExplored}% hidden',
         style: const TextStyle(
           color: DanderColors.onSurface,
           fontWeight: FontWeight.w600,

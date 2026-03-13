@@ -1,10 +1,14 @@
 # Dander
 
-> **Your neighbourhood is a game world.**
+> **How well do you really know where you live?**
+
+*43 discoveries waiting · 2% explored · 98% still hidden*
 
 Dander is a fog-of-war exploration game for the real world. As you walk, you lift the fog from your local streets — revealing the map of the places you've actually been. Mystery markers hide local gems sourced from OpenStreetMap: hidden cafés, forgotten parks, street art, historic landmarks. Walk there to unlock them.
 
-The more you explore, the more your neighbourhood comes alive.
+**Explore. Collect. Belong.**
+
+You start as a stranger. You explore, you collect — and eventually, you belong.
 
 ---
 
@@ -15,6 +19,8 @@ Most people live in the same few square miles for years and still don't really *
 Dander makes local exploration feel like an adventure. It borrows the fog-of-war mechanic from strategy games — you only see the streets you've personally walked — and layers a discovery and progression system on top of the real world. Every walk chips away at the fog. Every discovery is a trophy. Every zone you master earns XP and levels up.
 
 The north star is simple: **make going for a walk feel like playing a game, forever.**
+
+**Explore. Collect. Belong.** You start as a stranger. You explore, you collect — and eventually, you belong.
 
 ---
 
