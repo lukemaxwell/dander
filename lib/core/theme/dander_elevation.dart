@@ -50,7 +50,7 @@ abstract final class DanderElevation {
   /// Accent glow — badge and CTA highlights using the brand secondary color.
   static const List<BoxShadow> accentGlow = [
     BoxShadow(
-      color: Color(0x666E56CF), // secondary at ~40%
+      color: Color(0x66FF8F00), // secondary (amber) at ~40%
       blurRadius: 20,
       spreadRadius: 2,
       offset: Offset.zero,
