@@ -44,7 +44,11 @@ class ProfileScreen extends StatelessWidget {
         elevation: 0,
       ),
       body: ListView(
-        padding: DanderSpacing.pagePadding,
+        padding: DanderSpacing.pagePadding.copyWith(
+          bottom: DanderSpacing.pagePadding.bottom +
+              MediaQuery.of(context).padding.bottom +
+              kBottomNavigationBarHeight,
+        ),
         children: [
           // Logo header
           Center(
