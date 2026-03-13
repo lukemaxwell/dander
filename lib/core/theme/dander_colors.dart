@@ -12,8 +12,8 @@ abstract final class DanderColors {
   /// Deep navy — primary brand background and app bar.
   static const Color primary = Color(0xFF1A1A2E);
 
-  /// Richer purple — secondary brand color for accents and active states.
-  static const Color secondary = Color(0xFF6E56CF);
+  /// Bold amber — secondary brand color for CTAs, walk buttons, quiz actions.
+  static const Color secondary = Color(0xFFFF8F00);
 
   /// Sky blue — interactive accent (links, icons, progress).
   static const Color accent = Color(0xFF4FC3F7);
@@ -97,10 +97,10 @@ abstract final class DanderColors {
   // Gradient pair (primary CTA gradient)
   // ---------------------------------------------------------------------------
 
-  /// Start color of the primary gradient.
-  static const Color gradientStart = Color(0xFF6E56CF);
+  /// Start color of the primary gradient (amber).
+  static const Color gradientStart = Color(0xFFFF8F00);
 
-  /// End color of the primary gradient.
+  /// End color of the primary gradient (cyan).
   static const Color gradientEnd = Color(0xFF4FC3F7);
 
   // ---------------------------------------------------------------------------
