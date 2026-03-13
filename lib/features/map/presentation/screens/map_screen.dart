@@ -14,7 +14,10 @@ import 'package:dander/features/map/presentation/widgets/exploration_badge.dart'
 import 'package:dander/features/map/presentation/widgets/fog_layer.dart';
 
 class MapScreen extends StatefulWidget {
-  const MapScreen({super.key});
+  const MapScreen({super.key, this.locationService});
+
+  /// Optional override for testing. Falls back to GetIt in production.
+  final LocationService? locationService;
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -60,7 +63,8 @@ class _MapScreenState extends State<MapScreen>
   }
 
   Future<void> _initLocation() async {
-    final locationService = GetIt.instance<LocationService>();
+    final locationService =
+        widget.locationService ?? GetIt.instance<LocationService>();
     final granted = await locationService.requestPermission();
     if (!granted) return;
 
