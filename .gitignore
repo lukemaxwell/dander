@@ -1,4 +1,8 @@
+# General
 .DS_Store
+*.log
+
+# Dart / Flutter build outputs
 build/
 .dart_tool/
 .flutter-plugins
@@ -6,15 +10,30 @@ build/
 .packages
 .pub-cache/
 .pub/
+
+# IDE
 *.iml
-*.lock
 .idea/
 .vscode/
-*.log
+
+# Secrets
 .env
+
+# Android
 android/.gradle/
 android/local.properties
+
+# iOS / macOS
 ios/Pods/
 ios/.symlinks/
+macos/Pods/
+
+# Signing artefacts
 *.jks
 *.keystore
+*.p12
+*.p8
+*.mobileprovision
+
+# Gradle lock files (but NOT pubspec.lock — committed for reproducible builds)
+*.lockfile
