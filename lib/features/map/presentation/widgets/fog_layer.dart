@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart' show LatLngBounds;
@@ -6,6 +7,8 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../../core/fog/fog_grid.dart';
 import '../../../../core/fog/fog_painter.dart';
+import '../../../../core/fog/fog_texture_generator.dart';
+import '../../../../core/theme/app_theme.dart';
 
 /// A widget that renders the fog-of-war overlay over the visible map area.
 ///
@@ -43,11 +46,26 @@ class FogLayer extends StatefulWidget {
 
 class _FogLayerState extends State<FogLayer> {
   StreamSubscription<LatLng>? _locationSub;
+  ui.Image? _fogTexture;
+
+  /// Default glow: amber at ~18% opacity.
+  static const Color _glowColor = Color(0x2EFF8F00);
+  static const double _glowSigma = 16.0;
 
   @override
   void initState() {
     super.initState();
     _subscribeToLocation();
+    _generateTexture();
+  }
+
+  Future<void> _generateTexture() async {
+    final image = await FogTextureGenerator.generate();
+    if (mounted) {
+      setState(() => _fogTexture = image);
+    } else {
+      image.dispose();
+    }
   }
 
   @override
@@ -117,6 +135,7 @@ class _FogLayerState extends State<FogLayer> {
   @override
   void dispose() {
     _locationSub?.cancel();
+    _fogTexture?.dispose();
     super.dispose();
   }
 
@@ -135,7 +154,13 @@ class _FogLayerState extends State<FogLayer> {
               ),
             );
             return CustomPaint(
-              painter: FogPainter(fogGrid: grid, viewport: viewport),
+              painter: FogPainter(
+                fogGrid: grid,
+                viewport: viewport,
+                fogTexture: _fogTexture,
+                glowColor: _glowColor,
+                glowSigma: _glowSigma,
+              ),
               child: const SizedBox.expand(),
             );
           },

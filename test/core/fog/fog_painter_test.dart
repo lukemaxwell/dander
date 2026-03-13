@@ -1,9 +1,11 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart' show LatLngBounds;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:dander/core/fog/fog_grid.dart';
 import 'package:dander/core/fog/fog_painter.dart';
+import 'package:dander/core/fog/fog_texture_generator.dart';
 
 void main() {
   const origin = LatLng(51.5, -0.05);
@@ -151,6 +153,240 @@ void main() {
           canvasSize: const Size(400, 600),
         );
         final painter = FogPainter(fogGrid: grid, viewport: viewport);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SizedBox(
+                width: 400,
+                height: 600,
+                child: CustomPaint(painter: painter),
+              ),
+            ),
+          ),
+        );
+
+        expect(tester.takeException(), isNull);
+      });
+    });
+
+    group('texture support', () {
+      test('constructs with optional fogTexture parameter', () async {
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
+        final viewport = FogViewport(
+          bounds: LatLngBounds(
+            const LatLng(51.495, -0.06),
+            const LatLng(51.505, -0.04),
+          ),
+          canvasSize: const Size(400, 600),
+        );
+        final texture = await FogTextureGenerator.generate(size: 32);
+        expect(
+          () => FogPainter(
+            fogGrid: grid,
+            viewport: viewport,
+            fogTexture: texture,
+          ),
+          returnsNormally,
+        );
+        texture.dispose();
+      });
+
+      test('shouldRepaint returns true when fogTexture changes', () async {
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
+        final viewport = FogViewport(
+          bounds: LatLngBounds(
+            const LatLng(51.495, -0.06),
+            const LatLng(51.505, -0.04),
+          ),
+          canvasSize: const Size(400, 600),
+        );
+        final tex1 = await FogTextureGenerator.generate(size: 32);
+        final tex2 = await FogTextureGenerator.generate(size: 32);
+
+        final painter1 = FogPainter(
+          fogGrid: grid,
+          viewport: viewport,
+          fogTexture: tex1,
+        );
+        final painter2 = FogPainter(
+          fogGrid: grid,
+          viewport: viewport,
+          fogTexture: tex2,
+        );
+
+        expect(painter1.shouldRepaint(painter2), isTrue);
+
+        tex1.dispose();
+        tex2.dispose();
+      });
+
+      test('shouldRepaint returns false when fogTexture is identical', () async {
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
+        final viewport = FogViewport(
+          bounds: LatLngBounds(
+            const LatLng(51.495, -0.06),
+            const LatLng(51.505, -0.04),
+          ),
+          canvasSize: const Size(400, 600),
+        );
+        final texture = await FogTextureGenerator.generate(size: 32);
+
+        final painter1 = FogPainter(
+          fogGrid: grid,
+          viewport: viewport,
+          fogTexture: texture,
+        );
+        final painter2 = FogPainter(
+          fogGrid: grid,
+          viewport: viewport,
+          fogTexture: texture,
+        );
+
+        expect(painter1.shouldRepaint(painter2), isFalse);
+
+        texture.dispose();
+      });
+
+      testWidgets('renders without error with texture', (tester) async {
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
+        grid.markExplored(origin, 50.0);
+        final viewport = FogViewport(
+          bounds: LatLngBounds(
+            const LatLng(51.495, -0.06),
+            const LatLng(51.505, -0.04),
+          ),
+          canvasSize: const Size(400, 600),
+        );
+        final texture = await FogTextureGenerator.generate(size: 32);
+        final painter = FogPainter(
+          fogGrid: grid,
+          viewport: viewport,
+          fogTexture: texture,
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SizedBox(
+                width: 400,
+                height: 600,
+                child: CustomPaint(painter: painter),
+              ),
+            ),
+          ),
+        );
+
+        expect(tester.takeException(), isNull);
+        texture.dispose();
+      });
+    });
+
+    group('edge glow', () {
+      test('constructs with glow colour and sigma', () {
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
+        final viewport = FogViewport(
+          bounds: LatLngBounds(
+            const LatLng(51.495, -0.06),
+            const LatLng(51.505, -0.04),
+          ),
+          canvasSize: const Size(400, 600),
+        );
+        expect(
+          () => FogPainter(
+            fogGrid: grid,
+            viewport: viewport,
+            glowColor: const Color(0x2EFF8F00),
+            glowSigma: 16.0,
+          ),
+          returnsNormally,
+        );
+      });
+
+      test('shouldRepaint returns true when glowColor changes', () {
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
+        final viewport = FogViewport(
+          bounds: LatLngBounds(
+            const LatLng(51.495, -0.06),
+            const LatLng(51.505, -0.04),
+          ),
+          canvasSize: const Size(400, 600),
+        );
+        final painter1 = FogPainter(
+          fogGrid: grid,
+          viewport: viewport,
+          glowColor: const Color(0x2EFF8F00),
+        );
+        final painter2 = FogPainter(
+          fogGrid: grid,
+          viewport: viewport,
+          glowColor: const Color(0x2E4FC3F7),
+        );
+        expect(painter1.shouldRepaint(painter2), isTrue);
+      });
+
+      test('shouldRepaint returns true when glowSigma changes', () {
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
+        final viewport = FogViewport(
+          bounds: LatLngBounds(
+            const LatLng(51.495, -0.06),
+            const LatLng(51.505, -0.04),
+          ),
+          canvasSize: const Size(400, 600),
+        );
+        final painter1 = FogPainter(
+          fogGrid: grid,
+          viewport: viewport,
+          glowSigma: 16.0,
+        );
+        final painter2 = FogPainter(
+          fogGrid: grid,
+          viewport: viewport,
+          glowSigma: 20.0,
+        );
+        expect(painter1.shouldRepaint(painter2), isTrue);
+      });
+
+      test('shouldRepaint returns false when glow config is identical', () {
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
+        final viewport = FogViewport(
+          bounds: LatLngBounds(
+            const LatLng(51.495, -0.06),
+            const LatLng(51.505, -0.04),
+          ),
+          canvasSize: const Size(400, 600),
+        );
+        final painter1 = FogPainter(
+          fogGrid: grid,
+          viewport: viewport,
+          glowColor: const Color(0x2EFF8F00),
+          glowSigma: 16.0,
+        );
+        final painter2 = FogPainter(
+          fogGrid: grid,
+          viewport: viewport,
+          glowColor: const Color(0x2EFF8F00),
+          glowSigma: 16.0,
+        );
+        expect(painter1.shouldRepaint(painter2), isFalse);
+      });
+
+      testWidgets('renders glow without error', (tester) async {
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
+        grid.markExplored(origin, 50.0);
+        final viewport = FogViewport(
+          bounds: LatLngBounds(
+            const LatLng(51.495, -0.06),
+            const LatLng(51.505, -0.04),
+          ),
+          canvasSize: const Size(400, 600),
+        );
+        final painter = FogPainter(
+          fogGrid: grid,
+          viewport: viewport,
+          glowColor: const Color(0x2EFF8F00),
+          glowSigma: 16.0,
+        );
 
         await tester.pumpWidget(
           MaterialApp(

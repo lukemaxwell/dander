@@ -1,6 +1,8 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart' show LatLngBounds;
+import 'package:latlong2/latlong.dart';
 import 'fog_grid.dart';
 
 /// Describes the visible region of the map that the painter should cover,
@@ -48,8 +50,13 @@ class FogViewport {
 
 /// Fog-of-war overlay [CustomPainter].
 ///
-/// Paints a deep navy/purple fog (#1A1A2E at 85% opacity) over the entire
-/// canvas, then "punches" transparent holes for every explored cell.
+/// Paints a deep navy fog over the entire canvas, optionally overlaid with a
+/// tileable [fogTexture] for atmospheric depth, then "punches" transparent
+/// holes for every explored cell.
+///
+/// When [glowColor] is set, a second compositing pass draws a coloured fringe
+/// at the boundary of explored territory by painting a wide blur and then
+/// removing the interior.
 ///
 /// Only cells within the current [viewport] are processed so rendering stays
 /// efficient even with tens of thousands of explored cells.
@@ -57,13 +64,26 @@ class FogPainter extends CustomPainter {
   FogPainter({
     required this.fogGrid,
     required this.viewport,
+    this.fogTexture,
+    this.glowColor,
+    this.glowSigma = 16.0,
   });
 
   /// Deep navy/purple fog colour matching the Dander aesthetic.
-  static const Color fogColor = Color(0xFF1A1A2E); // #1A1A2E fully opaque
+  static const Color fogColor = Color(0xFF1A1A2E);
 
   final FogGrid fogGrid;
   final FogViewport viewport;
+
+  /// Optional tileable noise image painted over the fog at low opacity.
+  final ui.Image? fogTexture;
+
+  /// Colour of the glow fringe at the fog boundary. When null, no glow is
+  /// painted.
+  final Color? glowColor;
+
+  /// Blur sigma for the glow fringe (default 16).
+  final double glowSigma;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -78,7 +98,14 @@ class FogPainter extends CustomPainter {
     final yMin = math.min(swCell.y, neCell.y) - 1;
     final yMax = math.max(swCell.y, neCell.y) + 1;
 
-    // Use saveLayer + BlendMode.dstOut to punch holes in the fog.
+    final origin = fogGrid.origin;
+    final cellDegLat = fogGrid.cellSizeMeters / 111111.0;
+    final cellDegLng = fogGrid.cellSizeMeters /
+        (111111.0 * math.cos(origin.latitude * math.pi / 180.0));
+
+    // ------------------------------------------------------------------
+    // Pass 1: Fog layer (solid fill + optional texture + hole-punching)
+    // ------------------------------------------------------------------
     final fogPaint = Paint()..color = fogColor;
     final clearPaint = Paint()
       ..color = const Color(0xFFFFFFFF)
@@ -87,43 +114,100 @@ class FogPainter extends CustomPainter {
 
     canvas.saveLayer(Offset.zero & size, Paint());
 
-    // Draw the solid fog background.
+    // Solid fog background.
     canvas.drawRect(Offset.zero & size, fogPaint);
 
-    final origin = fogGrid.origin;
-    final cellDegLat = fogGrid.cellSizeMeters / 111111.0;
-    final cellDegLng = fogGrid.cellSizeMeters /
-        (111111.0 * math.cos(origin.latitude * math.pi / 180.0));
+    // Overlay noise texture if available.
+    final texture = fogTexture;
+    if (texture != null) {
+      final shader = ImageShader(
+        texture,
+        TileMode.repeated,
+        TileMode.repeated,
+        Matrix4.identity().storage,
+      );
+      final texturePaint = Paint()
+        ..shader = shader
+        ..color = const Color(0x0FFFFFFF); // ~6% opacity
+      canvas.drawRect(Offset.zero & size, texturePaint);
+    }
 
+    // Punch transparent holes for explored cells.
+    _forEachVisibleExploredCell(
+      xMin, xMax, yMin, yMax, origin, cellDegLat, cellDegLng,
+      (rect) => canvas.drawRect(rect, clearPaint),
+    );
+
+    canvas.restore();
+
+    // ------------------------------------------------------------------
+    // Pass 2: Edge glow (optional)
+    // ------------------------------------------------------------------
+    final glow = glowColor;
+    if (glow != null) {
+      canvas.saveLayer(Offset.zero & size, Paint());
+
+      // Draw wide coloured blur for all explored cells.
+      final glowPaint = Paint()
+        ..color = glow
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, glowSigma);
+
+      _forEachVisibleExploredCell(
+        xMin, xMax, yMin, yMax, origin, cellDegLat, cellDegLng,
+        (rect) => canvas.drawRect(rect, glowPaint),
+      );
+
+      // Punch out the interior — leaves only the fringe.
+      final glowClearPaint = Paint()
+        ..color = const Color(0xFFFFFFFF)
+        ..blendMode = BlendMode.dstOut
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, glowSigma * 0.35);
+
+      _forEachVisibleExploredCell(
+        xMin, xMax, yMin, yMax, origin, cellDegLat, cellDegLng,
+        (rect) => canvas.drawRect(rect, glowClearPaint),
+      );
+
+      canvas.restore();
+    }
+  }
+
+  /// Iterates over every explored cell in the visible range and calls
+  /// [callback] with its pixel [Rect].
+  void _forEachVisibleExploredCell(
+    int xMin,
+    int xMax,
+    int yMin,
+    int yMax,
+    LatLng origin,
+    double cellDegLat,
+    double cellDegLng,
+    void Function(Rect rect) callback,
+  ) {
     for (var y = yMin; y <= yMax; y++) {
       for (var x = xMin; x <= xMax; x++) {
         if (!fogGrid.isCellExplored(x, y)) continue;
 
-        // Pixel coordinates of the cell's top-left corner.
-        // Cell (x, y) spans longitude [origin.lng + x*dLng, origin.lng + (x+1)*dLng]
-        // and latitude [origin.lat + y*dLat, origin.lat + (y+1)*dLat].
         final cellLngLeft = origin.longitude + x * cellDegLng;
         final cellLatBottom = origin.latitude + y * cellDegLat;
         final cellLngRight = cellLngLeft + cellDegLng;
         final cellLatTop = cellLatBottom + cellDegLat;
 
         final left = viewport.lngToX(cellLngLeft);
-        final top = viewport.latToY(cellLatTop); // higher lat = smaller y
+        final top = viewport.latToY(cellLatTop);
         final right = viewport.lngToX(cellLngRight);
         final bottom = viewport.latToY(cellLatBottom);
 
-        canvas.drawRect(
-          Rect.fromLTRB(left, top, right, bottom),
-          clearPaint,
-        );
+        callback(Rect.fromLTRB(left, top, right, bottom));
       }
     }
-
-    canvas.restore();
   }
 
   @override
   bool shouldRepaint(FogPainter oldDelegate) =>
       !identical(fogGrid, oldDelegate.fogGrid) ||
-      viewport != oldDelegate.viewport;
+      viewport != oldDelegate.viewport ||
+      !identical(fogTexture, oldDelegate.fogTexture) ||
+      glowColor != oldDelegate.glowColor ||
+      glowSigma != oldDelegate.glowSigma;
 }
