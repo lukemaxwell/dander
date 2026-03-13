@@ -274,6 +274,9 @@ class _MapScreenState extends State<MapScreen>
         minZoom: 10,
         maxZoom: 18,
         onMapReady: () => setState(() {}),
+        interactionOptions: const InteractionOptions(
+          flags: InteractiveFlag.drag | InteractiveFlag.doubleTapZoom,
+        ),
       ),
       children: [
         TileLayer(
