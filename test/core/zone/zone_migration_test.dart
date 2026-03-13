@@ -188,7 +188,22 @@ void main() {
   });
 
   group('ZoneMigration.migrate', () {
+    test('skips migration when no walked streets and no quiz records',
+        () async {
+      await ZoneMigration.migrate(
+        zoneRepo: zoneRepo,
+        appStateRepo: appStateRepo,
+        streetRepo: streetRepo,
+        quizRepo: quizRepo,
+      );
+
+      final zones = await zoneRepo.loadAll();
+      expect(zones, isEmpty);
+    });
+
     test('creates a home zone with id "zone_home" and name "Home"', () async {
+      streetRepo.seedWalkedStreets([_walkedStreet('s1')]);
+
       await ZoneMigration.migrate(
         zoneRepo: zoneRepo,
         appStateRepo: appStateRepo,
@@ -203,6 +218,7 @@ void main() {
     });
 
     test('uses last known position as zone centre', () async {
+      streetRepo.seedWalkedStreets([_walkedStreet('s1')]);
       appStateRepo.seedLastPosition(const LatLng(48.8566, 2.3522));
 
       await ZoneMigration.migrate(
@@ -218,7 +234,8 @@ void main() {
     });
 
     test('falls back to London when no position is saved', () async {
-      // appStateRepo has no position seeded
+      // appStateRepo has no position seeded — but user has progress
+      streetRepo.seedWalkedStreets([_walkedStreet('s1')]);
 
       await ZoneMigration.migrate(
         zoneRepo: zoneRepo,
@@ -261,6 +278,8 @@ void main() {
     });
 
     test('counts only non-newCard quiz records for XP', () async {
+      // Seed one walked street so migration proceeds
+      streetRepo.seedWalkedStreets([_walkedStreet('s1')]);
       quizRepo.seedRecords([
         _record('a', MemoryState.newCard),
         _record('b', MemoryState.newCard),
@@ -275,8 +294,8 @@ void main() {
       );
 
       final zone = await zoneRepo.load('zone_home');
-      // All newCard → 0 quiz XP, 0 walked streets → 0 street XP
-      expect(zone!.xp, 0);
+      // All newCard → 0 quiz XP, 1 walked street → 10 street XP
+      expect(zone!.xp, 10);
     });
 
     test('counts review and mastered quiz states as XP-eligible', () async {
@@ -300,6 +319,8 @@ void main() {
 
     test('is idempotent — does not create duplicate zones when called twice',
         () async {
+      streetRepo.seedWalkedStreets([_walkedStreet('s1')]);
+
       await ZoneMigration.migrate(
         zoneRepo: zoneRepo,
         appStateRepo: appStateRepo,
@@ -361,7 +382,9 @@ void main() {
       expect(zone!.xp, 0);
     });
 
-    test('XP is zero when repositories are empty', () async {
+    test('creates zone with zero XP when only walked streets exist', () async {
+      streetRepo.seedWalkedStreets([_walkedStreet('s1')]);
+
       await ZoneMigration.migrate(
         zoneRepo: zoneRepo,
         appStateRepo: appStateRepo,
@@ -370,10 +393,12 @@ void main() {
       );
 
       final zone = await zoneRepo.load('zone_home');
-      expect(zone!.xp, 0);
+      // 1 walked street × 10 = 10 XP
+      expect(zone!.xp, 10);
     });
 
     test('createdAt is set to a recent datetime', () async {
+      streetRepo.seedWalkedStreets([_walkedStreet('s1')]);
       final before = DateTime.now().subtract(const Duration(seconds: 1));
 
       await ZoneMigration.migrate(

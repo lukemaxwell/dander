@@ -44,10 +44,14 @@ abstract final class ZoneMigration {
     final alreadyMigrated = !(await needsMigration(zoneRepo));
     if (alreadyMigrated) return;
 
-    final centre = await appStateRepo.getLastPosition() ?? _londonFallback;
-
     final walkedStreets = await streetRepo.getWalkedStreets();
     final quizRecords = await quizRepo.getAllRecords();
+
+    // Only create a home zone if the user has actual progress to preserve.
+    // New users will get their first zone via the zone detection prompt instead.
+    if (walkedStreets.isEmpty && quizRecords.isEmpty) return;
+
+    final centre = await appStateRepo.getLastPosition() ?? _londonFallback;
 
     final streetXp = walkedStreets.length * ZoneLevel.xpPerStreet;
     final quizXp = quizRecords
