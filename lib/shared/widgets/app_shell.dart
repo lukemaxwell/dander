@@ -13,7 +13,8 @@ class AppShell extends StatelessWidget {
   int _currentIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.toString();
     if (location.startsWith(AppRoutes.discoveries)) return 1;
-    if (location.startsWith(AppRoutes.profile)) return 2;
+    if (location.startsWith(AppRoutes.quiz)) return 2;
+    if (location.startsWith(AppRoutes.profile)) return 3;
     return 0;
   }
 
@@ -24,6 +25,8 @@ class AppShell extends StatelessWidget {
       case 1:
         context.go(AppRoutes.discoveries);
       case 2:
+        context.go(AppRoutes.quiz);
+      case 3:
         context.go(AppRoutes.profile);
     }
   }
@@ -48,6 +51,11 @@ class AppShell extends StatelessWidget {
             icon: Icon(Icons.star_outline),
             activeIcon: Icon(Icons.star),
             label: 'Discoveries',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.quiz_outlined),
+            activeIcon: Icon(Icons.quiz),
+            label: 'Quiz',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),

@@ -7,12 +7,14 @@ import 'package:dander/core/progress/streak_tracker.dart';
 import 'package:dander/features/discoveries/presentation/screens/discoveries_screen.dart';
 import 'package:dander/features/map/presentation/screens/map_screen.dart';
 import 'package:dander/features/profile/presentation/screens/profile_screen.dart';
+import 'package:dander/features/quiz/presentation/screens/quiz_home_screen.dart';
 import 'package:dander/shared/widgets/app_shell.dart';
 
 /// Named route paths used throughout the app.
 abstract final class AppRoutes {
   static const String home = '/home';
   static const String discoveries = '/discoveries';
+  static const String quiz = '/quiz';
   static const String profile = '/profile';
 }
 
@@ -43,6 +45,17 @@ final GoRouter router = GoRouter(
           ),
         ),
         GoRoute(
+          path: AppRoutes.quiz,
+          pageBuilder: (context, state) => const NoTransitionPage(
+            child: QuizHomeScreen(
+              walkedStreets: [],
+              records: [],
+              onStartReview: _noop,
+              onPracticeAll: _noop,
+            ),
+          ),
+        ),
+        GoRoute(
           path: AppRoutes.profile,
           pageBuilder: (context, state) => NoTransitionPage(
             child: ProfileScreen(
@@ -58,6 +71,8 @@ final GoRouter router = GoRouter(
     GoRoute(path: '/', redirect: (context, state) => AppRoutes.home),
   ],
 );
+
+void _noop() {}
 
 /// Returns the [GlobalKey<NavigatorState>] for the root navigator.
 ///
