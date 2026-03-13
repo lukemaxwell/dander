@@ -10,9 +10,11 @@ import 'package:latlong2/latlong.dart';
 
 import 'package:dander/core/fog/fog_grid.dart';
 import 'package:dander/core/location/location_service.dart';
+import 'package:dander/core/location/walk_session.dart';
 import 'package:dander/core/theme/app_theme.dart';
 import 'package:dander/features/map/presentation/widgets/exploration_badge.dart';
 import 'package:dander/features/map/presentation/widgets/fog_layer.dart';
+import 'package:dander/features/map/presentation/widgets/walk_control.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key, this.locationService});
@@ -44,6 +46,7 @@ class _MapScreenState extends State<MapScreen>
   LatLng _currentCenter = _defaultCenter;
   LatLng? _userPosition;
   StreamSubscription<Position>? _positionSub;
+  WalkSession? _walkSession;
 
   @override
   void initState() {
@@ -108,15 +111,34 @@ class _MapScreenState extends State<MapScreen>
     super.dispose();
   }
 
+  void _startWalk() {
+    setState(() {
+      _walkSession = WalkSession.start(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        startTime: DateTime.now(),
+      );
+    });
+  }
+
+  void _stopWalk(WalkSession session) {
+    setState(() => _walkSession = null);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       body: Stack(
         children: [
           _buildMap(),
           _buildFog(),
           if (_userPosition != null) _buildLocationDot(),
           _buildOverlays(),
+          WalkControl(
+            session: _walkSession,
+            onStart: _startWalk,
+            onStop: _stopWalk,
+          ),
         ],
       ),
     );

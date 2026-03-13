@@ -34,10 +34,13 @@ class WalkControl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Sit above the nav bar (64px) plus safe area bottom inset.
+    final bottomInset =
+        MediaQuery.of(context).padding.bottom + 64 + DanderSpacing.md;
     return Positioned(
       left: DanderSpacing.lg,
       right: DanderSpacing.lg,
-      bottom: DanderSpacing.xl,
+      bottom: bottomInset,
       child: _Panel(
         session: session,
         onStart: onStart,
