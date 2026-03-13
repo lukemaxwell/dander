@@ -1,30 +1,50 @@
 import 'package:flutter/material.dart';
 
-/// Dander brand colour palette.
-abstract final class DanderColors {
-  static const Color primary = Color(0xFF1A1A2E);
-  static const Color fogOverlay = Color(0xCC1A1A2E);
-  static const Color revealedTint = Color(0x00000000);
-  static const Color accent = Color(0xFF4FC3F7);
-  static const Color discoveryCommon = Color(0xFFCD7F32);
-  static const Color discoveryUncommon = Color(0xFFC0C0C0);
-  static const Color discoveryRare = Color(0xFFFFD700);
-  static const Color surface = Color(0xFF0D0D1A);
-  static const Color onSurface = Color(0xFFE8EAF6);
-}
+import 'dander_colors.dart';
+
+// Re-export design system tokens so callers can import a single file.
+export 'dander_colors.dart';
+export 'dander_elevation.dart';
+export 'dander_spacing.dart';
+export 'dander_text_styles.dart';
 
 /// Returns the application [ThemeData].
+///
+/// Fonts are wired in by Issue #34 (Typography); until then the default
+/// Material font family is used.
 ThemeData buildAppTheme() {
   return ThemeData(
     useMaterial3: true,
     colorScheme: ColorScheme.fromSeed(
       seedColor: DanderColors.accent,
       brightness: Brightness.dark,
+    ).copyWith(
+      surface: DanderColors.surface,
+      primary: DanderColors.primary,
+      secondary: DanderColors.secondary,
+      error: DanderColors.error,
     ),
     scaffoldBackgroundColor: DanderColors.surface,
     appBarTheme: const AppBarTheme(
-      backgroundColor: DanderColors.primary,
+      backgroundColor: DanderColors.surfaceElevated,
       foregroundColor: DanderColors.onSurface,
+      elevation: 0,
+    ),
+    cardTheme: CardThemeData(
+      color: DanderColors.cardBackground,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+    ),
+    dividerTheme: const DividerThemeData(
+      color: DanderColors.divider,
+    ),
+    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      backgroundColor: DanderColors.surfaceElevated,
+      selectedItemColor: DanderColors.accent,
+      unselectedItemColor: DanderColors.onSurfaceMuted,
+      type: BottomNavigationBarType.fixed,
       elevation: 0,
     ),
   );

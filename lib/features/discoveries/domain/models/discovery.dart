@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dander/core/theme/dander_colors.dart';
 
 enum Rarity { common, uncommon, rare }
 
@@ -17,11 +18,11 @@ extension RarityExtension on Rarity {
   Color get color {
     switch (this) {
       case Rarity.common:
-        return const Color(0xFFCD7F32); // bronze
+        return DanderColors.rarityCommon;
       case Rarity.uncommon:
-        return const Color(0xFFC0C0C0); // silver
+        return DanderColors.rarityUncommon;
       case Rarity.rare:
-        return const Color(0xFFFFD700); // gold
+        return DanderColors.rarityRare;
     }
   }
 

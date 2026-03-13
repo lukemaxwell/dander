@@ -4,6 +4,7 @@ import 'package:flutter/material.dart' hide Badge;
 import 'package:dander/core/discoveries/discovery.dart';
 import 'package:dander/core/progress/badge.dart';
 import 'package:dander/core/progress/streak_tracker.dart';
+import 'package:dander/core/theme/app_theme.dart';
 import 'package:dander/core/theme/rarity_colors.dart';
 
 /// Profile screen showing exploration progress, streak, badges, and discoveries.
@@ -31,25 +32,25 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF12121F),
+      backgroundColor: DanderColors.surfaceElevated,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF12121F),
-        foregroundColor: Colors.white,
-        title: const Text(
+        backgroundColor: DanderColors.surfaceElevated,
+        foregroundColor: DanderColors.onSurface,
+        title: Text(
           'Profile',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: DanderTextStyles.titleLarge,
         ),
         elevation: 0,
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: DanderSpacing.pagePadding,
         children: [
           _ExplorationRing(pct: explorationPct),
-          const SizedBox(height: 16),
+          const SizedBox(height: DanderSpacing.lg),
           _StreakCard(streak: streak),
-          const SizedBox(height: 16),
+          const SizedBox(height: DanderSpacing.lg),
           _BadgeGrid(badges: badges),
-          const SizedBox(height: 16),
+          const SizedBox(height: DanderSpacing.lg),
           _DiscoveryStatsSection(discoveries: discoveries),
         ],
       ),
@@ -70,22 +71,21 @@ class _ExplorationRing extends StatelessWidget {
   Widget build(BuildContext context) {
     final percentage = (pct * 100).round();
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: DanderSpacing.cardPadding.copyWith(
+        top: DanderSpacing.xl,
+        bottom: DanderSpacing.xl,
+      ),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E2E),
-        borderRadius: BorderRadius.circular(16),
+        color: DanderColors.cardBackground,
+        borderRadius: BorderRadius.circular(DanderSpacing.borderRadiusLg),
       ),
       child: Column(
         children: [
-          const Text(
+          Text(
             'Neighbourhood Explored',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+            style: DanderTextStyles.titleMedium,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: DanderSpacing.lg),
           SizedBox(
             width: 120,
             height: 120,
@@ -94,11 +94,7 @@ class _ExplorationRing extends StatelessWidget {
               child: Center(
                 child: Text(
                   '$percentage%',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: DanderTextStyles.headlineMedium,
                 ),
               ),
             ),
@@ -120,12 +116,12 @@ class _RingPainter extends CustomPainter {
     final radius = (size.shortestSide / 2) - 8;
 
     final trackPaint = Paint()
-      ..color = Colors.white12
+      ..color = DanderColors.divider
       ..style = PaintingStyle.stroke
       ..strokeWidth = 10;
 
     final progressPaint = Paint()
-      ..color = const Color(0xFF6E56CF)
+      ..color = DanderColors.secondary
       ..style = PaintingStyle.stroke
       ..strokeWidth = 10
       ..strokeCap = StrokeCap.round;
@@ -161,48 +157,40 @@ class _StreakCard extends StatelessWidget {
     final isActive = streak.isActiveThisWeek;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: DanderSpacing.cardPadding,
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E2E),
-        borderRadius: BorderRadius.circular(16),
+        color: DanderColors.cardBackground,
+        borderRadius: BorderRadius.circular(DanderSpacing.borderRadiusLg),
       ),
       child: Row(
         children: [
           Icon(
             Icons.local_fire_department,
             color: isActive
-                ? const Color(0xFFFF6B35)
+                ? DanderColors.streakActive
                 : isAtRisk
-                    ? Colors.orange
-                    : Colors.white30,
+                    ? DanderColors.streakAtRisk
+                    : DanderColors.onSurfaceDisabled,
             size: 36,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: DanderSpacing.md),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Weekly Streak',
-                style: TextStyle(
-                  color: Colors.white54,
-                  fontSize: 13,
-                ),
-              ),
+              Text('Weekly Streak', style: DanderTextStyles.bodySmall),
               Text(
                 '${streak.currentStreak} week${streak.currentStreak == 1 ? '' : 's'}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: DanderTextStyles.titleLarge,
               ),
             ],
           ),
           if (isAtRisk) ...[
             const Spacer(),
-            const Text(
+            Text(
               'At risk!',
-              style: TextStyle(color: Colors.orange, fontSize: 12),
+              style: DanderTextStyles.labelMedium.copyWith(
+                color: DanderColors.streakAtRisk,
+              ),
             ),
           ],
         ],
@@ -223,30 +211,23 @@ class _BadgeGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: DanderSpacing.cardPadding,
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E2E),
-        borderRadius: BorderRadius.circular(16),
+        color: DanderColors.cardBackground,
+        borderRadius: BorderRadius.circular(DanderSpacing.borderRadiusLg),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Badges',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 16),
+          Text('Badges', style: DanderTextStyles.titleLarge),
+          const SizedBox(height: DanderSpacing.lg),
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
+              mainAxisSpacing: DanderSpacing.md,
+              crossAxisSpacing: DanderSpacing.md,
               childAspectRatio: 0.85,
             ),
             itemCount: badges.length,
@@ -274,29 +255,32 @@ class _BadgeTile extends StatelessWidget {
           height: 56,
           decoration: BoxDecoration(
             color: unlocked
-                ? const Color(0xFF6E56CF).withValues(alpha: 0.2)
-                : Colors.white.withValues(alpha: 0.05),
+                ? DanderColors.secondary.withValues(alpha: 0.2)
+                : DanderColors.onSurfaceDisabled.withValues(alpha: 0.05),
             shape: BoxShape.circle,
             border: Border.all(
-              color: unlocked ? const Color(0xFF6E56CF) : Colors.white24,
+              color: unlocked ? DanderColors.secondary : DanderColors.divider,
               width: 2,
             ),
           ),
           child: Icon(
             badge.icon,
-            color: unlocked ? const Color(0xFF6E56CF) : Colors.white24,
+            color: unlocked
+                ? DanderColors.secondary
+                : DanderColors.onSurfaceDisabled,
             size: 28,
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: DanderSpacing.xs + 2),
         Text(
           badge.name,
           textAlign: TextAlign.center,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: unlocked ? Colors.white : Colors.white38,
-            fontSize: 11,
+          style: DanderTextStyles.labelSmall.copyWith(
+            color: unlocked
+                ? DanderColors.onSurface
+                : DanderColors.onSurfaceDisabled,
             fontWeight: unlocked ? FontWeight.w600 : FontWeight.normal,
           ),
         ),
@@ -325,32 +309,22 @@ class _DiscoveryStatsSection extends StatelessWidget {
     final commonCount = _count(RarityTier.common);
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: DanderSpacing.cardPadding,
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E2E),
-        borderRadius: BorderRadius.circular(16),
+        color: DanderColors.cardBackground,
+        borderRadius: BorderRadius.circular(DanderSpacing.borderRadiusLg),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Discoveries',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '$total total',
-            style: const TextStyle(color: Colors.white54, fontSize: 13),
-          ),
-          const SizedBox(height: 16),
+          Text('Discoveries', style: DanderTextStyles.titleLarge),
+          const SizedBox(height: DanderSpacing.xs),
+          Text('$total total', style: DanderTextStyles.bodySmall),
+          const SizedBox(height: DanderSpacing.lg),
           _RarityRow(tier: RarityTier.rare, count: rareCount),
-          const SizedBox(height: 8),
+          const SizedBox(height: DanderSpacing.sm),
           _RarityRow(tier: RarityTier.uncommon, count: uncommonCount),
-          const SizedBox(height: 8),
+          const SizedBox(height: DanderSpacing.sm),
           _RarityRow(tier: RarityTier.common, count: commonCount),
         ],
       ),
@@ -379,16 +353,18 @@ class _RarityRow extends StatelessWidget {
             shape: BoxShape.circle,
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: DanderSpacing.sm),
         Text(
           label,
-          style: TextStyle(color: color, fontWeight: FontWeight.w600),
+          style: DanderTextStyles.bodyMedium.copyWith(
+            color: color,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         const Spacer(),
         Text(
           '$count',
-          style: const TextStyle(
-            color: Colors.white,
+          style: DanderTextStyles.bodyMedium.copyWith(
             fontWeight: FontWeight.bold,
           ),
         ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dander/core/location/walk_session.dart';
 import 'package:dander/core/location/walk_stats_formatter.dart';
+import 'package:dander/core/theme/app_theme.dart';
 import 'package:dander/features/walks/presentation/widgets/walk_mini_map.dart';
 
 // ---------------------------------------------------------------------------
@@ -54,14 +55,11 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
       ..sort((a, b) => b.startTime.compareTo(a.startTime));
 
     return Scaffold(
-      backgroundColor: const Color(0xFF12121F),
+      backgroundColor: DanderColors.surfaceElevated,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF12121F),
-        foregroundColor: Colors.white,
-        title: const Text(
-          'Walk History',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
+        backgroundColor: DanderColors.surfaceElevated,
+        foregroundColor: DanderColors.onSurface,
+        title: Text('Walk History', style: DanderTextStyles.titleLarge),
         elevation: 0,
       ),
       body: sorted.isEmpty
@@ -84,31 +82,30 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
 class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Padding(
-        padding: EdgeInsets.all(32),
+        padding: DanderSpacing.pagePadding.copyWith(
+          top: DanderSpacing.xxxl,
+          bottom: DanderSpacing.xxxl,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.directions_walk, color: Colors.white24, size: 64),
-            SizedBox(height: 16),
+            Icon(
+              Icons.directions_walk,
+              color: DanderColors.onSurfaceDisabled,
+              size: 64,
+            ),
+            const SizedBox(height: DanderSpacing.lg),
             Text(
               'No walks yet',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: DanderTextStyles.headlineSmall,
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: DanderSpacing.sm),
             Text(
               'Tap Start Walk on the map to begin\nyour first exploration.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white54,
-                fontSize: 14,
-                height: 1.5,
-              ),
+              style: DanderTextStyles.bodyMediumMuted.copyWith(height: 1.5),
             ),
           ],
         ),
@@ -135,9 +132,9 @@ class _WalkList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
+      padding: DanderSpacing.pagePadding,
       itemCount: walks.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      separatorBuilder: (_, __) => const SizedBox(height: DanderSpacing.sm),
       itemBuilder: (context, index) {
         final walk = walks[index];
         return _WalkRow(
@@ -174,35 +171,39 @@ class _WalkRow extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E2E),
-        borderRadius: BorderRadius.circular(16),
+        color: DanderColors.cardBackground,
+        borderRadius: BorderRadius.circular(DanderSpacing.borderRadiusLg),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           ListTile(
             onTap: onTap,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: DanderSpacing.lg,
+              vertical: DanderSpacing.xs,
+            ),
             title: Text(
               dateLabel,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
+              style: DanderTextStyles.titleSmall,
             ),
             subtitle: Text(
               '$duration · $distance',
-              style: const TextStyle(color: Colors.white54, fontSize: 13),
+              style: DanderTextStyles.bodySmall,
             ),
             trailing: Icon(
               isExpanded ? Icons.expand_less : Icons.expand_more,
-              color: Colors.white38,
+              color: DanderColors.onSurfaceDisabled,
             ),
           ),
           if (isExpanded)
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              padding: const EdgeInsets.fromLTRB(
+                DanderSpacing.md,
+                0,
+                DanderSpacing.md,
+                DanderSpacing.md,
+              ),
               child: SizedBox(
                 height: 160,
                 child: WalkMiniMap(points: routePoints),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:dander/core/theme/app_theme.dart';
+
 /// Visual state of a [ChoiceButton].
 enum ChoiceButtonState {
   /// Default — not yet answered.
@@ -40,20 +42,22 @@ class ChoiceButton extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+        padding: const EdgeInsets.symmetric(
+          vertical: DanderSpacing.md + 2,
+          horizontal: DanderSpacing.lg,
+        ),
         decoration: BoxDecoration(
           color: colors.background,
           border: Border.all(color: colors.border, width: 2),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(DanderSpacing.borderRadiusMd),
         ),
         child: Row(
           children: [
             Expanded(
               child: Text(
                 label,
-                style: TextStyle(
+                style: DanderTextStyles.bodyMedium.copyWith(
                   color: colors.text,
-                  fontSize: 15,
                   fontWeight: state == ChoiceButtonState.correct
                       ? FontWeight.bold
                       : FontWeight.normal,
@@ -61,9 +65,9 @@ class ChoiceButton extends StatelessWidget {
               ),
             ),
             if (state == ChoiceButtonState.correct)
-              const Icon(Icons.check_circle, color: Colors.green, size: 20),
+              Icon(Icons.check_circle, color: DanderColors.success, size: 20),
             if (state == ChoiceButtonState.incorrect)
-              const Icon(Icons.cancel, color: Colors.red, size: 20),
+              Icon(Icons.cancel, color: DanderColors.error, size: 20),
           ],
         ),
       ),
@@ -73,28 +77,28 @@ class ChoiceButton extends StatelessWidget {
   _ButtonColors _resolveColors(ChoiceButtonState s) {
     switch (s) {
       case ChoiceButtonState.unanswered:
-        return const _ButtonColors(
-          background: Color(0xFF1E1E2E),
-          border: Color(0xFF7C3AED),
-          text: Colors.white,
+        return _ButtonColors(
+          background: DanderColors.cardBackground,
+          border: DanderColors.secondary,
+          text: DanderColors.onSurface,
         );
       case ChoiceButtonState.correct:
-        return const _ButtonColors(
-          background: Color(0xFF0F2E1A),
-          border: Colors.green,
-          text: Colors.green,
+        return _ButtonColors(
+          background: DanderColors.success.withValues(alpha: 0.12),
+          border: DanderColors.success,
+          text: DanderColors.success,
         );
       case ChoiceButtonState.incorrect:
-        return const _ButtonColors(
-          background: Color(0xFF2E0F0F),
-          border: Colors.red,
-          text: Colors.red,
+        return _ButtonColors(
+          background: DanderColors.error.withValues(alpha: 0.12),
+          border: DanderColors.error,
+          text: DanderColors.error,
         );
       case ChoiceButtonState.disabled:
-        return const _ButtonColors(
-          background: Color(0xFF12121F),
-          border: Colors.white12,
-          text: Colors.white38,
+        return _ButtonColors(
+          background: DanderColors.surface,
+          border: DanderColors.divider,
+          text: DanderColors.onSurfaceDisabled,
         );
     }
   }

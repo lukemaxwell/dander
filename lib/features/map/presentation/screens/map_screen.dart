@@ -10,6 +10,7 @@ import 'package:latlong2/latlong.dart';
 
 import 'package:dander/core/fog/fog_grid.dart';
 import 'package:dander/core/location/location_service.dart';
+import 'package:dander/core/theme/app_theme.dart';
 import 'package:dander/features/map/presentation/widgets/exploration_badge.dart';
 import 'package:dander/features/map/presentation/widgets/fog_layer.dart';
 
@@ -217,7 +218,7 @@ class _LocationDotPainter extends CustomPainter {
       center,
       ringRadius,
       Paint()
-        ..color = Colors.white.withValues(alpha: ringOpacity * 0.4)
+        ..color = DanderColors.onSurface.withValues(alpha: ringOpacity * 0.4)
         ..style = PaintingStyle.fill,
     );
 
@@ -226,7 +227,7 @@ class _LocationDotPainter extends CustomPainter {
       center,
       14,
       Paint()
-        ..color = const Color(0x336C63FF)
+        ..color = DanderColors.secondary.withValues(alpha: 0.2)
         ..style = PaintingStyle.fill,
     );
 
@@ -235,7 +236,7 @@ class _LocationDotPainter extends CustomPainter {
       center,
       9,
       Paint()
-        ..color = Colors.white
+        ..color = DanderColors.onSurface
         ..style = PaintingStyle.fill,
     );
 
@@ -244,8 +245,8 @@ class _LocationDotPainter extends CustomPainter {
       center,
       7,
       Paint()
-        ..shader = const RadialGradient(
-          colors: [Color(0xFF6C63FF), Color(0xFF4A42D4)],
+        ..shader = RadialGradient(
+          colors: [DanderColors.secondary, DanderColors.gradientStart],
         ).createShader(Rect.fromCircle(center: center, radius: 7))
         ..style = PaintingStyle.fill,
     );
@@ -255,13 +256,13 @@ class _LocationDotPainter extends CustomPainter {
       center + const Offset(-2, -2),
       2,
       Paint()
-        ..color = Colors.white.withValues(alpha: 0.6)
+        ..color = DanderColors.onSurface.withValues(alpha: 0.6)
         ..style = PaintingStyle.fill,
     );
 
     // Direction indicator (chevron pointing up)
     final chevronPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.9)
+      ..color = DanderColors.onSurface.withValues(alpha: 0.9)
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;

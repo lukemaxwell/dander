@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+import 'package:dander/core/theme/app_theme.dart';
+
 /// A small, non-interactive map widget showing a walk route as a polyline.
 ///
 /// The map is centred and zoomed to fit all [points].  When [points] is empty
@@ -29,7 +31,7 @@ class WalkMiniMap extends StatelessWidget {
 
     return IgnorePointer(
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DanderSpacing.borderRadiusMd),
         child: FlutterMap(
           options: MapOptions(
             initialCenter: center,
@@ -48,7 +50,7 @@ class WalkMiniMap extends StatelessWidget {
                 polylines: [
                   Polyline(
                     points: points,
-                    color: const Color(0xFF7C3AED),
+                    color: DanderColors.secondary,
                     strokeWidth: 3,
                   ),
                 ],
@@ -60,8 +62,8 @@ class WalkMiniMap extends StatelessWidget {
                   width: 12,
                   height: 12,
                   child: Container(
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF7C3AED),
+                    decoration: BoxDecoration(
+                      color: DanderColors.secondary,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -71,8 +73,8 @@ class WalkMiniMap extends StatelessWidget {
                   width: 12,
                   height: 12,
                   child: Container(
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF10B981),
+                    decoration: BoxDecoration(
+                      color: DanderColors.success,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -120,13 +122,13 @@ class _EmptyMap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(DanderSpacing.borderRadiusMd),
       child: Container(
-        color: const Color(0xFF12121F),
-        child: const Center(
+        color: DanderColors.surfaceElevated,
+        child: Center(
           child: Text(
             'No route data',
-            style: TextStyle(color: Colors.white38, fontSize: 12),
+            style: DanderTextStyles.labelSmall,
           ),
         ),
       ),
