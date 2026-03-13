@@ -9,6 +9,8 @@ import '../location/walk_service.dart';
 import '../progress/progress_repository.dart';
 import '../progress/progress_service.dart';
 import '../quiz/quiz_repository.dart';
+import '../streets/street_overpass_client.dart';
+import '../streets/street_repository.dart';
 
 /// Global service locator instance.
 final GetIt serviceLocator = GetIt.instance;
@@ -21,14 +23,16 @@ final GetIt sl = serviceLocator;
 /// Call once at app startup before [runApp].
 ///
 /// Registration strategy:
-/// - [GeolocatorLocationService] — singleton: one GPS stream for the app lifetime.
-/// - [HiveWalkRepository]        — singleton: single Hive box reference.
-/// - [WalkService]               — singleton: one active walk session at a time.
-/// - [HttpOverpassClient]        — singleton: shared HTTP client for Overpass queries.
-/// - [HiveDiscoveryRepository]   — singleton: single Hive box reference for POI cache.
-/// - [DiscoveryService]          — singleton: one discovery pipeline for the app lifetime.
-/// - [HiveProgressRepository]    — singleton: single Hive box reference for progress data.
-/// - [ProgressService]           — singleton: exploration %, badges, and streak logic.
+/// - [GeolocatorLocationService]    — singleton: one GPS stream for the app lifetime.
+/// - [HiveWalkRepository]           — singleton: single Hive box reference.
+/// - [WalkService]                  — singleton: one active walk session at a time.
+/// - [HttpOverpassClient]           — singleton: shared HTTP client for POI Overpass queries.
+/// - [HiveDiscoveryRepository]      — singleton: single Hive box reference for POI cache.
+/// - [DiscoveryService]             — singleton: one discovery pipeline for the app lifetime.
+/// - [HiveProgressRepository]       — singleton: single Hive box reference for progress data.
+/// - [ProgressService]              — singleton: exploration %, badges, and streak logic.
+/// - [HttpStreetOverpassClient]     — singleton: shared HTTP client for street Overpass queries.
+/// - [HiveStreetRepository]         — singleton: single Hive box reference for street cache.
 Future<void> setupLocator() async {
   // Infrastructure
   sl.registerLazySingleton<LocationService>(GeolocatorLocationService.new);
@@ -53,6 +57,11 @@ Future<void> setupLocator() async {
   // Progress
   sl.registerLazySingleton<ProgressRepository>(HiveProgressRepository.new);
   sl.registerLazySingleton<ProgressService>(ProgressService.new);
+
+  // Streets
+  sl.registerLazySingleton<StreetOverpassClient>(
+      HttpStreetOverpassClient.new);
+  sl.registerLazySingleton<StreetRepository>(HiveStreetRepository.new);
 
   // Quiz
   sl.registerLazySingleton<QuizRepository>(HiveQuizRepository.new);
