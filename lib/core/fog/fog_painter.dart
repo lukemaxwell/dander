@@ -60,7 +60,7 @@ class FogPainter extends CustomPainter {
   });
 
   /// Deep navy/purple fog colour matching the Dander aesthetic.
-  static const Color fogColor = Color(0xD91A1A2E); // #1A1A2E @ ~85% (D9 hex)
+  static const Color fogColor = Color(0xFF1A1A2E); // #1A1A2E fully opaque
 
   final FogGrid fogGrid;
   final FogViewport viewport;

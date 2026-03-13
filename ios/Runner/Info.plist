@@ -49,6 +49,16 @@
 	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Dander uses your location to clear the fog-of-war map as you walk and reveal nearby discoveries.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Dander uses your location in the background to continue clearing fog and detecting discoveries while you walk with the screen off.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Dander uses your location in the background to continue clearing fog and detecting discoveries while you walk with the screen off.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
