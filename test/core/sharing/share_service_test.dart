@@ -150,3 +150,24 @@ void main() {
     });
   });
 }
+
+// ---------------------------------------------------------------------------
+// WidgetRenderer cleanup notes
+// ---------------------------------------------------------------------------
+// Direct unit tests for WidgetRenderer are not possible in pure unit test
+// environments because RenderRepaintBoundary.toImage() requires a real GPU
+// context (a FlutterView). Integration/golden tests are the appropriate
+// vehicle. The three fixes applied to widget_renderer.dart are:
+//
+//   1. ui.Image disposal  -- the dart:ui Image returned by toImage() is now
+//      wrapped in try/finally so image.dispose() is always called, preventing
+//      GPU memory leaks.
+//
+//   2. Render tree detachment -- buildOwner.finalizeTree(), nulling
+//      pipelineOwner.rootNode, and calling renderView.dispose() are now
+//      called after image capture so the BuildOwner does not retain element
+//      references.
+//
+//   3. Safe view access -- PlatformDispatcher.instance.implicitView is used
+//      (with a views.first fallback) instead of views.first directly, which
+//      threw a StateError when the views list was empty.

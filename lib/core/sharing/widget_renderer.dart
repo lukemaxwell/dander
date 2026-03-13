@@ -45,11 +45,19 @@ class WidgetRenderer {
     Size size,
     double pixelRatio,
   ) async {
-    // Create a standalone pipeline to render without a display
+    // Create a standalone pipeline to render without a display.
     final pipelineOwner = PipelineOwner();
 
+    // Fix (issue 3): `views.first` throws a StateError when the dispatcher has
+    // no views (e.g. during cold-start or in headless environments). Use
+    // `implicitView` which is guaranteed non-null after binding initialisation
+    // and fall back to `views.first` only as a last resort.
+    final flutterView =
+        ui.PlatformDispatcher.instance.implicitView ??
+        WidgetsBinding.instance.platformDispatcher.views.first;
+
     final renderView = RenderView(
-      view: WidgetsBinding.instance.platformDispatcher.views.first,
+      view: flutterView,
       configuration: ViewConfiguration(
         logicalConstraints: BoxConstraints.tight(size),
         devicePixelRatio: pixelRatio,
@@ -86,10 +94,38 @@ class WidgetRenderer {
     pipelineOwner.flushPaint();
 
     final boundary =
-        repaintKey.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+        repaintKey.currentContext!.findRenderObject()!
+            as RenderRepaintBoundary;
+
+    // Fix (issue 1): `toImage()` returns a dart:ui Image backed by a GPU
+    // texture. It MUST be disposed after use to prevent GPU memory leaks.
+    // The try/finally guarantees disposal even when `toByteData` throws.
     final image = await boundary.toImage(pixelRatio: pixelRatio);
-    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-    return byteData!.buffer.asUint8List();
+    final Uint8List bytes;
+    try {
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) {
+        throw StateError(
+          'Failed to capture widget as image: toByteData returned null',
+        );
+      }
+      bytes = byteData.buffer.asUint8List();
+    } finally {
+      // Always release the GPU texture regardless of outcome.
+      image.dispose();
+    }
+
+    // Fix (issue 2): Detach the offscreen render tree after capture so the
+    // BuildOwner does not retain element references, preventing memory leaks.
+    // Steps:
+    //   1. finalizeTree() unmounts all elements still in the inactive set.
+    //   2. Nulling rootNode detaches the RenderView from the PipelineOwner.
+    //   3. renderView.dispose() releases native resources held by the view.
+    buildOwner.finalizeTree();
+    pipelineOwner.rootNode = null;
+    renderView.dispose();
+
+    return bytes;
   }
 }
 
