@@ -11,6 +11,8 @@ import '../progress/progress_service.dart';
 import '../quiz/quiz_repository.dart';
 import '../streets/street_overpass_client.dart';
 import '../streets/street_repository.dart';
+import '../zone/zone_repository.dart';
+import '../zone/zone_service.dart';
 
 /// Global service locator instance.
 final GetIt serviceLocator = GetIt.instance;
@@ -65,4 +67,10 @@ Future<void> setupLocator() async {
 
   // Quiz
   sl.registerLazySingleton<QuizRepository>(HiveQuizRepository.new);
+
+  // Zones
+  sl.registerLazySingleton<ZoneRepository>(HiveZoneRepository.new);
+  sl.registerLazySingleton<ZoneService>(
+    () => ZoneService(repository: sl<ZoneRepository>()),
+  );
 }
