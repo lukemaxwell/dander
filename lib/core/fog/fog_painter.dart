@@ -118,6 +118,7 @@ class FogPainter extends CustomPainter {
     canvas.drawRect(Offset.zero & size, fogPaint);
 
     // Overlay noise texture if available.
+    // paint.color is ignored when a shader is set, so use saveLayer for opacity.
     final texture = fogTexture;
     if (texture != null) {
       final shader = ImageShader(
@@ -126,10 +127,12 @@ class FogPainter extends CustomPainter {
         TileMode.repeated,
         Matrix4.identity().storage,
       );
-      final texturePaint = Paint()
-        ..shader = shader
-        ..color = const Color(0x0FFFFFFF); // ~6% opacity
-      canvas.drawRect(Offset.zero & size, texturePaint);
+      canvas.saveLayer(
+        Offset.zero & size,
+        Paint()..color = const Color(0x26FFFFFF), // 15% opacity layer
+      );
+      canvas.drawRect(Offset.zero & size, Paint()..shader = shader);
+      canvas.restore();
     }
 
     // Punch transparent holes for explored cells.

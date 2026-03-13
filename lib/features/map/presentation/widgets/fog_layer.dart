@@ -48,9 +48,9 @@ class _FogLayerState extends State<FogLayer> {
   StreamSubscription<LatLng>? _locationSub;
   ui.Image? _fogTexture;
 
-  /// Default glow: amber at ~18% opacity.
-  static const Color _glowColor = Color(0x2EFF8F00);
-  static const double _glowSigma = 16.0;
+  /// Default glow: amber at ~40% opacity.
+  static const Color _glowColor = Color(0x66FF8F00);
+  static const double _glowSigma = 18.0;
 
   @override
   void initState() {

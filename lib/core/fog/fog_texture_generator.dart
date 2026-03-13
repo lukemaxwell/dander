@@ -31,7 +31,7 @@ abstract final class FogTextureGenerator {
     for (var i = 0; i < size * 4; i++) {
       final x = rng.nextDouble() * size;
       final y = rng.nextDouble() * size;
-      final alpha = (rng.nextDouble() * 0.08 + 0.02); // 2-10% opacity
+      final alpha = (rng.nextDouble() * 0.18 + 0.08); // 8-26% opacity
       final radius = rng.nextDouble() * 1.5 + 0.5; // 0.5-2px
 
       dotPaint.color = Color.fromRGBO(200, 210, 230, alpha);
@@ -42,7 +42,7 @@ abstract final class FogTextureGenerator {
     for (var i = 0; i < size ~/ 2; i++) {
       final x = rng.nextDouble() * size;
       final y = rng.nextDouble() * size;
-      final alpha = (rng.nextDouble() * 0.04 + 0.01); // 1-5% opacity
+      final alpha = (rng.nextDouble() * 0.12 + 0.05); // 5-17% opacity
       final radius = rng.nextDouble() * 3.0 + 1.5; // 1.5-4.5px
 
       dotPaint.color = Color.fromRGBO(180, 190, 210, alpha);
