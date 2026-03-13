@@ -1,5 +1,5 @@
 name: dander
-description: Fog-of-war neighbourhood explorer app.
+description: "Fog-of-war neighbourhood explorer app."
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -21,6 +21,7 @@ dependencies:
   uuid: ^4.5.1
   get_it: ^8.0.3
   http: ^1.2.0
+  share_plus: ^10.0.0
 
 dev_dependencies:
   flutter_test:
