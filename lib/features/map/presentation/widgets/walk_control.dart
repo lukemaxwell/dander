@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dander/core/location/walk_session.dart';
 import 'package:dander/core/location/walk_stats_formatter.dart';
+import 'package:dander/core/theme/app_theme.dart';
 
 /// A floating bottom panel that controls walk sessions.
 ///
@@ -34,9 +35,9 @@ class WalkControl extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      left: 16,
-      right: 16,
-      bottom: 24,
+      left: DanderSpacing.lg,
+      right: DanderSpacing.lg,
+      bottom: DanderSpacing.xl,
       child: _Panel(
         session: session,
         onStart: onStart,
@@ -92,32 +93,27 @@ class _IdlePanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: DanderSpacing.cardPadding,
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E2E),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black38,
-            blurRadius: 12,
-            offset: Offset(0, 4),
-          ),
-        ],
+        color: DanderColors.cardBackground,
+        borderRadius: BorderRadius.circular(DanderSpacing.borderRadiusXl - 4),
+        boxShadow: DanderElevation.level2,
       ),
       child: ElevatedButton(
         onPressed: onStart,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF7C3AED),
-          foregroundColor: Colors.white,
+          backgroundColor: DanderColors.secondary,
+          foregroundColor: DanderColors.onSurface,
           minimumSize: const Size(double.infinity, 52),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius:
+                BorderRadius.circular(DanderSpacing.borderRadiusMd + 2),
           ),
           elevation: 0,
         ),
-        child: const Text(
+        child: Text(
           'Start Walk',
-          style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+          style: DanderTextStyles.titleMedium,
         ),
       ),
     );
@@ -146,17 +142,14 @@ class _ActivePanel extends StatelessWidget {
     final distance = WalkStatsFormatter.formatDistance(session.distanceMeters);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(
+        horizontal: DanderSpacing.lg,
+        vertical: DanderSpacing.md + 2,
+      ),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E2E),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black38,
-            blurRadius: 12,
-            offset: Offset(0, 4),
-          ),
-        ],
+        color: DanderColors.cardBackground,
+        borderRadius: BorderRadius.circular(DanderSpacing.borderRadiusXl - 4),
+        boxShadow: DanderElevation.level2,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -166,32 +159,31 @@ class _ActivePanel extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _StatCell(label: 'Duration', value: duration),
-              _Divider(),
+              _StatDivider(),
               _StatCell(label: 'Distance', value: distance),
-              _Divider(),
+              _StatDivider(),
               _StatCell(
                 label: 'Discoveries',
                 value: '$discoveriesThisWalk',
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: DanderSpacing.md),
           // End walk button
           ElevatedButton(
             onPressed: () => onStop(session),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFDC2626),
-              foregroundColor: Colors.white,
+              backgroundColor: DanderColors.error,
+              foregroundColor: DanderColors.onSurface,
               minimumSize: const Size(double.infinity, 48),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(
+                  DanderSpacing.borderRadiusMd + 2,
+                ),
               ),
               elevation: 0,
             ),
-            child: const Text(
-              'End Walk',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
+            child: Text('End Walk', style: DanderTextStyles.titleMedium),
           ),
         ],
       ),
@@ -216,32 +208,22 @@ class _StatCell extends StatelessWidget {
       children: [
         Text(
           value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
+          style: DanderTextStyles.titleMedium.copyWith(fontSize: 18),
         ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white54,
-            fontSize: 11,
-          ),
-        ),
+        const SizedBox(height: DanderSpacing.xs / 2),
+        Text(label, style: DanderTextStyles.labelSmall),
       ],
     );
   }
 }
 
-class _Divider extends StatelessWidget {
+class _StatDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
       width: 1,
       height: 32,
-      color: Colors.white12,
+      color: DanderColors.divider,
     );
   }
 }

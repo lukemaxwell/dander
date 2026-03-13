@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:dander/core/quiz/quiz_session.dart';
 import 'package:dander/core/quiz/quiz_streak_tracker.dart';
+import 'package:dander/core/theme/app_theme.dart';
 
 /// Screen shown after a quiz session is complete.
 ///
@@ -36,85 +37,95 @@ class QuizSummaryScreen extends StatelessWidget {
     final accuracyPct = total > 0 ? (correct / total * 100).round() : 0;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D1A),
+      backgroundColor: DanderColors.surface,
       appBar: AppBar(
-        title: const Text('Session Complete'),
-        backgroundColor: const Color(0xFF0D0D1A),
-        foregroundColor: Colors.white,
+        title: Text('Session Complete', style: DanderTextStyles.titleLarge),
+        backgroundColor: DanderColors.surface,
+        foregroundColor: DanderColors.onSurface,
         automaticallyImplyLeading: false,
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: DanderSpacing.pagePadding.copyWith(
+            top: DanderSpacing.xl,
+            bottom: DanderSpacing.xl,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 16),
+              const SizedBox(height: DanderSpacing.lg),
               // Score
               _StatRow(
                 icon: Icons.check_circle_outline,
                 label: 'Score',
                 value: '$correct / $total',
-                color: Colors.white,
+                color: DanderColors.onSurface,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: DanderSpacing.lg),
               // Accuracy
               _StatRow(
                 icon: Icons.percent,
                 label: 'Accuracy',
                 value: '$accuracyPct%',
-                color: accuracyPct >= 80 ? Colors.green : Colors.orange,
+                color: accuracyPct >= 80
+                    ? DanderColors.success
+                    : DanderColors.streakAtRisk,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: DanderSpacing.lg),
               // Mastered
               _StatRow(
                 icon: Icons.star,
                 label: 'Mastered this session',
                 value: '$masteredThisSession',
-                color: const Color(0xFFFFD700),
+                color: DanderColors.rarityRare,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: DanderSpacing.lg),
               // Streak
               _StatRow(
                 icon: Icons.local_fire_department,
                 label: 'Quiz streak',
-                value: '${streak.currentStreak} week${streak.currentStreak == 1 ? '' : 's'}',
-                color: Colors.orange,
+                value:
+                    '${streak.currentStreak} week${streak.currentStreak == 1 ? '' : 's'}',
+                color: DanderColors.streakActive,
               ),
               const Spacer(),
               // Start Another
               ElevatedButton(
                 onPressed: onStartAnother,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF7C3AED),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: DanderColors.secondary,
+                  padding: const EdgeInsets.symmetric(
+                    vertical: DanderSpacing.lg,
+                  ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(
+                      DanderSpacing.borderRadiusMd,
+                    ),
                   ),
                 ),
-                child: const Text(
-                  'Start Another',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                child:
+                    Text('Start Another', style: DanderTextStyles.labelLarge),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: DanderSpacing.md),
               // Go Explore
               OutlinedButton(
                 onPressed: onGoExplore,
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.white38),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  side: const BorderSide(color: DanderColors.divider),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: DanderSpacing.lg,
+                  ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(
+                      DanderSpacing.borderRadiusMd,
+                    ),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'Go Explore',
-                  style: TextStyle(color: Colors.white70, fontSize: 16),
+                  style: DanderTextStyles.bodyMedium.copyWith(
+                    color: DanderColors.onSurfaceMuted,
+                  ),
                 ),
               ),
             ],
@@ -147,20 +158,13 @@ class _StatRow extends StatelessWidget {
     return Row(
       children: [
         Icon(icon, color: color, size: 24),
-        const SizedBox(width: 12),
+        const SizedBox(width: DanderSpacing.md),
         Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(color: Colors.white70, fontSize: 15),
-          ),
+          child: Text(label, style: DanderTextStyles.bodyMediumMuted),
         ),
         Text(
           value,
-          style: TextStyle(
-            color: color,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: DanderTextStyles.titleMedium.copyWith(color: color),
         ),
       ],
     );

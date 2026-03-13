@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:dander/core/quiz/quiz_result.dart';
 import 'package:dander/core/quiz/quiz_session.dart';
+import 'package:dander/core/theme/app_theme.dart';
 import 'package:dander/features/quiz/presentation/widgets/choice_button.dart';
 import 'package:dander/features/quiz/presentation/widgets/quiz_map_snippet.dart';
 
@@ -85,7 +86,7 @@ class _QuizQuestionScreenState extends State<QuizQuestionScreen> {
     final question = _session.currentQuestion;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D1A),
+      backgroundColor: DanderColors.surface,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -93,24 +94,24 @@ class _QuizQuestionScreenState extends State<QuizQuestionScreen> {
             children: [
               // Map snippet
               QuizMapSnippet(street: question.targetStreet),
-              const SizedBox(height: 16),
+              const SizedBox(height: DanderSpacing.lg),
               // Question prompt
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: DanderSpacing.xl,
+                ),
                 child: Text(
                   'What is this street called?',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: DanderTextStyles.titleMedium,
                   textAlign: TextAlign.center,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: DanderSpacing.lg),
               // Choices
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: DanderSpacing.xl,
+                ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
@@ -121,7 +122,7 @@ class _QuizQuestionScreenState extends State<QuizQuestionScreen> {
                         onTap: () => _onChoiceTap(i),
                       ),
                       if (i < question.choices.length - 1)
-                        const SizedBox(height: 10),
+                        const SizedBox(height: DanderSpacing.md - 2),
                     ],
                   ],
                 ),
@@ -129,25 +130,25 @@ class _QuizQuestionScreenState extends State<QuizQuestionScreen> {
               // Next button — appears after answering
               if (_selectedIndex != null)
                 Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: DanderSpacing.pagePadding,
                   child: SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: _onNext,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF7C3AED),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: DanderColors.secondary,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: DanderSpacing.lg,
+                        ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(
+                            DanderSpacing.borderRadiusMd,
+                          ),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Next',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: DanderTextStyles.labelLarge,
                       ),
                     ),
                   ),

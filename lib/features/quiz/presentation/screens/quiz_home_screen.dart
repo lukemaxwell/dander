@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:dander/core/quiz/quiz_scheduler.dart';
 import 'package:dander/core/quiz/street_memory_record.dart';
 import 'package:dander/core/streets/street.dart';
+import 'package:dander/core/theme/app_theme.dart';
 
 /// The mastery level label shown next to each street in the quiz home list.
 enum MasteryLevel {
@@ -28,10 +29,10 @@ class MasteryBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (color, label) = switch (level) {
-      MasteryLevel.newStreet => (const Color(0xFF7C3AED), 'New'),
-      MasteryLevel.learning => (Colors.orange, 'Learning'),
-      MasteryLevel.review => (Colors.blue, 'Review'),
-      MasteryLevel.mastered => (Colors.green, 'Mastered'),
+      MasteryLevel.newStreet => (DanderColors.secondary, 'New'),
+      MasteryLevel.learning => (DanderColors.streakAtRisk, 'Learning'),
+      MasteryLevel.review => (DanderColors.accent, 'Review'),
+      MasteryLevel.mastered => (DanderColors.success, 'Mastered'),
     };
 
     return Row(
@@ -42,11 +43,8 @@ class MasteryBadge extends StatelessWidget {
           height: 8,
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: TextStyle(color: color, fontSize: 12),
-        ),
+        const SizedBox(width: DanderSpacing.xs),
+        Text(label, style: DanderTextStyles.labelSmall.copyWith(color: color)),
       ],
     );
   }
@@ -108,46 +106,50 @@ class QuizHomeScreen extends StatelessWidget {
     final masteryPct = _masteryPct;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D1A),
+      backgroundColor: DanderColors.surface,
       appBar: AppBar(
-        title: const Text('Quiz'),
-        backgroundColor: const Color(0xFF0D0D1A),
-        foregroundColor: Colors.white,
+        title: Text('Quiz', style: DanderTextStyles.titleLarge),
+        backgroundColor: DanderColors.surface,
+        foregroundColor: DanderColors.onSurface,
       ),
       body: Column(
         children: [
           // Stats header
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: DanderSpacing.pagePadding.copyWith(
+              top: DanderSpacing.xl,
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _StatChip(
                   label: 'Due',
                   value: '$dueCount',
-                  color: dueCount > 0 ? const Color(0xFFFFD700) : Colors.white54,
+                  color: dueCount > 0
+                      ? DanderColors.rarityRare
+                      : DanderColors.onSurfaceMuted,
                 ),
                 _StatChip(
                   label: 'Mastery',
                   value: '${masteryPct.toStringAsFixed(0)}%',
-                  color: Colors.green,
+                  color: DanderColors.success,
                 ),
                 _StatChip(
                   label: 'Walked',
                   value: '${walkedStreets.length}',
-                  color: Colors.white70,
+                  color: DanderColors.onSurfaceMuted,
                 ),
                 _StatChip(
                   label: 'Mastered',
                   value: '$_masteredCount',
-                  color: Colors.green,
+                  color: DanderColors.success,
                 ),
               ],
             ),
           ),
           // Action buttons
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: DanderSpacing.xl),
             child: Column(
               children: [
                 SizedBox(
@@ -155,42 +157,47 @@ class QuizHomeScreen extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: dueCount > 0 ? onStartReview : null,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF7C3AED),
-                      disabledBackgroundColor: Colors.white12,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      backgroundColor: DanderColors.secondary,
+                      disabledBackgroundColor: DanderColors.onSurfaceDisabled,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: DanderSpacing.md + 2,
+                      ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(
+                          DanderSpacing.borderRadiusMd,
+                        ),
                       ),
                     ),
                     child: Text(
                       'Start Review${dueCount > 0 ? ' ($dueCount)' : ''}',
-                      style: const TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold),
+                      style: DanderTextStyles.labelLarge,
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: DanderSpacing.sm),
                 SizedBox(
                   width: double.infinity,
                   child: TextButton(
                     onPressed: walkedStreets.isNotEmpty ? onPracticeAll : null,
-                    child: const Text(
+                    child: Text(
                       'Practice All',
-                      style: TextStyle(color: Colors.white70),
+                      style: DanderTextStyles.bodyMediumMuted,
                     ),
                   ),
                 ),
               ],
             ),
           ),
-          const Divider(color: Colors.white12),
+          const Divider(color: DanderColors.divider),
           // Streets list
           Expanded(
             child: walkedStreets.isEmpty
-                ? const Center(
+                ? Center(
                     child: Text(
                       'Walk some streets to start quizzing!',
-                      style: TextStyle(color: Colors.white38),
+                      style: DanderTextStyles.bodyMediumMuted.copyWith(
+                        color: DanderColors.onSurfaceDisabled,
+                      ),
                     ),
                   )
                 : ListView.builder(
@@ -201,7 +208,7 @@ class QuizHomeScreen extends StatelessWidget {
                       return ListTile(
                         title: Text(
                           street.name,
-                          style: const TextStyle(color: Colors.white),
+                          style: DanderTextStyles.bodyMedium,
                         ),
                         trailing: MasteryBadge(level: level),
                       );
@@ -236,17 +243,13 @@ class _StatChip extends StatelessWidget {
       children: [
         Text(
           value,
-          style: TextStyle(
+          style: DanderTextStyles.headlineSmall.copyWith(
             color: color,
             fontSize: 22,
-            fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(color: Colors.white54, fontSize: 11),
-        ),
+        const SizedBox(height: DanderSpacing.xs / 2),
+        Text(label, style: DanderTextStyles.labelSmall),
       ],
     );
   }

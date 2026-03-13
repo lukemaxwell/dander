@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dander/core/location/walk_session.dart';
 import 'package:dander/core/location/walk_stats_formatter.dart';
+import 'package:dander/core/theme/app_theme.dart';
 
 /// A card shown at the end of a walk summarising key stats.
 ///
@@ -38,10 +39,17 @@ class WalkSummaryCard extends StatelessWidget {
     final fogLabel = WalkStatsFormatter.formatFogCleared(fogClearedPercent);
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-      decoration: const BoxDecoration(
-        color: Color(0xFF1E1E2E),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      padding: const EdgeInsets.fromLTRB(
+        DanderSpacing.xl,
+        DanderSpacing.xl,
+        DanderSpacing.xl,
+        DanderSpacing.xxl,
+      ),
+      decoration: BoxDecoration(
+        color: DanderColors.cardBackground,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(DanderSpacing.borderRadiusXl),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -52,24 +60,20 @@ class WalkSummaryCard extends StatelessWidget {
             child: Container(
               width: 40,
               height: 4,
-              margin: const EdgeInsets.only(bottom: 16),
+              margin: const EdgeInsets.only(bottom: DanderSpacing.lg),
               decoration: BoxDecoration(
-                color: Colors.white24,
+                color: DanderColors.divider,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
           ),
           // Title
-          const Text(
+          Text(
             'Walk Complete',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
+            style: DanderTextStyles.headlineSmall,
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: DanderSpacing.xl),
           // Stats grid
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -78,7 +82,7 @@ class WalkSummaryCard extends StatelessWidget {
               _StatTile(label: 'Distance', value: distance),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: DanderSpacing.lg),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -86,40 +90,43 @@ class WalkSummaryCard extends StatelessWidget {
               _StatTile(label: 'Discoveries', value: '$discoveriesFound'),
             ],
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: DanderSpacing.xxl),
           // Share button (placeholder)
           OutlinedButton(
             onPressed: onShare,
             style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFF7C3AED),
-              side: const BorderSide(color: Color(0xFF7C3AED)),
+              foregroundColor: DanderColors.secondary,
+              side: const BorderSide(color: DanderColors.secondary),
               minimumSize: const Size(double.infinity, 48),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(
+                  DanderSpacing.borderRadiusMd + 2,
+                ),
               ),
             ),
-            child: const Text(
+            child: Text(
               'Share',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              style: DanderTextStyles.labelLarge.copyWith(
+                color: DanderColors.secondary,
+              ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: DanderSpacing.md),
           // Done button
           ElevatedButton(
             onPressed: onDone,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF7C3AED),
-              foregroundColor: Colors.white,
+              backgroundColor: DanderColors.secondary,
+              foregroundColor: DanderColors.onSurface,
               minimumSize: const Size(double.infinity, 48),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(
+                  DanderSpacing.borderRadiusMd + 2,
+                ),
               ),
               elevation: 0,
             ),
-            child: const Text(
-              'Done',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
+            child: Text('Done', style: DanderTextStyles.labelLarge),
           ),
         ],
       ),
@@ -141,31 +148,24 @@ class _StatTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-        margin: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.symmetric(
+          vertical: DanderSpacing.md + 2,
+          horizontal: DanderSpacing.sm,
+        ),
+        margin: const EdgeInsets.symmetric(horizontal: DanderSpacing.xs),
         decoration: BoxDecoration(
-          color: const Color(0xFF12121F),
-          borderRadius: BorderRadius.circular(12),
+          color: DanderColors.surfaceElevated,
+          borderRadius: BorderRadius.circular(DanderSpacing.borderRadiusMd),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-              ),
+              style: DanderTextStyles.titleLarge.copyWith(fontSize: 20),
             ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white54,
-                fontSize: 12,
-              ),
-            ),
+            const SizedBox(height: DanderSpacing.xs),
+            Text(label, style: DanderTextStyles.labelSmall),
           ],
         ),
       ),

@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'package:dander/core/streets/street.dart';
+import 'package:dander/core/theme/app_theme.dart';
 
 /// A non-interactive map widget that highlights a single [street] as a gold
 /// polyline, used in quiz questions so the user can identify the street.
@@ -16,7 +17,7 @@ class QuizMapSnippet extends StatelessWidget {
   final Street street;
 
   static const double _height = 280.0;
-  static const Color _polylineColor = Color(0xFFFFD700);
+  static const Color _polylineColor = DanderColors.rarityRare;
   static const double _polylineWidth = 4.0;
   static const double _defaultZoom = 16.0;
 
@@ -25,14 +26,14 @@ class QuizMapSnippet extends StatelessWidget {
     final nodes = street.nodes;
 
     if (nodes.isEmpty) {
-      return const SizedBox(
+      return SizedBox(
         height: _height,
         child: ColoredBox(
-          color: Color(0xFF1A1A2E),
+          color: DanderColors.primary,
           child: Center(
             child: Text(
               'No map data',
-              style: TextStyle(color: Colors.white38, fontSize: 12),
+              style: DanderTextStyles.labelSmall,
             ),
           ),
         ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dander/core/discoveries/discovery.dart';
+import 'package:dander/core/theme/app_theme.dart';
 import 'package:dander/core/theme/rarity_colors.dart';
 import 'package:dander/features/discoveries/presentation/widgets/discovery_card.dart';
 
@@ -56,14 +57,11 @@ class _DiscoveriesScreenState extends State<DiscoveriesScreen> {
     final filtered = _filtered;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF12121F),
+      backgroundColor: DanderColors.surfaceElevated,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF12121F),
-        foregroundColor: Colors.white,
-        title: const Text(
-          'Discoveries',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
+        backgroundColor: DanderColors.surfaceElevated,
+        foregroundColor: DanderColors.onSurface,
+        title: Text('Discoveries', style: DanderTextStyles.titleLarge),
         elevation: 0,
       ),
       body: Column(
@@ -72,10 +70,15 @@ class _DiscoveriesScreenState extends State<DiscoveriesScreen> {
           // Count header
           if (widget.discoveries.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              padding: const EdgeInsets.fromLTRB(
+                DanderSpacing.lg,
+                DanderSpacing.sm,
+                DanderSpacing.lg,
+                0,
+              ),
               child: Text(
                 _buildCountHeader(),
-                style: const TextStyle(color: Colors.white70, fontSize: 13),
+                style: DanderTextStyles.bodySmall,
               ),
             ),
           // Filter chips
@@ -94,22 +97,24 @@ class _DiscoveriesScreenState extends State<DiscoveriesScreen> {
             child: filtered.isEmpty && widget.discoveries.isEmpty
                 ? const _EmptyState()
                 : filtered.isEmpty
-                    ? const Center(
+                    ? Center(
                         child: Text(
                           'No discoveries match the selected filters.',
-                          style: TextStyle(color: Colors.white54),
+                          style: DanderTextStyles.bodyMediumMuted,
                           textAlign: TextAlign.center,
                         ),
                       )
                     : ListView.builder(
-                        padding: const EdgeInsets.all(16),
+                        padding: DanderSpacing.pagePadding,
                         itemCount: filtered.length,
                         itemBuilder: (context, index) {
                           final discovery = filtered[index];
                           final number =
                               widget.discoveries.indexOf(discovery) + 1;
                           return Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.only(
+                              bottom: DanderSpacing.md,
+                            ),
                             child: DiscoveryCard(
                               discovery: discovery,
                               discoveryNumber: number,
@@ -133,18 +138,24 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Padding(
-        padding: EdgeInsets.all(32),
+        padding: DanderSpacing.pagePadding.copyWith(
+          top: DanderSpacing.xxxl,
+          bottom: DanderSpacing.xxxl,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.explore_off, color: Colors.white24, size: 64),
-            SizedBox(height: 16),
+            Icon(
+              Icons.explore_off,
+              color: DanderColors.onSurfaceDisabled,
+              size: 64,
+            ),
+            const SizedBox(height: DanderSpacing.lg),
             Text(
               'No discoveries yet — go for a walk!',
-              style: TextStyle(
-                color: Colors.white54,
+              style: DanderTextStyles.bodyMediumMuted.copyWith(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
               ),
@@ -176,13 +187,16 @@ class _FilterRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: DanderSpacing.md,
+        vertical: DanderSpacing.sm,
+      ),
       child: Row(
         children: [
           // Rarity chips
           for (final tier in RarityTier.values)
             Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.only(right: DanderSpacing.sm),
               child: FilterChip(
                 label: Text(RarityColors.label(tier)),
                 selected: selectedRarity == tier,
@@ -192,13 +206,13 @@ class _FilterRow extends StatelessWidget {
                 labelStyle: TextStyle(
                   color: selectedRarity == tier
                       ? RarityColors.forTier(tier)
-                      : Colors.white70,
+                      : DanderColors.onSurfaceMuted,
                 ),
-                backgroundColor: const Color(0xFF1E1E2E),
+                backgroundColor: DanderColors.cardBackground,
                 side: BorderSide(
                   color: selectedRarity == tier
                       ? RarityColors.forTier(tier)
-                      : Colors.white24,
+                      : DanderColors.divider,
                 ),
                 onSelected: (selected) {
                   onRarityChanged(selected ? tier : null);
@@ -208,21 +222,21 @@ class _FilterRow extends StatelessWidget {
           // Category chips
           for (final category in categories)
             Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.only(right: DanderSpacing.sm),
               child: FilterChip(
                 label: Text(category),
                 selected: selectedCategory == category,
-                selectedColor: Colors.white.withValues(alpha: 0.2),
+                selectedColor: DanderColors.onSurface.withValues(alpha: 0.2),
                 labelStyle: TextStyle(
                   color: selectedCategory == category
-                      ? Colors.white
-                      : Colors.white70,
+                      ? DanderColors.onSurface
+                      : DanderColors.onSurfaceMuted,
                 ),
-                backgroundColor: const Color(0xFF1E1E2E),
+                backgroundColor: DanderColors.cardBackground,
                 side: BorderSide(
                   color: selectedCategory == category
-                      ? Colors.white
-                      : Colors.white24,
+                      ? DanderColors.onSurface
+                      : DanderColors.divider,
                 ),
                 onSelected: (selected) {
                   onCategoryChanged(selected ? category : null);

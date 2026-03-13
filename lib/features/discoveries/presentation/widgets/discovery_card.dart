@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dander/core/discoveries/discovery.dart';
+import 'package:dander/core/theme/app_theme.dart';
 import 'package:dander/core/theme/category_icons.dart';
 import 'package:dander/core/theme/rarity_colors.dart';
 
@@ -61,8 +62,8 @@ class DiscoveryCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E2E),
-        borderRadius: BorderRadius.circular(16),
+        color: DanderColors.cardBackground,
+        borderRadius: BorderRadius.circular(DanderSpacing.borderRadiusLg),
         border: Border.all(color: rarityColor, width: 2),
       ),
       child: Column(
@@ -74,12 +75,12 @@ class DiscoveryCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: rarityColor,
               borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(14),
+                top: Radius.circular(DanderSpacing.borderRadiusLg - 2),
               ),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: DanderSpacing.cardPadding,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -90,25 +91,26 @@ class DiscoveryCard extends StatelessWidget {
                     // Rarity badge
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
+                        horizontal: DanderSpacing.md - 2,
+                        vertical: DanderSpacing.xs,
                       ),
                       decoration: BoxDecoration(
                         color: rarityColor,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(
+                          DanderSpacing.borderRadiusFull,
+                        ),
                       ),
                       child: Text(
                         rarityLabel,
-                        style: const TextStyle(
+                        style: DanderTextStyles.labelMedium.copyWith(
                           color: Colors.black,
                           fontWeight: FontWeight.bold,
-                          fontSize: 12,
                         ),
                       ),
                     ),
                     // Category icon
                     Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(DanderSpacing.sm),
                       decoration: BoxDecoration(
                         color: rarityColor.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
@@ -121,50 +123,45 @@ class DiscoveryCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: DanderSpacing.md),
                 // POI name
                 Text(
                   discovery.name.isEmpty ? '(Unnamed)' : discovery.name,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: compact ? 14 : 20,
-                  ),
+                  style: compact
+                      ? DanderTextStyles.titleSmall
+                      : DanderTextStyles.titleLarge.copyWith(fontSize: 20),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: DanderSpacing.xs),
                 // Category label
                 Text(
                   discovery.category,
-                  style: TextStyle(
-                    color: Colors.white60,
-                    fontSize: compact ? 11 : 13,
-                  ),
+                  style: compact
+                      ? DanderTextStyles.labelSmall
+                      : DanderTextStyles.bodySmall,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: DanderSpacing.sm),
                 // Discovery number + date
                 Text(
                   'Discovery #$discoveryNumber',
-                  style: TextStyle(
+                  style: DanderTextStyles.labelMedium.copyWith(
                     color: rarityColor,
-                    fontWeight: FontWeight.w600,
                     fontSize: compact ? 11 : 13,
                   ),
                 ),
                 if (dateText.isNotEmpty && !compact) ...[
-                  const SizedBox(height: 2),
+                  const SizedBox(height: DanderSpacing.xs / 2),
                   Text(
                     'Found $dateText',
-                    style: const TextStyle(
-                      color: Colors.white38,
-                      fontSize: 12,
+                    style: DanderTextStyles.bodySmall.copyWith(
+                      color: DanderColors.onSurfaceDisabled,
                     ),
                   ),
                 ],
                 if (!compact) ...[
-                  const SizedBox(height: 16),
+                  const SizedBox(height: DanderSpacing.lg),
                   ElevatedButton(
                     onPressed: onDismiss,
                     style: ElevatedButton.styleFrom(
@@ -172,12 +169,17 @@ class DiscoveryCard extends StatelessWidget {
                       foregroundColor: Colors.black,
                       minimumSize: const Size(double.infinity, 44),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(
+                          DanderSpacing.borderRadiusMd,
+                        ),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Collect',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      style: DanderTextStyles.labelLarge.copyWith(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],

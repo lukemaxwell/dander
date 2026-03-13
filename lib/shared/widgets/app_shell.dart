@@ -36,9 +36,9 @@ class AppShell extends StatelessWidget {
     return Scaffold(
       body: child,
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: DanderColors.primary,
+        backgroundColor: DanderColors.surfaceElevated,
         selectedItemColor: DanderColors.accent,
-        unselectedItemColor: DanderColors.onSurface.withValues(alpha: 0.5),
+        unselectedItemColor: DanderColors.onSurfaceMuted,
         currentIndex: _currentIndex(context),
         onTap: (index) => _onTap(context, index),
         items: const [
