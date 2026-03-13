@@ -90,18 +90,39 @@ class QuizHomeScreen extends StatelessWidget {
       : (_masteredCount / walkedStreets.length * 100).clamp(0, 100);
 
   void _showExploreFirst(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text(
-          'Explore your neighbourhood first to unlock the quiz!',
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.directions_walk, color: DanderColors.surface),
+              const SizedBox(width: DanderSpacing.sm),
+              Expanded(
+                child: Text(
+                  'Go for a walk first — explore your neighbourhood to unlock the quiz!',
+                  style: DanderTextStyles.bodySmall.copyWith(
+                    color: DanderColors.surface,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: DanderColors.secondary,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.only(
+            left: DanderSpacing.lg,
+            right: DanderSpacing.lg,
+            bottom: DanderSpacing.xl,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius:
+                BorderRadius.circular(DanderSpacing.borderRadiusMd),
+          ),
+          duration: const Duration(seconds: 4),
         ),
-        backgroundColor: DanderColors.cardBackground,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(DanderSpacing.borderRadiusMd),
-        ),
-      ),
-    );
+      );
   }
 
   MasteryLevel _masteryLevelFor(String streetId) {
@@ -218,10 +239,37 @@ class QuizHomeScreen extends StatelessWidget {
           Expanded(
             child: walkedStreets.isEmpty
                 ? Center(
-                    child: Text(
-                      'Walk some streets to start quizzing!',
-                      style: DanderTextStyles.bodyMediumMuted.copyWith(
-                        color: DanderColors.onSurfaceDisabled,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: DanderSpacing.xxl,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.directions_walk_rounded,
+                            size: 64,
+                            color: DanderColors.secondary.withValues(alpha: 0.6),
+                          ),
+                          const SizedBox(height: DanderSpacing.lg),
+                          Text(
+                            'No streets explored yet',
+                            style: DanderTextStyles.titleMedium.copyWith(
+                              color: DanderColors.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: DanderSpacing.sm),
+                          Text(
+                            'Head to the Explore tab and go for a walk — '
+                            'every street you visit will appear here '
+                            'as a quiz question.',
+                            textAlign: TextAlign.center,
+                            style: DanderTextStyles.bodyMedium.copyWith(
+                              color: DanderColors.onSurfaceMuted,
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   )
