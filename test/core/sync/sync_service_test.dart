@@ -228,6 +228,86 @@ void main() {
     });
   });
 
+  group('SyncService — dispose', () {
+    test('dispose cancels connectivity subscription', () async {
+      when(() => connectivity.isOnline).thenAnswer((_) async => false);
+      when(() => appStateRepo.getNeighbourhoodBounds()).thenAnswer((_) async => null);
+
+      var syncCalled = false;
+      final service = SyncService(
+        connectivity: connectivity,
+        appStateRepository: appStateRepo,
+        poiSyncCallback: (_) async { syncCalled = true; },
+      );
+
+      await service.dispose();
+
+      // After dispose the subscription must be cancelled:
+      // emitting online must not trigger a sync.
+      connectivityController.add(true);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(syncCalled, isFalse);
+    });
+
+    test('dispose closes the status stream', () async {
+      when(() => connectivity.isOnline).thenAnswer((_) async => false);
+
+      final service = SyncService(
+        connectivity: connectivity,
+        appStateRepository: appStateRepo,
+        poiSyncCallback: (_) async {},
+      );
+
+      final done = Completer<void>();
+      service.syncStream.listen((_) {}, onDone: done.complete);
+
+      await service.dispose();
+
+      await done.future.timeout(
+        const Duration(seconds: 1),
+        onTimeout: () => fail('syncStream did not complete after dispose'),
+      );
+    });
+  });
+
+  group('SyncService — connectivity stream error handling', () {
+    test('error on connectivity stream emits SyncStatus.failed', () async {
+      when(() => connectivity.isOnline).thenAnswer((_) async => false);
+
+      final statuses = <SyncStatus>[];
+      final service = SyncService(
+        connectivity: connectivity,
+        appStateRepository: appStateRepo,
+        poiSyncCallback: (_) async {},
+      );
+
+      service.syncStream.listen(statuses.add);
+
+      connectivityController.addError(Exception("connectivity error"));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(statuses, contains(SyncStatus.failed));
+      await service.dispose();
+    });
+
+    test('service remains usable after connectivity stream error', () async {
+      when(() => connectivity.isOnline).thenAnswer((_) async => false);
+
+      final service = SyncService(
+        connectivity: connectivity,
+        appStateRepository: appStateRepo,
+        poiSyncCallback: (_) async {},
+      );
+
+      connectivityController.addError(StateError("lost"));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      // Must not throw
+      await service.dispose();
+    });
+  });
+
   group('SyncStatus enum', () {
     test('has four values', () {
       expect(SyncStatus.values.length, equals(4));

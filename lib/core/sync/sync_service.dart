@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+
 import '../network/connectivity_service.dart';
 import '../storage/app_state_repository.dart';
 
@@ -114,6 +116,10 @@ class SyncService {
         final bounds = await _appStateRepository.getNeighbourhoodBounds();
         if (bounds == null) return;
         await syncPOIs(bounds);
+      },
+      onError: (Object error, StackTrace stack) {
+        debugPrint('SyncService: connectivity stream error: $error');
+        _emit(SyncStatus.failed);
       },
     );
   }
