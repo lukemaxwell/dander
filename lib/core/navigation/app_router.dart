@@ -8,10 +8,12 @@ import 'package:dander/features/discoveries/presentation/screens/discoveries_scr
 import 'package:dander/features/map/presentation/screens/map_screen.dart';
 import 'package:dander/features/profile/presentation/screens/profile_screen.dart';
 import 'package:dander/features/quiz/presentation/screens/quiz_home_screen.dart';
+import 'package:dander/features/splash/presentation/screens/splash_screen.dart';
 import 'package:dander/shared/widgets/app_shell.dart';
 
 /// Named route paths used throughout the app.
 abstract final class AppRoutes {
+  static const String splash = '/splash';
   static const String home = '/home';
   static const String discoveries = '/discoveries';
   static const String quiz = '/quiz';
@@ -26,8 +28,16 @@ abstract final class AppRoutes {
 /// - `/profile`      — [ProfileScreen]
 /// - `/`             — redirects to [AppRoutes.home]
 final GoRouter router = GoRouter(
-  initialLocation: AppRoutes.home,
+  initialLocation: AppRoutes.splash,
   routes: [
+    GoRoute(
+      path: AppRoutes.splash,
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: SplashScreen(
+          onComplete: () => router.go(AppRoutes.home),
+        ),
+      ),
+    ),
     ShellRoute(
       builder: (context, state, child) => AppShell(child: child),
       routes: [

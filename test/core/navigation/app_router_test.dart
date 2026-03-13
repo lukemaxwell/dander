@@ -35,6 +35,10 @@ void main() {
       expect(router, isA<GoRouter>());
     });
 
+    test('AppRoutes.splash is /splash', () {
+      expect(AppRoutes.splash, equals('/splash'));
+    });
+
     test('AppRoutes.home is /home', () {
       expect(AppRoutes.home, equals('/home'));
     });
