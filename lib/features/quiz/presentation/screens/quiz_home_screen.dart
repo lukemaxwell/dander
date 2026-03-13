@@ -89,6 +89,21 @@ class QuizHomeScreen extends StatelessWidget {
       ? 0.0
       : (_masteredCount / walkedStreets.length * 100).clamp(0, 100);
 
+  void _showExploreFirst(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text(
+          'Explore your neighbourhood first to unlock the quiz!',
+        ),
+        backgroundColor: DanderColors.cardBackground,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(DanderSpacing.borderRadiusMd),
+        ),
+      ),
+    );
+  }
+
   MasteryLevel _masteryLevelFor(String streetId) {
     final record = records.where((r) => r.streetId == streetId).firstOrNull;
     if (record == null) return MasteryLevel.newStreet;
@@ -155,10 +170,16 @@ class QuizHomeScreen extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: dueCount > 0 ? onStartReview : null,
+                    onPressed: dueCount > 0
+                        ? onStartReview
+                        : () => _showExploreFirst(context),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: DanderColors.secondary,
-                      disabledBackgroundColor: DanderColors.onSurfaceDisabled,
+                      backgroundColor: dueCount > 0
+                          ? DanderColors.secondary
+                          : DanderColors.cardBackground,
+                      foregroundColor: dueCount > 0
+                          ? DanderColors.onSurface
+                          : DanderColors.onSurfaceMuted,
                       padding: const EdgeInsets.symmetric(
                         vertical: DanderSpacing.md + 2,
                       ),
@@ -169,7 +190,9 @@ class QuizHomeScreen extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      'Start Review${dueCount > 0 ? ' ($dueCount)' : ''}',
+                      dueCount > 0
+                          ? 'Start Review ($dueCount)'
+                          : 'Start Review',
                       style: DanderTextStyles.labelLarge,
                     ),
                   ),
@@ -178,7 +201,9 @@ class QuizHomeScreen extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: TextButton(
-                    onPressed: walkedStreets.isNotEmpty ? onPracticeAll : null,
+                    onPressed: walkedStreets.isNotEmpty
+                        ? onPracticeAll
+                        : () => _showExploreFirst(context),
                     child: Text(
                       'Practice All',
                       style: DanderTextStyles.bodyMediumMuted,

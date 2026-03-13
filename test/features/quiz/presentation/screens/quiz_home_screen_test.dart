@@ -41,7 +41,8 @@ void main() {
         expect(tester.takeException(), isNull);
       });
 
-      testWidgets('Start Review button is disabled when due count is 0',
+      testWidgets(
+          'Start Review button shows snackbar when due count is 0',
           (tester) async {
         await tester.pumpWidget(
           _wrap(QuizHomeScreen(
@@ -51,13 +52,18 @@ void main() {
             onPracticeAll: () {},
           )),
         );
+        // Button is always tappable — shows snackbar instead of being disabled.
         final button = tester.widget<ElevatedButton>(
           find.widgetWithText(ElevatedButton, 'Start Review'),
         );
-        expect(button.onPressed, isNull);
+        expect(button.onPressed, isNotNull);
+        await tester.tap(find.widgetWithText(ElevatedButton, 'Start Review'));
+        await tester.pump();
+        expect(find.byType(SnackBar), findsOneWidget);
       });
 
-      testWidgets('Practice All button is disabled when no streets walked',
+      testWidgets(
+          'Practice All button shows snackbar when no streets walked',
           (tester) async {
         await tester.pumpWidget(
           _wrap(QuizHomeScreen(
@@ -67,10 +73,15 @@ void main() {
             onPracticeAll: () {},
           )),
         );
+        // Button is always tappable — tapping shows a snackbar instead of
+        // silently doing nothing.
         final button = tester.widget<TextButton>(
           find.widgetWithText(TextButton, 'Practice All'),
         );
-        expect(button.onPressed, isNull);
+        expect(button.onPressed, isNotNull);
+        await tester.tap(find.widgetWithText(TextButton, 'Practice All'));
+        await tester.pump();
+        expect(find.byType(SnackBar), findsOneWidget);
       });
     });
 
