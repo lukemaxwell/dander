@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:hive/hive.dart';
 
+import '../storage/hive_boxes.dart';
 import 'zone.dart';
 
 /// Abstract interface for persisting zone data.
@@ -23,14 +24,14 @@ abstract class ZoneRepository {
 ///
 /// Each zone is stored as a JSON string keyed by its [Zone.id].
 class HiveZoneRepository implements ZoneRepository {
-  HiveZoneRepository({String boxName = 'zones'})
+  HiveZoneRepository({String boxName = HiveBoxes.zones})
       : _box = null,
         _boxName = boxName;
 
   /// Constructor that injects an already-open [Box] — used in tests.
   HiveZoneRepository.withBox(Box<dynamic> box)
       : _box = box,
-        _boxName = 'zones';
+        _boxName = HiveBoxes.zones;
 
   final Box<dynamic>? _box;
   final String _boxName;

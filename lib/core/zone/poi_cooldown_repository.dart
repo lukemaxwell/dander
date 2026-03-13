@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:hive/hive.dart';
 
+import '../storage/hive_boxes.dart';
 import 'poi_cooldown.dart';
 
 /// Abstract interface for persisting [PoiCooldown] data.
@@ -17,14 +18,14 @@ abstract class PoiCooldownRepository {
 ///
 /// Each cooldown is stored as a JSON string keyed by `'cooldown_$zoneId'`.
 class HivePoiCooldownRepository implements PoiCooldownRepository {
-  HivePoiCooldownRepository({String boxName = 'poi_cooldowns'})
+  HivePoiCooldownRepository({String boxName = HiveBoxes.poiCooldowns})
       : _box = null,
         _boxName = boxName;
 
   /// Constructor that injects an already-open [Box] — used in tests.
   HivePoiCooldownRepository.withBox(Box<dynamic> box)
       : _box = box,
-        _boxName = 'poi_cooldowns';
+        _boxName = HiveBoxes.poiCooldowns;
 
   final Box<dynamic>? _box;
   final String _boxName;

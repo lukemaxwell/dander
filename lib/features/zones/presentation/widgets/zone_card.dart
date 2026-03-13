@@ -23,9 +23,7 @@ double _xpProgress(Zone zone) {
   if (nextLevelXp == null) return 1.0;
 
   // XP threshold for the current level start.
-  final currentLevel = zone.level;
-  final levels = const [0, 100, 300, 700, 1500];
-  final currentLevelXp = levels[currentLevel - 1];
+  final currentLevelXp = ZoneLevel.xpForLevel(zone.level);
 
   final span = nextLevelXp - currentLevelXp;
   if (span <= 0) return 1.0;

@@ -47,6 +47,9 @@ class ZoneLevel {
     return _levels[level - 1].$2;
   }
 
+  /// Returns the minimum XP required to reach the given 1-based [level].
+  static int xpForLevel(int level) => _levels[level - 1].$1;
+
   /// Returns the XP threshold to reach the next level, or `null` if at max.
   static int? xpForNextLevel(int xp) {
     final level = levelForXp(xp);

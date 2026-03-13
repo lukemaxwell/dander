@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+
+import 'package:dander/core/theme/app_theme.dart';
 import 'package:dander/core/zone/zone.dart';
 import 'package:dander/core/zone/zone_repository.dart';
-import 'package:dander/core/theme/app_theme.dart';
 import 'package:dander/features/zones/presentation/widgets/zone_card.dart';
 
 /// Screen that lists all zones loaded from [ZoneRepository].
@@ -55,6 +56,15 @@ class _ZonesScreenState extends State<ZonesScreen> {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                'Failed to load zones.',
+                style: DanderTextStyles.bodyMediumMuted,
+              ),
+            );
           }
 
           final zones = snapshot.data ?? const [];
@@ -140,10 +150,7 @@ class _ZoneList extends StatelessWidget {
         return ZoneCard(
           zone: zone,
           isActive: isActive,
-          onTap: () {
-            debugPrint('[ZonesScreen] Tapped zone: ${zone.id}');
-            onZoneTapped?.call(zone.id);
-          },
+          onTap: () => onZoneTapped?.call(zone.id),
         );
       },
     );

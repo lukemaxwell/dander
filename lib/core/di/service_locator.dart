@@ -11,6 +11,10 @@ import '../progress/progress_service.dart';
 import '../quiz/quiz_repository.dart';
 import '../streets/street_overpass_client.dart';
 import '../streets/street_repository.dart';
+import '../zone/mystery_poi_repository.dart';
+import '../zone/mystery_poi_service.dart';
+import '../zone/poi_cooldown_repository.dart';
+import '../zone/zone_detector.dart';
 import '../zone/zone_repository.dart';
 import '../zone/zone_service.dart';
 
@@ -70,7 +74,19 @@ Future<void> setupLocator() async {
 
   // Zones
   sl.registerLazySingleton<ZoneRepository>(HiveZoneRepository.new);
+  sl.registerLazySingleton<ZoneDetector>(ZoneDetector.new);
   sl.registerLazySingleton<ZoneService>(
     () => ZoneService(repository: sl<ZoneRepository>()),
+  );
+  sl.registerLazySingleton<MysteryPoiRepository>(
+      HiveMysteryPoiRepository.new);
+  sl.registerLazySingleton<PoiCooldownRepository>(
+      HivePoiCooldownRepository.new);
+  sl.registerLazySingleton<MysteryPoiService>(
+    () => MysteryPoiService(
+      repository: sl<MysteryPoiRepository>(),
+      overpassClient: sl<OverpassClient>(),
+      zoneDetector: sl<ZoneDetector>(),
+    ),
   );
 }

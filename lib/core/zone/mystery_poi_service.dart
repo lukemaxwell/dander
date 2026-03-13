@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import '../discoveries/overpass_client.dart';
 import 'mystery_poi.dart';
 import 'mystery_poi_repository.dart';
+import 'zone_detector.dart';
 
 /// Maximum number of active (unrevealed) mystery POIs per zone.
 const int _maxActivePois = 3;
@@ -16,11 +17,14 @@ class MysteryPoiService {
   MysteryPoiService({
     required MysteryPoiRepository repository,
     required OverpassClient overpassClient,
+    ZoneDetector? zoneDetector,
   })  : _repository = repository,
-        _overpassClient = overpassClient;
+        _overpassClient = overpassClient,
+        _zoneDetector = zoneDetector ?? ZoneDetector();
 
   final MysteryPoiRepository _repository;
   final OverpassClient _overpassClient;
+  final ZoneDetector _zoneDetector;
 
   /// Returns up to [_maxActivePois] unrevealed [MysteryPoi] for [zoneId].
   Future<List<MysteryPoi>> getActivePois(String zoneId) async {
@@ -86,7 +90,7 @@ class MysteryPoiService {
   }) {
     for (final poi in activePois) {
       if (poi.isRevealed) continue;
-      final dist = _haversineMeters(userPosition, poi.position);
+      final dist = _zoneDetector.distanceBetween(userPosition, poi.position);
       if (dist <= thresholdMeters) return poi;
     }
     return null;
@@ -98,24 +102,4 @@ class MysteryPoiService {
   MysteryPoi revealPoi(MysteryPoi poi, String revealedName) =>
       poi.reveal(revealedName);
 
-  // ---------------------------------------------------------------------------
-  // Private helpers
-  // ---------------------------------------------------------------------------
-
-  /// Haversine distance in metres between [a] and [b].
-  ///
-  /// Uses Earth radius 6 371 000 m, consistent with [ZoneDetector].
-  double _haversineMeters(LatLng a, LatLng b) {
-    const r = 6371000.0;
-    final dLat = (b.latitude - a.latitude) * math.pi / 180.0;
-    final dLng = (b.longitude - a.longitude) * math.pi / 180.0;
-    final sinHalfLat = math.sin(dLat / 2);
-    final sinHalfLng = math.sin(dLng / 2);
-    final hav = sinHalfLat * sinHalfLat +
-        math.cos(a.latitude * math.pi / 180.0) *
-            math.cos(b.latitude * math.pi / 180.0) *
-            sinHalfLng *
-            sinHalfLng;
-    return 2 * r * math.atan2(math.sqrt(hav), math.sqrt(1 - hav));
-  }
 }

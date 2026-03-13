@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:hive/hive.dart';
 
+import '../storage/hive_boxes.dart';
 import 'mystery_poi.dart';
 
 /// Abstract persistence interface for [MysteryPoi] records.
@@ -21,14 +22,14 @@ abstract class MysteryPoiRepository {
 /// POI lists are stored as JSON strings keyed by `'mystery_pois_<zoneId>'`
 /// within a dedicated 'mystery_pois' box.
 class HiveMysteryPoiRepository implements MysteryPoiRepository {
-  HiveMysteryPoiRepository({String boxName = 'mystery_pois'})
+  HiveMysteryPoiRepository({String boxName = HiveBoxes.mysteryPois})
       : _box = null,
         _boxName = boxName;
 
   /// Inject an already-open [Box] — used in tests.
   HiveMysteryPoiRepository.withBox(Box<dynamic> box)
       : _box = box,
-        _boxName = 'mystery_pois';
+        _boxName = HiveBoxes.mysteryPois;
 
   final Box<dynamic>? _box;
   final String _boxName;
