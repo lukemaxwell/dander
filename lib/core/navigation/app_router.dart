@@ -1,7 +1,9 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Badge;
 import 'package:go_router/go_router.dart';
 
 import 'package:dander/core/discoveries/discovery.dart';
+import 'package:dander/core/progress/badge.dart';
+import 'package:dander/core/progress/streak_tracker.dart';
 import 'package:dander/features/discoveries/presentation/screens/discoveries_screen.dart';
 import 'package:dander/features/map/presentation/screens/map_screen.dart';
 import 'package:dander/features/profile/presentation/screens/profile_screen.dart';
@@ -42,9 +44,12 @@ final GoRouter router = GoRouter(
         ),
         GoRoute(
           path: AppRoutes.profile,
-          pageBuilder: (context, state) => const NoTransitionPage(
+          pageBuilder: (context, state) => NoTransitionPage(
             child: ProfileScreen(
-              discoveries: <Discovery>[],
+              discoveries: const <Discovery>[],
+              explorationPct: 0.0,
+              streak: StreakTracker.empty(),
+              badges: BadgeDefinitions.badges,
             ),
           ),
         ),

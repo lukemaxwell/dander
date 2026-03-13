@@ -22,7 +22,7 @@ void main() {
     // -------------------------------------------------------------------------
     group('saveBadges / loadBadges', () {
       test('saveBadges writes JSON-encoded list to box', () async {
-        final badges = BadgeDefinitions.badges;
+        const badges = BadgeDefinitions.badges;
 
         when(() => mockBox.put(any(), any())).thenAnswer((_) async {});
         await repository.saveBadges(badges);
@@ -41,7 +41,7 @@ void main() {
 
       test('round-trip: saveBadges then loadBadges preserves locked state',
           () async {
-        final badges = BadgeDefinitions.badges;
+        const badges = BadgeDefinitions.badges;
 
         dynamic saved;
         when(() => mockBox.put(any(), any())).thenAnswer((inv) async {
@@ -84,7 +84,7 @@ void main() {
 
       test('loadBadges returns all 6 badge definitions when data present',
           () async {
-        final badges = BadgeDefinitions.badges;
+        const badges = BadgeDefinitions.badges;
 
         dynamic saved;
         when(() => mockBox.put(any(), any())).thenAnswer((inv) async {

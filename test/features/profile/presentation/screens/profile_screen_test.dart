@@ -11,7 +11,7 @@ Widget _wrap(Widget child) => MaterialApp(home: child);
 void main() {
   final noDiscoveries = <Discovery>[];
 
-  final sampleBadges = BadgeDefinitions.badges;
+  const sampleBadges = BadgeDefinitions.badges;
   final unlockedBadges = BadgeDefinitions.badges.map((b) {
     if (b.id == BadgeId.firstDander || b.id == BadgeId.explorer) {
       return b.unlock(DateTime(2024, 6, 1));

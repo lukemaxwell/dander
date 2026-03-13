@@ -4,7 +4,7 @@ import 'package:dander/core/progress/badge.dart';
 
 void main() {
   group('Badge', () {
-    final lockedBadge = Badge(
+    const lockedBadge = Badge(
       id: BadgeId.explorer,
       name: 'Explorer',
       description: 'Explore 10% of your neighbourhood',
