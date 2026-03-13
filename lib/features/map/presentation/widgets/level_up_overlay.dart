@@ -12,6 +12,7 @@ class LevelUpOverlay extends StatefulWidget {
     super.key,
     required this.event,
     required this.child,
+    this.onDismissed,
   });
 
   /// The level-up event to display, or `null` to show no overlay.
@@ -19,6 +20,9 @@ class LevelUpOverlay extends StatefulWidget {
 
   /// The widget rendered beneath the overlay (typically the map).
   final Widget child;
+
+  /// Called when the animation completes and the banner has fully faded out.
+  final VoidCallback? onDismissed;
 
   @override
   State<LevelUpOverlay> createState() => _LevelUpOverlayState();
@@ -86,7 +90,9 @@ class _LevelUpOverlayState extends State<LevelUpOverlay>
   }
 
   void _runAnimation() {
-    _controller.forward(from: 0.0);
+    _controller.forward(from: 0.0).then((_) {
+      widget.onDismissed?.call();
+    });
   }
 
   @override

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 
 import 'package:dander/core/quiz/quiz_result.dart';
 import 'package:dander/core/quiz/quiz_session.dart';
 import 'package:dander/core/theme/app_theme.dart';
+import 'package:dander/core/zone/zone_repository.dart';
+import 'package:dander/core/zone/zone_service.dart';
 import 'package:dander/features/quiz/presentation/widgets/choice_button.dart';
 import 'package:dander/features/quiz/presentation/widgets/quiz_map_snippet.dart';
 
@@ -56,6 +59,8 @@ class _QuizQuestionScreenState extends State<QuizQuestionScreen> {
         ? QuizResult.correct
         : QuizResult.incorrect;
 
+    _awardQuizXp(result);
+
     final updated = _session.answerCurrent(result);
 
     if (updated.isComplete) {
@@ -67,6 +72,28 @@ class _QuizQuestionScreenState extends State<QuizQuestionScreen> {
       _session = updated;
       _selectedIndex = null;
     });
+  }
+
+  Future<void> _awardQuizXp(QuizResult result) async {
+    try {
+      final zoneService = GetIt.instance<ZoneService>();
+      final zoneRepo = GetIt.instance<ZoneRepository>();
+      final zones = await zoneRepo.loadAll();
+      if (zones.isEmpty) return;
+
+      // Award XP to the first zone (home zone for now).
+      final zoneId = zones.first.id;
+
+      if (result == QuizResult.correct) {
+        zoneService.incrementQuizStreak(zoneId);
+        final streakBonus = zoneService.isStreakBonusActive(zoneId);
+        await zoneService.awardQuizXp(zoneId, isStreakBonus: streakBonus);
+      } else {
+        zoneService.resetQuizStreak(zoneId);
+      }
+    } catch (_) {
+      // Zone service not available — skip
+    }
   }
 
   ChoiceButtonState _stateFor(int index) {

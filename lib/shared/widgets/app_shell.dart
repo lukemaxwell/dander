@@ -18,7 +18,8 @@ class AppShell extends StatelessWidget {
     final location = GoRouterState.of(context).uri.toString();
     if (location.startsWith(AppRoutes.discoveries)) return 1;
     if (location.startsWith(AppRoutes.quiz)) return 2;
-    if (location.startsWith(AppRoutes.profile)) return 3;
+    if (location.startsWith(AppRoutes.zones)) return 3;
+    if (location.startsWith(AppRoutes.profile)) return 4;
     return 0;
   }
 
@@ -31,6 +32,8 @@ class AppShell extends StatelessWidget {
       case 2:
         context.go(AppRoutes.quiz);
       case 3:
+        context.go(AppRoutes.zones);
+      case 4:
         context.go(AppRoutes.profile);
     }
   }
@@ -100,10 +103,18 @@ class _BlurredNavBar extends StatelessWidget {
                     onTap: onTap,
                   ),
                   _NavItem(
+                    icon: Icons.public_outlined,
+                    activeIcon: Icons.public,
+                    label: 'Zones',
+                    index: 3,
+                    currentIndex: currentIndex,
+                    onTap: onTap,
+                  ),
+                  _NavItem(
                     icon: Icons.person_outline,
                     activeIcon: Icons.person,
                     label: 'Profile',
-                    index: 3,
+                    index: 4,
                     currentIndex: currentIndex,
                     onTap: onTap,
                   ),

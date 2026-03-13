@@ -19,6 +19,7 @@ class FogLayer extends StatefulWidget {
     required this.bounds,
     this.locationStream,
     this.exploreRadius = 50.0,
+    this.onFogExpanded,
   });
 
   /// Holds the current [FogGrid] and notifies listeners when it changes.
@@ -32,6 +33,9 @@ class FogLayer extends StatefulWidget {
 
   /// Radius in meters cleared around each received GPS position.
   final double exploreRadius;
+
+  /// Called when new fog cells are revealed (i.e. territory expanded).
+  final VoidCallback? onFogExpanded;
 
   @override
   State<FogLayer> createState() => _FogLayerState();
@@ -80,7 +84,14 @@ class _FogLayerState extends State<FogLayer> {
     // Punch the new circle.
     updated.markExplored(position, widget.exploreRadius);
 
+    // Detect if new cells were actually revealed.
+    final expanded = updated.exploredCount > current.exploredCount;
+
     widget.fogGridNotifier.value = updated;
+
+    if (expanded) {
+      widget.onFogExpanded?.call();
+    }
   }
 
   /// Copies explored cells from [src] into [dst] by replaying them.
