@@ -24,4 +24,13 @@ abstract final class HiveBoxes {
 
   /// Stores spaced-repetition memory records for the street quiz.
   static const String quiz = 'quiz';
+
+  /// Stores zone data (multi-zone progression system).
+  static const String zones = 'zones';
+
+  /// Stores POI request cooldown records, keyed per zone.
+  static const String poiCooldowns = 'poi_cooldowns';
+
+  /// Stores mystery POI data (unrevealed/revealed POIs per zone).
+  static const String mysteryPois = 'mystery_pois';
 }
