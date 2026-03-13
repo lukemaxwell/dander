@@ -41,6 +41,53 @@ class _ZonesScreenState extends State<ZonesScreen> {
     _zonesFuture = widget.repository.loadAll();
   }
 
+  void _reload() {
+    setState(() {
+      _zonesFuture = widget.repository.loadAll();
+    });
+  }
+
+  Future<void> _confirmDelete(Zone zone) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: DanderColors.surfaceElevated,
+        title: Text('Delete ${zone.name}?', style: DanderTextStyles.titleMedium),
+        content: Text(
+          'This will permanently delete this zone and all its progress — '
+          'including ${zone.xp} XP, walked streets, and quiz history. '
+          'This cannot be undone.',
+          style: DanderTextStyles.bodyMedium,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(
+              'Cancel',
+              style: DanderTextStyles.labelLarge.copyWith(
+                color: DanderColors.onSurfaceMuted,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(
+              'Delete',
+              style: DanderTextStyles.labelLarge.copyWith(
+                color: DanderColors.error,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await widget.repository.delete(zone.id);
+      _reload();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -77,6 +124,7 @@ class _ZonesScreenState extends State<ZonesScreen> {
             zones: zones,
             activeZoneId: widget.activeZoneId,
             onZoneTapped: widget.onZoneTapped,
+            onZoneDelete: _confirmDelete,
           );
         },
       ),
@@ -132,11 +180,13 @@ class _ZoneList extends StatelessWidget {
     required this.zones,
     required this.activeZoneId,
     required this.onZoneTapped,
+    required this.onZoneDelete,
   });
 
   final List<Zone> zones;
   final String? activeZoneId;
   final void Function(String id)? onZoneTapped;
+  final void Function(Zone zone) onZoneDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -151,6 +201,7 @@ class _ZoneList extends StatelessWidget {
           zone: zone,
           isActive: isActive,
           onTap: () => onZoneTapped?.call(zone.id),
+          onDelete: () => onZoneDelete(zone),
         );
       },
     );

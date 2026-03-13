@@ -43,6 +43,7 @@ class ZoneCard extends StatelessWidget {
     required this.zone,
     required this.isActive,
     this.onTap,
+    this.onDelete,
   });
 
   /// The zone to display.
@@ -53,6 +54,9 @@ class ZoneCard extends StatelessWidget {
 
   /// Called when the card is tapped.
   final VoidCallback? onTap;
+
+  /// Called when the user confirms deletion of this zone.
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -77,7 +81,7 @@ class ZoneCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _Header(zone: zone, isMaxLevel: isMaxLevel),
+            _Header(zone: zone, isMaxLevel: isMaxLevel, onDelete: onDelete),
             const SizedBox(height: DanderSpacing.sm),
             _XpRow(
               zone: zone,
@@ -110,10 +114,15 @@ class ZoneCard extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _Header extends StatelessWidget {
-  const _Header({required this.zone, required this.isMaxLevel});
+  const _Header({
+    required this.zone,
+    required this.isMaxLevel,
+    this.onDelete,
+  });
 
   final Zone zone;
   final bool isMaxLevel;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -129,6 +138,21 @@ class _Header extends StatelessWidget {
         ),
         const SizedBox(width: DanderSpacing.sm),
         _LevelBadge(level: zone.level),
+        if (onDelete != null) ...[
+          const SizedBox(width: DanderSpacing.sm),
+          GestureDetector(
+            onTap: onDelete,
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: const EdgeInsets.all(DanderSpacing.xs),
+              child: Icon(
+                Icons.delete_outline,
+                color: DanderColors.onSurfaceMuted,
+                size: 20,
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
