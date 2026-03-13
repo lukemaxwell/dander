@@ -8,18 +8,23 @@ import 'package:geolocator/geolocator.dart';
 import 'package:get_it/get_it.dart';
 import 'package:latlong2/latlong.dart';
 
+import 'package:dander/core/discoveries/discovery.dart';
 import 'package:dander/core/fog/fog_grid.dart';
 import 'package:dander/core/location/location_service.dart';
 import 'package:dander/core/location/walk_session.dart';
 import 'package:dander/core/theme/app_theme.dart';
 import 'package:dander/core/zone/level_up_detector.dart';
+import 'package:dander/core/zone/mystery_poi.dart';
+import 'package:dander/core/zone/mystery_poi_service.dart';
 import 'package:dander/core/zone/zone.dart' as zone_model;
 import 'package:dander/core/zone/zone_detector.dart';
 import 'package:dander/core/zone/zone_repository.dart';
 import 'package:dander/core/zone/zone_service.dart';
+import 'package:dander/features/discoveries/presentation/widgets/discovery_notification.dart';
 import 'package:dander/features/map/presentation/widgets/exploration_badge.dart';
 import 'package:dander/features/map/presentation/widgets/fog_layer.dart';
 import 'package:dander/features/map/presentation/widgets/level_up_overlay.dart';
+import 'package:dander/features/map/presentation/widgets/mystery_poi_marker_layer.dart';
 import 'package:dander/features/map/presentation/widgets/walk_control.dart';
 
 class MapScreen extends StatefulWidget {
@@ -40,6 +45,7 @@ class _MapScreenState extends State<MapScreen>
   final MapController _mapController = MapController();
 
   late final ValueNotifier<FogGrid> _fogGridNotifier;
+  late final ValueNotifier<List<MysteryPoi>> _mysteryPoisNotifier;
   late final StreamController<LatLng> _locationStreamController;
   late final AnimationController _pulseController;
   late final Animation<double> _pulseAnimation;
@@ -54,11 +60,15 @@ class _MapScreenState extends State<MapScreen>
   LevelUpEvent? _levelUpEvent;
   bool _zonePromptShown = false;
 
+  // POI discovery state
+  Discovery? _pendingDiscovery;
+
   @override
   void initState() {
     super.initState();
 
     _fogGridNotifier = ValueNotifier(FogGrid(origin: _defaultCenter));
+    _mysteryPoisNotifier = ValueNotifier(const []);
     _locationStreamController = StreamController<LatLng>.broadcast();
 
     _pulseController = AnimationController(
@@ -105,6 +115,7 @@ class _MapScreenState extends State<MapScreen>
       if (mounted) setState(() => _userPosition = latLng);
       _locationStreamController.add(latLng);
       _checkZoneOnMove(latLng);
+      _checkPoiArrival(latLng);
     });
   }
 
@@ -113,6 +124,74 @@ class _MapScreenState extends State<MapScreen>
       final zoneService = GetIt.instance<ZoneService>();
       final zone = await zoneService.getActiveZone(position);
       if (mounted) setState(() => _activeZone = zone);
+    } catch (_) {
+      // Zone service not available — skip
+    }
+
+    await _generatePoisForPosition(position);
+  }
+
+  Future<void> _generatePoisForPosition(LatLng position) async {
+    try {
+      final poiService = GetIt.instance<MysteryPoiService>();
+      final pois = await poiService.generatePois(position, 500.0);
+      _mysteryPoisNotifier.value = pois;
+    } catch (_) {
+      // POI service not available — skip
+    }
+  }
+
+  void _checkPoiArrival(LatLng position) {
+    final currentPois = _mysteryPoisNotifier.value;
+    if (currentPois.isEmpty) return;
+
+    try {
+      final poiService = GetIt.instance<MysteryPoiService>();
+      final arrived = poiService.checkArrival(position, currentPois);
+      if (arrived == null) return;
+
+      final revealedName = arrived.category;
+      final revealed = poiService.revealPoi(arrived, revealedName);
+
+      // Immutable list update — replace the arrived POI with its revealed copy.
+      final updatedPois = currentPois
+          .map((p) => p.id == arrived.id ? revealed : p)
+          .toList();
+      _mysteryPoisNotifier.value = updatedPois;
+
+      _showPoiDiscoveryNotification(revealed);
+      _awardPoiXp();
+    } catch (_) {
+      // POI service not available — skip
+    }
+  }
+
+  void _showPoiDiscoveryNotification(MysteryPoi poi) {
+    if (!mounted) return;
+    final discovery = Discovery(
+      id: poi.id,
+      name: poi.name ?? poi.category,
+      category: poi.category,
+      rarity: RarityTier.uncommon,
+      position: poi.position,
+      osmTags: const {},
+      discoveredAt: DateTime.now(),
+    );
+    setState(() => _pendingDiscovery = discovery);
+  }
+
+  Future<void> _awardPoiXp() async {
+    if (_activeZone == null) return;
+    try {
+      final zoneService = GetIt.instance<ZoneService>();
+      final after = await zoneService.awardPoiXp(_activeZone!.id);
+      final event = LevelUpDetector.checkLevelUp(_activeZone!, after);
+      if (mounted) {
+        setState(() {
+          _activeZone = after;
+          if (event != null) _levelUpEvent = event;
+        });
+      }
     } catch (_) {
       // Zone service not available — skip
     }
@@ -225,6 +304,7 @@ class _MapScreenState extends State<MapScreen>
     _positionSub?.cancel();
     _locationStreamController.close();
     _fogGridNotifier.dispose();
+    _mysteryPoisNotifier.dispose();
     _mapController.dispose();
     _pulseController.dispose();
     super.dispose();
@@ -254,6 +334,16 @@ class _MapScreenState extends State<MapScreen>
           children: [
             _buildMap(),
             _buildOverlays(),
+            if (_pendingDiscovery != null)
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: DiscoveryNotification(
+                  discovery: _pendingDiscovery!,
+                  onDismiss: () => setState(() => _pendingDiscovery = null),
+                ),
+              ),
             WalkControl(
               session: _walkSession,
               onStart: _startWalk,
@@ -284,8 +374,8 @@ class _MapScreenState extends State<MapScreen>
           userAgentPackageName: 'com.dander.dander',
           maxNativeZoom: 18,
         ),
-        // Fog and location dot are inside FlutterMap so they share the same
-        // render frame as the tiles — no zoom/pan desync.
+        // Fog, POI markers and location dot are inside FlutterMap so they
+        // share the same render frame as the tiles — no zoom/pan desync.
         Builder(
           builder: (context) {
             final camera = MapCamera.of(context);
@@ -298,6 +388,13 @@ class _MapScreenState extends State<MapScreen>
                     locationStream: _locationStreamController.stream,
                     exploreRadius: 50.0,
                     onFogExpanded: _walkSession != null ? _awardStreetXp : null,
+                  ),
+                  ValueListenableBuilder<List<MysteryPoi>>(
+                    valueListenable: _mysteryPoisNotifier,
+                    builder: (context, pois, _) => MysteryPoiMarkerLayer(
+                      pois: pois,
+                      camera: camera,
+                    ),
                   ),
                   if (_userPosition != null)
                     _buildLocationDot(camera),
