@@ -284,7 +284,7 @@ void main() {
 
       service.syncStream.listen(statuses.add);
 
-      connectivityController.addError(Exception("connectivity error"));
+      connectivityController.addError(Exception('connectivity error'));
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
       expect(statuses, contains(SyncStatus.failed));
@@ -300,7 +300,7 @@ void main() {
         poiSyncCallback: (_) async {},
       );
 
-      connectivityController.addError(StateError("lost"));
+      connectivityController.addError(StateError('lost'));
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
       // Must not throw
