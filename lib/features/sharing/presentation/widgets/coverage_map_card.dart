@@ -105,15 +105,15 @@ class CoverageMapCard extends StatelessWidget {
   }
 
   Widget _buildFooter() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(48, 16, 48, 48),
+    return const Padding(
+      padding: EdgeInsets.fromLTRB(48, 16, 48, 48),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           Text(
             'dander.app',
-            key: const Key('watermark'),
-            style: const TextStyle(
+            key: Key('watermark'),
+            style: TextStyle(
               color: Colors.white38,
               fontSize: 28,
               fontWeight: FontWeight.w400,
@@ -169,7 +169,7 @@ class _FogMapPainter extends CustomPainter {
     const rows = 10;
     final cellWidth = size.width / cols;
     final cellHeight = size.height / rows;
-    final totalCells = cols * rows;
+    const totalCells = cols * rows;
     final exploredCells = (totalCells * explorationPercent / 100).round();
 
     var cellIndex = 0;

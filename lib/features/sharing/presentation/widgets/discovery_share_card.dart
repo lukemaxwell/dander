@@ -118,12 +118,12 @@ class DiscoveryShareCard extends StatelessWidget {
   }
 
   Widget _buildFooter() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(48, 24, 48, 60),
+    return const Padding(
+      padding: EdgeInsets.fromLTRB(48, 24, 48, 60),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          const Text(
+          Text(
             'dander.app',
             key: Key('watermark'),
             style: TextStyle(

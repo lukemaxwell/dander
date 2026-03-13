@@ -63,9 +63,9 @@ class WalkSummaryShareCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 24),
-          Text(
+          const Text(
             'Walk Summary',
-            style: const TextStyle(
+            style: TextStyle(
               color: Color(0xFF6C63FF),
               fontSize: 40,
               fontWeight: FontWeight.w700,
@@ -148,13 +148,13 @@ class WalkSummaryShareCard extends StatelessWidget {
   }
 
   Widget _buildTagline() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 40),
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 48, vertical: 40),
       child: Text(
         'Every street tells a story.',
-        key: const Key('tagline'),
+        key: Key('tagline'),
         textAlign: TextAlign.center,
-        style: const TextStyle(
+        style: TextStyle(
           color: Colors.white60,
           fontSize: 36,
           fontWeight: FontWeight.w300,
@@ -166,11 +166,11 @@ class WalkSummaryShareCard extends StatelessWidget {
   }
 
   Widget _buildFooter() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(48, 0, 48, 60),
+    return const Padding(
+      padding: EdgeInsets.fromLTRB(48, 0, 48, 60),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
-        children: const [
+        children: [
           Text(
             'dander.app',
             key: Key('watermark'),
