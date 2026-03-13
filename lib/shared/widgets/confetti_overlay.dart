@@ -58,7 +58,7 @@ class _ConfettiOverlayState extends State<ConfettiOverlay>
   final math.Random _rng = math.Random(42);
 
   static const _colors = [
-    Color(0xFF6E56CF),
+    Color(0xFFFF8F00), // amber (brand secondary)
     Color(0xFF4FC3F7),
     Color(0xFFFF6B35),
     Color(0xFFFFD700),
