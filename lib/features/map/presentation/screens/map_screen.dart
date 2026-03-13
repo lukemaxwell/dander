@@ -463,7 +463,7 @@ class _LocationDotPainter extends CustomPainter {
       center,
       14,
       Paint()
-        ..color = DanderColors.secondary.withValues(alpha: 0.2)
+        ..color = DanderColors.accent.withValues(alpha: 0.2)
         ..style = PaintingStyle.fill,
     );
 
@@ -482,7 +482,7 @@ class _LocationDotPainter extends CustomPainter {
       7,
       Paint()
         ..shader = RadialGradient(
-          colors: [DanderColors.secondary, DanderColors.gradientStart],
+          colors: [DanderColors.accent, DanderColors.gradientEnd],
         ).createShader(Rect.fromCircle(center: center, radius: 7))
         ..style = PaintingStyle.fill,
     );
