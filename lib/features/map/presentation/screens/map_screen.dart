@@ -44,11 +44,6 @@ class _MapScreenState extends State<MapScreen>
   late final AnimationController _pulseController;
   late final Animation<double> _pulseAnimation;
 
-  LatLngBounds _visibleBounds = LatLngBounds(
-    const LatLng(51.48, -0.15),
-    const LatLng(51.53, -0.10),
-  );
-
   LatLng _currentCenter = _defaultCenter;
   LatLng? _userPosition;
   StreamSubscription<Position>? _positionSub;
@@ -216,8 +211,13 @@ class _MapScreenState extends State<MapScreen>
   }
 
   int get _explorationPct {
-    final pct = _fogGridNotifier.value.explorationPercentage(_visibleBounds);
-    return (pct * 100).round();
+    try {
+      final pct = _fogGridNotifier.value
+          .explorationPercentage(_mapController.camera.visibleBounds);
+      return (pct * 100).round();
+    } catch (_) {
+      return 0;
+    }
   }
 
   @override
@@ -253,8 +253,6 @@ class _MapScreenState extends State<MapScreen>
         child: Stack(
           children: [
             _buildMap(),
-            _buildFog(),
-            if (_userPosition != null) _buildLocationDot(),
             _buildOverlays(),
             WalkControl(
               session: _walkSession,
@@ -275,16 +273,7 @@ class _MapScreenState extends State<MapScreen>
         initialZoom: _defaultZoom,
         minZoom: 10,
         maxZoom: 18,
-        onMapReady: () {
-          setState(() {
-            _visibleBounds = _mapController.camera.visibleBounds;
-          });
-        },
-        onPositionChanged: (camera, _) {
-          setState(() {
-            _visibleBounds = camera.visibleBounds;
-          });
-        },
+        onMapReady: () => setState(() {}),
       ),
       children: [
         TileLayer(
@@ -292,42 +281,43 @@ class _MapScreenState extends State<MapScreen>
           userAgentPackageName: 'com.dander.dander',
           maxNativeZoom: 18,
         ),
+        // Fog and location dot are inside FlutterMap so they share the same
+        // render frame as the tiles — no zoom/pan desync.
+        Builder(
+          builder: (context) {
+            final camera = MapCamera.of(context);
+            return IgnorePointer(
+              child: Stack(
+                children: [
+                  FogLayer(
+                    fogGridNotifier: _fogGridNotifier,
+                    bounds: camera.visibleBounds,
+                    locationStream: _locationStreamController.stream,
+                    exploreRadius: 50.0,
+                    onFogExpanded: _walkSession != null ? _awardStreetXp : null,
+                  ),
+                  if (_userPosition != null)
+                    _buildLocationDot(camera),
+                ],
+              ),
+            );
+          },
+        ),
       ],
     );
   }
 
-  Widget _buildFog() {
-    return Positioned.fill(
-      child: IgnorePointer(
-        child: FogLayer(
-          fogGridNotifier: _fogGridNotifier,
-          bounds: _visibleBounds,
-          locationStream: _locationStreamController.stream,
-          exploreRadius: 50.0,
-          onFogExpanded: _walkSession != null ? _awardStreetXp : null,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLocationDot() {
-    final pos = _userPosition!;
-    final screenPoint = _mapController.camera.getOffsetFromOrigin(pos);
-
+  Widget _buildLocationDot(MapCamera camera) {
+    final screenPoint = camera.getOffsetFromOrigin(_userPosition!);
     return Positioned(
       left: screenPoint.dx - 32,
       top: screenPoint.dy - 32,
       width: 64,
       height: 64,
-      child: IgnorePointer(
-        child: AnimatedBuilder(
-          animation: _pulseAnimation,
-          builder: (context, child) {
-            final pulse = _pulseAnimation.value;
-            return CustomPaint(
-              painter: _LocationDotPainter(pulseProgress: pulse),
-            );
-          },
+      child: AnimatedBuilder(
+        animation: _pulseAnimation,
+        builder: (context, _) => CustomPaint(
+          painter: _LocationDotPainter(pulseProgress: _pulseAnimation.value),
         ),
       ),
     );

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart' show LatLngBounds;
@@ -7,14 +6,16 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../../core/fog/fog_grid.dart';
 import '../../../../core/fog/fog_painter.dart';
-import '../../../../core/fog/fog_texture_generator.dart';
-import '../../../../core/theme/app_theme.dart';
 
 /// A widget that renders the fog-of-war overlay over the visible map area.
 ///
-/// It listens to [fogGridNotifier] for reactive grid updates and, when
+/// Listens to [fogGridNotifier] for reactive grid updates and, when
 /// [locationStream] is provided, automatically expands explored areas as new
 /// positions arrive.
+///
+/// Place this inside [FlutterMap.children] wrapped in a [Builder] so that
+/// [bounds] can be sourced from [MapCamera.of(context).visibleBounds] — this
+/// keeps the fog perfectly in sync with the map tiles on every render frame.
 class FogLayer extends StatefulWidget {
   const FogLayer({
     super.key,
@@ -25,19 +26,10 @@ class FogLayer extends StatefulWidget {
     this.onFogExpanded,
   });
 
-  /// Holds the current [FogGrid] and notifies listeners when it changes.
   final ValueNotifier<FogGrid> fogGridNotifier;
-
-  /// The geographic bounds currently visible on screen.
   final LatLngBounds bounds;
-
-  /// Optional stream of GPS positions that drives automatic exploration.
   final Stream<LatLng>? locationStream;
-
-  /// Radius in meters cleared around each received GPS position.
   final double exploreRadius;
-
-  /// Called when new fog cells are revealed (i.e. territory expanded).
   final VoidCallback? onFogExpanded;
 
   @override
@@ -46,26 +38,11 @@ class FogLayer extends StatefulWidget {
 
 class _FogLayerState extends State<FogLayer> {
   StreamSubscription<LatLng>? _locationSub;
-  ui.Image? _fogTexture;
-
-  /// Default glow: amber at ~40% opacity.
-  static const Color _glowColor = Color(0x66FF8F00);
-  static const double _glowSigma = 18.0;
 
   @override
   void initState() {
     super.initState();
     _subscribeToLocation();
-    _generateTexture();
-  }
-
-  Future<void> _generateTexture() async {
-    final image = await FogTextureGenerator.generate();
-    if (mounted) {
-      setState(() => _fogTexture = image);
-    } else {
-      image.dispose();
-    }
   }
 
   @override
@@ -83,10 +60,6 @@ class _FogLayerState extends State<FogLayer> {
     _locationSub = stream.listen(_onLocationUpdate);
   }
 
-  /// Merges a new position into the fog grid immutably.
-  ///
-  /// Creates a new [FogGrid] containing all previously explored cells plus the
-  /// newly cleared circle, then updates the notifier so listeners rebuild.
   void _onLocationUpdate(LatLng position) {
     final current = widget.fogGridNotifier.value;
 
@@ -95,34 +68,21 @@ class _FogLayerState extends State<FogLayer> {
       cellSizeMeters: current.cellSizeMeters,
     );
 
-    // Re-add all existing explored cells efficiently by directly inserting
-    // their coordinates — no round-trip through lat/lng needed.
-    _copyExploredCells(current, updated);
+    for (final cell in current.exploredCells) {
+      updated.addCell(cell);
+    }
 
-    // Punch the new circle.
     updated.markExplored(position, widget.exploreRadius);
 
-    // Detect if new cells were actually revealed.
     final expanded = updated.exploredCount > current.exploredCount;
-
     widget.fogGridNotifier.value = updated;
 
-    if (expanded) {
-      widget.onFogExpanded?.call();
-    }
-  }
-
-  /// Copies explored cells from [src] into [dst] directly via [addCell].
-  void _copyExploredCells(FogGrid src, FogGrid dst) {
-    for (final cell in src.exploredCells) {
-      dst.addCell(cell);
-    }
+    if (expanded) widget.onFogExpanded?.call();
   }
 
   @override
   void dispose() {
     _locationSub?.cancel();
-    _fogTexture?.dispose();
     super.dispose();
   }
 
@@ -141,13 +101,7 @@ class _FogLayerState extends State<FogLayer> {
               ),
             );
             return CustomPaint(
-              painter: FogPainter(
-                fogGrid: grid,
-                viewport: viewport,
-                fogTexture: _fogTexture,
-                glowColor: _glowColor,
-                glowSigma: _glowSigma,
-              ),
+              painter: FogPainter(fogGrid: grid, viewport: viewport),
               child: const SizedBox.expand(),
             );
           },
