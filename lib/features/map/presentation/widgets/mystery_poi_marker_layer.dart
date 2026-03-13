@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 
 import 'package:dander/core/theme/app_theme.dart';
+import 'package:dander/core/theme/category_pin_config.dart';
 import 'package:dander/core/zone/mystery_poi.dart';
 
 /// A map layer that renders mystery POI markers over the FlutterMap canvas.
 ///
-/// Unrevealed POIs are shown as a pulsing amber "?" circle.
-/// Revealed POIs are shown as a gold trophy icon ([Icons.emoji_events]).
+/// Three rendering modes driven by [PoiState]:
+/// - [PoiState.unrevealed]: NOT rendered — no marker at all.
+/// - [PoiState.hinted]: Amber pulsing "?" circle.
+/// - [PoiState.revealed]: Category-coloured pin using
+///   [CategoryPinConfig.forCategory].
 ///
 /// Place this inside a [Builder] within [FlutterMap.children], where
 /// [MapCamera.of(context)] is accessible — identical to the pattern used in
@@ -62,33 +66,37 @@ class _MysteryPoiMarkerLayerState extends State<MysteryPoiMarkerLayer>
 
   @override
   Widget build(BuildContext context) {
-    if (widget.pois.isEmpty) return const SizedBox.shrink();
+    // Filter to only pois that need a visible marker.
+    final visiblePois = widget.pois
+        .where((p) => p.state != PoiState.unrevealed)
+        .toList(growable: false);
+
+    if (visiblePois.isEmpty) return const SizedBox.shrink();
 
     return AnimatedBuilder(
       animation: _pulseAnimation,
       builder: (context, _) {
         return Stack(
-          children: widget.pois.map((poi) {
-            return _buildMarker(poi);
-          }).toList(),
+          children: visiblePois.map(_buildMarker).toList(),
         );
       },
     );
   }
 
   Widget _buildMarker(MysteryPoi poi) {
-    // Convert geographic position to screen offset.
     final screenPoint = widget.camera.getOffsetFromOrigin(poi.position);
 
     if (poi.isRevealed) {
       return _RevealedMarker(
         key: ValueKey('poi_revealed_${poi.id}'),
         screenPoint: screenPoint,
+        category: poi.category,
       );
     }
 
-    return _UnrevealedMarker(
-      key: ValueKey('poi_unrevealed_${poi.id}'),
+    // Hinted state.
+    return _HintedMarker(
+      key: ValueKey('poi_hinted_${poi.id}'),
       screenPoint: screenPoint,
       pulseProgress: _pulseAnimation.value,
     );
@@ -96,41 +104,63 @@ class _MysteryPoiMarkerLayerState extends State<MysteryPoiMarkerLayer>
 }
 
 // ---------------------------------------------------------------------------
-// Revealed marker — gold trophy icon
+// Revealed marker — category-coloured pin with icon
 // ---------------------------------------------------------------------------
 
 class _RevealedMarker extends StatelessWidget {
   const _RevealedMarker({
     super.key,
     required this.screenPoint,
+    required this.category,
   });
 
   final Offset screenPoint;
+  final String category;
 
-  static const double _size = 40.0;
+  static const double _size = 44.0;
+  static const double _bgSize = 36.0;
+  static const double _iconSize = 22.0;
 
   @override
   Widget build(BuildContext context) {
+    final config = CategoryPinConfig.forCategory(category);
+
     return Positioned(
       left: screenPoint.dx - _size / 2,
       top: screenPoint.dy - _size / 2,
       width: _size,
       height: _size,
-      child: const Icon(
-        Icons.emoji_events,
-        color: DanderColors.rarityRare, // gold
-        size: 28,
+      child: Center(
+        child: Container(
+          width: _bgSize,
+          height: _bgSize,
+          decoration: BoxDecoration(
+            color: config.color.withValues(alpha: 0.9),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: DanderColors.onSurface.withValues(alpha: 0.6),
+              width: 1.5,
+            ),
+          ),
+          child: Center(
+            child: Icon(
+              config.icon,
+              color: DanderColors.onSurface,
+              size: _iconSize,
+            ),
+          ),
+        ),
       ),
     );
   }
 }
 
 // ---------------------------------------------------------------------------
-// Unrevealed marker — pulsing amber "?" circle
+// Hinted marker — pulsing amber "?" circle
 // ---------------------------------------------------------------------------
 
-class _UnrevealedMarker extends StatelessWidget {
-  const _UnrevealedMarker({
+class _HintedMarker extends StatelessWidget {
+  const _HintedMarker({
     super.key,
     required this.screenPoint,
     required this.pulseProgress,
@@ -150,7 +180,7 @@ class _UnrevealedMarker extends StatelessWidget {
       height: _size,
       child: CustomPaint(
         painter: MysteryPoiMarkerPainter(
-          pois: const [],   // painter draws a single marker; pois unused here
+          pois: const [],
           pulseProgress: pulseProgress,
           isSingleMarker: true,
         ),
@@ -175,8 +205,8 @@ class _UnrevealedMarker extends StatelessWidget {
 
 /// Custom painter for the pulsing mystery-POI circle.
 ///
-/// When [isSingleMarker] is `true` (used by [_UnrevealedMarker]) it draws a
-/// single circle centered in the canvas.  When `false` it is used in tests
+/// When [isSingleMarker] is `true` (used by [_HintedMarker]) it draws a
+/// single circle centred in the canvas.  When `false` it is used in tests
 /// for [shouldRepaint] verification only; no drawing occurs.
 class MysteryPoiMarkerPainter extends CustomPainter {
   const MysteryPoiMarkerPainter({

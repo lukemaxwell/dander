@@ -10,42 +10,6 @@ import 'package:dander/features/map/presentation/widgets/mystery_poi_marker_laye
 // Helpers
 // ---------------------------------------------------------------------------
 
-/// Wraps [child] inside a FlutterMap so that [MapCamera] is available via
-/// [BuildContext].  The map is set to a fixed 400x600 viewport for testing.
-Widget _withMap({
-  required Widget child,
-  LatLng center = const LatLng(51.5074, -0.1278),
-  double zoom = 15.0,
-}) {
-  return MaterialApp(
-    home: Scaffold(
-      body: SizedBox(
-        width: 400,
-        height: 600,
-        child: FlutterMap(
-          options: MapOptions(
-            initialCenter: center,
-            initialZoom: zoom,
-          ),
-          children: [
-            Builder(
-              builder: (context) {
-                final camera = MapCamera.of(context);
-                return child is MysteryPoiMarkerLayer
-                    ? MysteryPoiMarkerLayer(
-                        pois: (child as MysteryPoiMarkerLayer).pois,
-                        camera: camera,
-                      )
-                    : child;
-              },
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-}
-
 /// Returns a [MysteryPoiMarkerLayer] inside a minimal [FlutterMap].
 ///
 /// The [MapCamera] is captured from the Builder context and passed through,
@@ -81,17 +45,30 @@ Widget _layerWidget({
 
 const _center = LatLng(51.5074, -0.1278);
 
-MysteryPoi _unrevealed({String id = 'p1'}) => MysteryPoi(
+MysteryPoi _unrevealed({String id = 'p1', String category = 'pub'}) =>
+    MysteryPoi(
       id: id,
       position: _center,
-      category: 'pub',
+      category: category,
     );
 
-MysteryPoi _revealed({String id = 'p1'}) => MysteryPoi(
+MysteryPoi _hinted({String id = 'p1', String category = 'pub'}) => MysteryPoi(
       id: id,
       position: _center,
-      category: 'pub',
-      name: 'The Red Lion',
+      category: category,
+      state: PoiState.hinted,
+    );
+
+MysteryPoi _revealed({
+  String id = 'p1',
+  String category = 'pub',
+  String name = 'The Red Lion',
+}) =>
+    MysteryPoi(
+      id: id,
+      position: _center,
+      category: category,
+      name: name,
       state: PoiState.revealed,
     );
 
@@ -101,6 +78,10 @@ MysteryPoi _revealed({String id = 'p1'}) => MysteryPoi(
 
 void main() {
   group('MysteryPoiMarkerLayer', () {
+    // -----------------------------------------------------------------------
+    // Empty list
+    // -----------------------------------------------------------------------
+
     testWidgets('renders without error with empty poi list', (tester) async {
       await tester.pumpWidget(_layerWidget(pois: const []));
       await tester.pump();
@@ -109,7 +90,11 @@ void main() {
       expect(find.byType(MysteryPoiMarkerLayer), findsOneWidget);
     });
 
-    testWidgets('renders a marker for each unrevealed POI', (tester) async {
+    // -----------------------------------------------------------------------
+    // Unrevealed state — no markers
+    // -----------------------------------------------------------------------
+
+    testWidgets('unrevealed POIs produce zero markers', (tester) async {
       final pois = [
         _unrevealed(id: 'p1'),
         _unrevealed(id: 'p2'),
@@ -120,53 +105,161 @@ void main() {
       await tester.pump();
 
       expect(tester.takeException(), isNull);
-      // Three unrevealed POIs should produce three '?' text widgets.
-      expect(find.text('?'), findsNWidgets(3));
+      // Unrevealed POIs must NOT render any visible marker.
+      expect(find.text('?'), findsNothing);
+      expect(find.byType(Icon), findsNothing);
     });
 
-    testWidgets('renders trophy icon for revealed POI', (tester) async {
-      final pois = [_revealed()];
+    testWidgets('single unrevealed POI renders nothing', (tester) async {
+      await tester.pumpWidget(_layerWidget(pois: [_unrevealed()]));
+      await tester.pump();
+
+      expect(find.text('?'), findsNothing);
+      expect(find.byType(Icon), findsNothing);
+    });
+
+    // -----------------------------------------------------------------------
+    // Hinted state — amber pulsing "?" circle
+    // -----------------------------------------------------------------------
+
+    testWidgets('hinted POI shows ? text', (tester) async {
+      await tester.pumpWidget(_layerWidget(pois: [_hinted()]));
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('?'), findsOneWidget);
+    });
+
+    testWidgets('multiple hinted POIs each show a ? text', (tester) async {
+      final pois = [_hinted(id: 'p1'), _hinted(id: 'p2'), _hinted(id: 'p3')];
 
       await tester.pumpWidget(_layerWidget(pois: pois));
       await tester.pump();
 
       expect(tester.takeException(), isNull);
-      expect(find.byIcon(Icons.emoji_events), findsOneWidget);
+      expect(find.text('?'), findsNWidgets(3));
     });
 
-    testWidgets('renders mix of revealed and unrevealed POIs', (tester) async {
+    testWidgets('hinted POI does not show a category icon', (tester) async {
+      await tester.pumpWidget(_layerWidget(pois: [_hinted(category: 'cafe')]));
+      await tester.pump();
+
+      expect(find.byIcon(Icons.coffee), findsNothing);
+    });
+
+    // -----------------------------------------------------------------------
+    // Revealed state — category pin
+    // -----------------------------------------------------------------------
+
+    testWidgets('revealed pub POI shows sports_bar icon', (tester) async {
+      await tester.pumpWidget(
+        _layerWidget(pois: [_revealed(category: 'pub')]),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byIcon(Icons.sports_bar), findsOneWidget);
+    });
+
+    testWidgets('revealed cafe POI shows coffee icon', (tester) async {
+      await tester.pumpWidget(
+        _layerWidget(pois: [_revealed(category: 'cafe')]),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byIcon(Icons.coffee), findsOneWidget);
+    });
+
+    testWidgets('revealed park POI shows park icon', (tester) async {
+      await tester.pumpWidget(
+        _layerWidget(pois: [_revealed(category: 'park')]),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byIcon(Icons.park), findsOneWidget);
+    });
+
+    testWidgets('revealed POI with unknown category shows place icon',
+        (tester) async {
+      await tester.pumpWidget(
+        _layerWidget(pois: [_revealed(category: 'unknown_xyz')]),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byIcon(Icons.place), findsOneWidget);
+    });
+
+    testWidgets('revealed POI does not show ? text', (tester) async {
+      await tester.pumpWidget(
+        _layerWidget(pois: [_revealed(category: 'pub')]),
+      );
+      await tester.pump();
+
+      expect(find.text('?'), findsNothing);
+    });
+
+    // -----------------------------------------------------------------------
+    // Mixed state list
+    // -----------------------------------------------------------------------
+
+    testWidgets('mixed state list renders correctly', (tester) async {
       final pois = [
-        _unrevealed(id: 'p1'),
-        _revealed(id: 'p2'),
-        _unrevealed(id: 'p3'),
+        _unrevealed(id: 'p1', category: 'pub'),
+        _hinted(id: 'p2', category: 'cafe'),
+        _revealed(id: 'p3', category: 'park'),
       ];
 
       await tester.pumpWidget(_layerWidget(pois: pois));
       await tester.pump();
 
       expect(tester.takeException(), isNull);
+      // Unrevealed: nothing. Hinted: one '?'. Revealed: park icon.
+      expect(find.text('?'), findsOneWidget);
+      expect(find.byIcon(Icons.park), findsOneWidget);
+      // No icon for the unrevealed pub or the hinted cafe.
+      expect(find.byIcon(Icons.sports_bar), findsNothing);
+      expect(find.byIcon(Icons.coffee), findsNothing);
+    });
+
+    testWidgets('two hinted and one revealed renders 2 question marks and 1 icon',
+        (tester) async {
+      final pois = [
+        _hinted(id: 'p1'),
+        _hinted(id: 'p2'),
+        _revealed(id: 'p3', category: 'cafe'),
+      ];
+
+      await tester.pumpWidget(_layerWidget(pois: pois));
+      await tester.pump();
+
       expect(find.text('?'), findsNWidgets(2));
-      expect(find.byIcon(Icons.emoji_events), findsOneWidget);
+      expect(find.byIcon(Icons.coffee), findsOneWidget);
     });
 
-    testWidgets('does not render trophy for unrevealed POI', (tester) async {
-      final pois = [_unrevealed()];
+    testWidgets('all three states together: 0 unrevealed markers, 1 hinted, 1 revealed',
+        (tester) async {
+      final pois = [
+        _unrevealed(id: 'p1'),
+        _unrevealed(id: 'p2'),
+        _hinted(id: 'p3'),
+        _revealed(id: 'p4', category: 'historic'),
+      ];
 
       await tester.pumpWidget(_layerWidget(pois: pois));
       await tester.pump();
 
-      expect(find.byIcon(Icons.emoji_events), findsNothing);
-    });
-
-    testWidgets('does not render ? marker for revealed POI', (tester) async {
-      final pois = [_revealed()];
-
-      await tester.pumpWidget(_layerWidget(pois: pois));
-      await tester.pump();
-
-      expect(find.text('?'), findsNothing);
+      expect(find.text('?'), findsOneWidget);
+      expect(find.byIcon(Icons.account_balance), findsOneWidget);
+      expect(find.byIcon(Icons.sports_bar), findsNothing);
     });
   });
+
+  // -------------------------------------------------------------------------
+  // Painter unit tests
+  // -------------------------------------------------------------------------
 
   group('MysteryPoiMarkerPainter.shouldRepaint', () {
     test('returns true when pois list changes', () {
