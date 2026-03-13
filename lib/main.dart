@@ -1,19 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
-void main() {
+import 'package:dander/core/di/service_locator.dart';
+import 'package:dander/core/navigation/app_router.dart';
+import 'package:dander/core/theme/app_theme.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Local storage
+  await Hive.initFlutter();
+
+  // Dependency injection
+  await setupLocator();
+
   runApp(const DanderApp());
 }
 
+/// Root application widget.
 class DanderApp extends StatelessWidget {
   const DanderApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp.router(
       title: 'Dander',
-      home: Scaffold(
-        body: Center(child: Text('Dander')),
-      ),
+      theme: buildAppTheme(),
+      routerConfig: router,
+      debugShowCheckedModeBanner: false,
     );
   }
 }
