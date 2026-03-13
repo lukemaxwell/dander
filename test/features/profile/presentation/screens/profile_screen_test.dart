@@ -158,9 +158,10 @@ void main() {
       )));
 
       // Scroll to bottom so all sections are rendered
+      // Use a larger drag to accommodate the logo header added in Issue #35.
       await tester.dragFrom(
         tester.getCenter(find.byType(ListView)),
-        const Offset(0, -600),
+        const Offset(0, -900),
       );
       await tester.pump();
 

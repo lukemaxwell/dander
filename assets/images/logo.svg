@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <!-- Outer fog ring — translucent circle -->
+  <circle cx="50" cy="50" r="46" fill="none" stroke="#4FC3F7" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.4"/>
+
+  <!-- Compass rose background disc -->
+  <circle cx="50" cy="50" r="36" fill="#1A1A2E"/>
+
+  <!-- Gradient definition -->
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#6E56CF" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#0D0D1A" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="needleGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4FC3F7"/>
+      <stop offset="100%" stop-color="#6E56CF"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Glow fill -->
+  <circle cx="50" cy="50" r="36" fill="url(#glow)"/>
+
+  <!-- Compass tick marks at cardinal directions -->
+  <line x1="50" y1="16" x2="50" y2="22" stroke="#4FC3F7" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+  <line x1="50" y1="78" x2="50" y2="84" stroke="#E8EAF6" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+  <line x1="16" y1="50" x2="22" y2="50" stroke="#E8EAF6" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+  <line x1="78" y1="50" x2="84" y2="50" stroke="#E8EAF6" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+
+  <!-- Compass needle — pointing north (accent) and south (dim) -->
+  <polygon points="50,20 53,50 50,46 47,50" fill="url(#needleGrad)"/>
+  <polygon points="50,80 53,50 50,54 47,50" fill="#E8EAF6" opacity="0.3"/>
+
+  <!-- Centre pivot dot -->
+  <circle cx="50" cy="50" r="4" fill="#4FC3F7"/>
+  <circle cx="50" cy="50" r="2" fill="#1A1A2E"/>
+
+  <!-- Footprint dots — two small ellipses suggesting a walking path -->
+  <ellipse cx="43" cy="66" rx="3.5" ry="2.5" fill="#6E56CF" opacity="0.7" transform="rotate(-20 43 66)"/>
+  <ellipse cx="57" cy="72" rx="3.5" ry="2.5" fill="#6E56CF" opacity="0.7" transform="rotate(-20 57 72)"/>
+</svg>
