@@ -33,7 +33,7 @@ class FogRepository {
   final Box<dynamic>? _box;
 
   Future<Box<dynamic>> _openBox() async {
-    if (_box != null) return _box;
+    if (_box != null) return _box!;
     if (Hive.isBoxOpen(_boxName)) return Hive.box(_boxName);
     return Hive.openBox(_boxName);
   }
