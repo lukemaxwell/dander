@@ -6,18 +6,31 @@ import 'fog_cell.dart';
 
 /// Tile-based fog-of-war grid.
 ///
-/// The world is divided into square cells of [cellSizeMeters] × [cellSizeMeters].
+/// The world is divided into square cells of [cellSizeMeters] x [cellSizeMeters].
 /// Cell (0, 0) is anchored at [origin].  Cells are stored in a [Set] for O(1)
 /// lookup; serialisation packs the set into a compact binary format.
 ///
+/// [FogGrid] is immutable - all mutating operations return a new instance.
+///
 /// Geographic math:
-/// - 1 degree latitude  ≈ 111,111 m
-/// - 1 degree longitude ≈ 111,111 * cos(lat) m
+/// - 1 degree latitude  approx 111,111 m
+/// - 1 degree longitude approx 111,111 * cos(lat) m
 class FogGrid {
   FogGrid({
     required this.origin,
     this.cellSizeMeters = 10.0,
-  })  : _cellSizeDegLat = cellSizeMeters / _metersPerDegLat,
+  })  : _explored = const {},
+        _cellSizeDegLat = cellSizeMeters / _metersPerDegLat,
+        _cellSizeDegLng = cellSizeMeters /
+            (_metersPerDegLat * math.cos(origin.latitude * math.pi / 180.0));
+
+  /// Private constructor for building a grid from a pre-populated explored set.
+  FogGrid._(
+    Set<FogCell> explored, {
+    required this.origin,
+    required this.cellSizeMeters,
+  })  : _explored = Set.unmodifiable(explored),
+        _cellSizeDegLat = cellSizeMeters / _metersPerDegLat,
         _cellSizeDegLng = cellSizeMeters /
             (_metersPerDegLat * math.cos(origin.latitude * math.pi / 180.0));
 
@@ -32,7 +45,7 @@ class FogGrid {
   final double _cellSizeDegLat;
   final double _cellSizeDegLng;
 
-  final Set<FogCell> _explored = {};
+  final Set<FogCell> _explored;
 
   /// Number of currently explored cells.
   int get exploredCount => _explored.length;
@@ -58,16 +71,19 @@ class FogGrid {
   }
 
   // ---------------------------------------------------------------------------
-  // Mutation helpers
+  // Immutable update helpers
   // ---------------------------------------------------------------------------
 
-  /// Marks all cells within [radiusMeters] of [position] as explored.
-  void markExplored(LatLng position, double radiusMeters) {
+  /// Returns a new [FogGrid] with all cells within [radiusMeters] of [position]
+  /// marked as explored, in addition to any already-explored cells.
+  FogGrid markExplored(LatLng position, double radiusMeters) {
     final center = latLngToCell(position);
 
     // Number of cells that span the radius in each axis
     final radiusCellsLat = (radiusMeters / cellSizeMeters).ceil();
     final radiusCellsLng = (radiusMeters / cellSizeMeters).ceil();
+
+    final newExplored = Set<FogCell>.from(_explored);
 
     for (var dy = -radiusCellsLat; dy <= radiusCellsLat; dy++) {
       for (var dx = -radiusCellsLng; dx <= radiusCellsLng; dx++) {
@@ -81,26 +97,23 @@ class FogGrid {
             position.latitude, position.longitude, cellLat, cellLng);
 
         if (distMeters <= radiusMeters) {
-          _explored.add(FogCell(x: center.x + dx, y: center.y + dy));
+          newExplored.add(FogCell(x: center.x + dx, y: center.y + dy));
         }
       }
     }
+
+    return FogGrid._(newExplored,
+        origin: origin, cellSizeMeters: cellSizeMeters);
   }
 
   /// Returns whether the cell at ([x], [y]) has been explored.
   bool isCellExplored(int x, int y) => _explored.contains(FogCell(x: x, y: y));
 
-  /// Directly marks a [cell] as explored without geographic radius math.
-  ///
-  /// Useful when copying cells from another grid without re-running the
-  /// haversine computation.
-  void addCell(FogCell cell) => _explored.add(cell);
-
   // ---------------------------------------------------------------------------
   // Exploration percentage
   // ---------------------------------------------------------------------------
 
-  /// Fraction of cells inside [bounds] that have been explored (0.0–1.0).
+  /// Fraction of cells inside [bounds] that have been explored (0.0-1.0).
   double explorationPercentage(LatLngBounds bounds) {
     final minCell = latLngToCell(bounds.southWest);
     final maxCell = latLngToCell(bounds.northEast);
@@ -146,18 +159,21 @@ class FogGrid {
     required LatLng origin,
     double cellSizeMeters = 10.0,
   }) {
-    final grid = FogGrid(origin: origin, cellSizeMeters: cellSizeMeters);
-    if (bytes.isEmpty) return grid;
+    if (bytes.isEmpty) {
+      return FogGrid(origin: origin, cellSizeMeters: cellSizeMeters);
+    }
 
     final buffer =
         bytes.buffer.asByteData(bytes.offsetInBytes, bytes.lengthInBytes);
     final cellCount = bytes.length ~/ 8;
+    final explored = <FogCell>{};
     for (var i = 0; i < cellCount; i++) {
       final x = buffer.getInt32(i * 8, Endian.little);
       final y = buffer.getInt32(i * 8 + 4, Endian.little);
-      grid._explored.add(FogCell(x: x, y: y));
+      explored.add(FogCell(x: x, y: y));
     }
-    return grid;
+    return FogGrid._(explored,
+        origin: origin, cellSizeMeters: cellSizeMeters);
   }
 
   // ---------------------------------------------------------------------------

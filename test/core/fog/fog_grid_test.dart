@@ -23,46 +23,46 @@ void main() {
 
     group('markExplored', () {
       test('marks cells within radius as explored', () {
-        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
-        grid.markExplored(origin, 50.0);
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0)
+            .markExplored(origin, 50.0);
         // A 50m radius around origin should mark cells
         expect(grid.exploredCount, greaterThan(0));
       });
 
       test('marks the origin cell as explored', () {
-        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
-        grid.markExplored(origin, 50.0);
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0)
+            .markExplored(origin, 50.0);
         expect(grid.isCellExplored(0, 0), isTrue);
       });
 
       test('does not mark cells outside the radius', () {
-        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
-        grid.markExplored(origin, 50.0);
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0)
+            .markExplored(origin, 50.0);
         // Cell 100 steps away should not be explored
         expect(grid.isCellExplored(100, 100), isFalse);
       });
 
       test('marks cells in circular pattern (corner cells outside 50m)', () {
-        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
-        grid.markExplored(origin, 50.0);
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0)
+            .markExplored(origin, 50.0);
         // Cell at exactly 6 steps (60m) diagonally should NOT be explored
-        // sqrt((60)^2 + (60)^2) ≈ 84.8m > 50m
+        // sqrt((60)^2 + (60)^2) approx 84.8m > 50m
         expect(grid.isCellExplored(6, 6), isFalse);
       });
 
       test('marking same area twice does not double-count', () {
-        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
-        grid.markExplored(origin, 50.0);
-        final countAfterFirst = grid.exploredCount;
-        grid.markExplored(origin, 50.0);
-        expect(grid.exploredCount, equals(countAfterFirst));
+        final first = FogGrid(origin: origin, cellSizeMeters: 10.0)
+            .markExplored(origin, 50.0);
+        final countAfterFirst = first.exploredCount;
+        final second = first.markExplored(origin, 50.0);
+        expect(second.exploredCount, equals(countAfterFirst));
       });
 
       test('marks cells around a different position', () {
-        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
         // Position 500m north of origin
         const northPos = LatLng(51.5045, -0.05);
-        grid.markExplored(northPos, 50.0);
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0)
+            .markExplored(northPos, 50.0);
         // The origin cell should not be explored
         expect(grid.isCellExplored(0, 0), isFalse);
         // But cells around northPos should be
@@ -70,13 +70,20 @@ void main() {
       });
 
       test('accumulates cells from multiple positions', () {
-        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
-        grid.markExplored(origin, 50.0);
-        final countAfterFirst = grid.exploredCount;
+        final first = FogGrid(origin: origin, cellSizeMeters: 10.0)
+            .markExplored(origin, 50.0);
+        final countAfterFirst = first.exploredCount;
         // Far away position
         const farPos = LatLng(51.502, -0.05);
-        grid.markExplored(farPos, 50.0);
-        expect(grid.exploredCount, greaterThan(countAfterFirst));
+        final second = first.markExplored(farPos, 50.0);
+        expect(second.exploredCount, greaterThan(countAfterFirst));
+      });
+
+      test('does not mutate the original grid', () {
+        final original = FogGrid(origin: origin, cellSizeMeters: 10.0);
+        original.markExplored(origin, 50.0);
+        // Original must still be empty - markExplored returns a new instance
+        expect(original.exploredCount, equals(0));
       });
     });
 
@@ -87,8 +94,8 @@ void main() {
       });
 
       test('returns true after cell is explored', () {
-        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
-        grid.markExplored(origin, 50.0);
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0)
+            .markExplored(origin, 50.0);
         expect(grid.isCellExplored(0, 0), isTrue);
       });
 
@@ -105,15 +112,15 @@ void main() {
       });
 
       test('returns all explored cells', () {
-        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
-        grid.markExplored(origin, 50.0);
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0)
+            .markExplored(origin, 50.0);
         expect(grid.exploredCells, isNotEmpty);
         expect(grid.exploredCells, isA<Set<FogCell>>());
       });
 
       test('explored cells are immutable (copy)', () {
-        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
-        grid.markExplored(origin, 50.0);
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0)
+            .markExplored(origin, 50.0);
         final cells = grid.exploredCells;
         // Modifying the returned set should not affect the grid
         cells.clear();
@@ -133,7 +140,7 @@ void main() {
         final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
         // ~15m north = at least 1 cell north (cell size = ~10m)
         const northPos =
-            LatLng(51.500135, -0.05); // 0.000135 deg * 111111 ≈ 15m
+            LatLng(51.500135, -0.05); // 0.000135 deg * 111111 approx 15m
         final cell = grid.latLngToCell(northPos);
         expect(cell.y, greaterThan(0));
       });
@@ -158,9 +165,9 @@ void main() {
       });
 
       test('returns 1.0 when all cells in bounds are explored', () {
-        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
         // Mark a large area as explored
-        grid.markExplored(origin, 2000.0);
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0)
+            .markExplored(origin, 2000.0);
         final bounds = LatLngBounds(
           const LatLng(51.4995, -0.0505),
           const LatLng(51.5005, -0.0495),
@@ -169,8 +176,8 @@ void main() {
       });
 
       test('returns value between 0 and 1 for partially explored', () {
-        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
-        grid.markExplored(origin, 50.0);
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0)
+            .markExplored(origin, 50.0);
         final bounds = LatLngBounds(
           const LatLng(51.496, -0.06),
           const LatLng(51.504, -0.04),
@@ -194,15 +201,15 @@ void main() {
 
     group('serialisation', () {
       test('toBytes produces non-empty bytes for explored grid', () {
-        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
-        grid.markExplored(origin, 50.0);
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0)
+            .markExplored(origin, 50.0);
         final bytes = grid.toBytes();
         expect(bytes, isNotEmpty);
       });
 
       test('fromBytes restores explored cells', () {
-        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
-        grid.markExplored(origin, 50.0);
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0)
+            .markExplored(origin, 50.0);
         final originalCount = grid.exploredCount;
 
         final bytes = grid.toBytes();
@@ -213,8 +220,8 @@ void main() {
       });
 
       test('fromBytes restores specific explored cells', () {
-        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
-        grid.markExplored(origin, 50.0);
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0)
+            .markExplored(origin, 50.0);
 
         final bytes = grid.toBytes();
         final restored =
@@ -232,10 +239,10 @@ void main() {
       });
 
       test('round-trip preserves all explored cells', () {
-        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
-        grid.markExplored(origin, 100.0);
         const pos2 = LatLng(51.501, -0.048);
-        grid.markExplored(pos2, 50.0);
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0)
+            .markExplored(origin, 100.0)
+            .markExplored(pos2, 50.0);
         final original = grid.exploredCells;
 
         final bytes = grid.toBytes();
@@ -248,15 +255,14 @@ void main() {
 
     group('performance', () {
       test('handles 10000+ explored cells without throwing', () {
-        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
-        // Mark a large area to get 10k+ cells
-        grid.markExplored(origin, 600.0);
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0)
+            .markExplored(origin, 600.0);
         expect(grid.exploredCount, greaterThan(10000));
       });
 
       test('isCellExplored is O(1) with large grid', () {
-        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
-        grid.markExplored(origin, 600.0);
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0)
+            .markExplored(origin, 600.0);
         final stopwatch = Stopwatch()..start();
         for (var i = 0; i < 10000; i++) {
           grid.isCellExplored(i % 100, i % 100);
@@ -267,8 +273,8 @@ void main() {
       });
 
       test('serialisation handles large grids', () {
-        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
-        grid.markExplored(origin, 600.0);
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0)
+            .markExplored(origin, 600.0);
         expect(
           () {
             final bytes = grid.toBytes();

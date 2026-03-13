@@ -21,8 +21,8 @@ void main() {
 
     group('save', () {
       test('writes serialised bytes to Hive box', () async {
-        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
-        grid.markExplored(origin, 50.0);
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0)
+            .markExplored(origin, 50.0);
 
         when(() => mockBox.put(any(), any())).thenAnswer((_) async {});
 
@@ -48,8 +48,8 @@ void main() {
       });
 
       test('returns restored FogGrid from stored bytes', () async {
-        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
-        grid.markExplored(origin, 50.0);
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0)
+            .markExplored(origin, 50.0);
         final bytes = grid.toBytes();
 
         when(() => mockBox.get(FogRepository.boxKey)).thenReturn(bytes);
@@ -61,8 +61,8 @@ void main() {
       });
 
       test('round-trip save and load preserves explored cells', () async {
-        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0);
-        grid.markExplored(origin, 100.0);
+        final grid = FogGrid(origin: origin, cellSizeMeters: 10.0)
+            .markExplored(origin, 100.0);
 
         // Capture what was saved
         dynamic savedData;

@@ -63,44 +63,12 @@ class _FogLayerState extends State<FogLayer> {
 
   /// Merges a new position into the fog grid immutably.
   ///
-  /// Creates a new [FogGrid] containing all previously explored cells plus the
-  /// newly cleared circle, then updates the notifier so listeners rebuild.
+  /// Calls [FogGrid.markExplored] which returns a new [FogGrid] containing all
+  /// previously explored cells plus the newly cleared circle, then updates the
+  /// notifier so listeners rebuild.
   void _onLocationUpdate(LatLng position) {
-    final current = widget.fogGridNotifier.value;
-
-    final updated = FogGrid(
-      origin: current.origin,
-      cellSizeMeters: current.cellSizeMeters,
-    );
-
-    // Re-add all existing explored cells efficiently by directly inserting
-    // their coordinates — no round-trip through lat/lng needed.
-    _copyExploredCells(current, updated);
-
-    // Punch the new circle.
-    updated.markExplored(position, widget.exploreRadius);
-
-    widget.fogGridNotifier.value = updated;
-  }
-
-  /// Copies explored cells from [src] into [dst] by replaying them.
-  ///
-  /// Uses the internal [FogGrid.addCell] escape-hatch so we avoid O(n) geo
-  /// math.  Falls back to serialisation-based copy if that is unavailable.
-  void _copyExploredCells(FogGrid src, FogGrid dst) {
-    final bytes = src.toBytes();
-    if (bytes.isEmpty) return;
-
-    // Use the public factory to restore the explored set in dst.
-    final restored = FogGrid.fromBytes(
-      bytes,
-      origin: src.origin,
-      cellSizeMeters: src.cellSizeMeters,
-    );
-    // Merge explored cells into dst.
-    for (final cell in restored.exploredCells) {
-      dst.addCell(cell);
-    }
+    widget.fogGridNotifier.value = widget.fogGridNotifier.value
+        .markExplored(position, widget.exploreRadius);
   }
 
   @override

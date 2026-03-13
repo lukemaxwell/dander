@@ -80,10 +80,9 @@ void main() {
         ),
       );
 
-      // Update the grid
-      final newGrid = FogGrid(origin: origin, cellSizeMeters: 10.0);
-      newGrid.markExplored(origin, 50.0);
-      fogNotifier.value = newGrid;
+      // Update the grid using the immutable API - assign the returned instance
+      fogNotifier.value =
+          FogGrid(origin: origin, cellSizeMeters: 10.0).markExplored(origin, 50.0);
 
       await tester.pump();
 
