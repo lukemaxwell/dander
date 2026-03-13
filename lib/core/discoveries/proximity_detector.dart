@@ -11,7 +11,7 @@ class ProximityDetector {
   static const double discoveryRadiusMeters = 30.0;
 
   // Haversine distance calculator from latlong2.
-  static final Distance _distance = const Distance();
+  static const Distance _distance = Distance();
 
   /// Returns the subset of [undiscovered] POIs whose distance from [position]
   /// is ≤ [radiusMeters].

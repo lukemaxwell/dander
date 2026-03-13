@@ -59,7 +59,7 @@ class HttpOverpassClient implements OverpassClient {
           )
           .timeout(
             _requestTimeout,
-            onTimeout: () => throw OverpassException('Request timed out'),
+            onTimeout: () => throw const OverpassException('Request timed out'),
           );
     } on OverpassException {
       rethrow;

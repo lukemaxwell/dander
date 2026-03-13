@@ -65,7 +65,7 @@ class HiveDiscoveryRepository implements DiscoveryRepository {
     final w = bounds.west.toStringAsFixed(3);
     final n = bounds.north.toStringAsFixed(3);
     final e = bounds.east.toStringAsFixed(3);
-    return 'pois_${s}_${w}_${n}_${e}';
+    return 'pois_${s}_${w}_${n}_$e';
   }
 
   // ---------------------------------------------------------------------------

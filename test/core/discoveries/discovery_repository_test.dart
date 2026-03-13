@@ -13,22 +13,22 @@ class MockBox extends Mock implements Box<dynamic> {}
 // Builds a list of test Discoveries.
 List<Discovery> _buildDiscoveries() {
   return [
-    Discovery(
+    const Discovery(
       id: 'node/1',
       name: 'Corner Café',
       category: 'cafe',
       rarity: RarityTier.common,
-      position: const LatLng(51.51, -0.12),
-      osmTags: const {'amenity': 'cafe'},
+      position: LatLng(51.51, -0.12),
+      osmTags: {'amenity': 'cafe'},
       discoveredAt: null,
     ),
-    Discovery(
+    const Discovery(
       id: 'node/2',
       name: 'Primrose Hill',
       category: 'viewpoint',
       rarity: RarityTier.rare,
-      position: const LatLng(51.54, -0.16),
-      osmTags: const {'tourism': 'viewpoint'},
+      position: LatLng(51.54, -0.16),
+      osmTags: {'tourism': 'viewpoint'},
       discoveredAt: null,
     ),
   ];
@@ -69,13 +69,13 @@ void main() {
         await repository.savePOIs(_buildDiscoveries(), _bounds);
         await repository.savePOIs(
           [
-            Discovery(
+            const Discovery(
               id: 'node/99',
               name: 'Remote Pub',
               category: 'pub',
               rarity: RarityTier.common,
-              position: const LatLng(52.05, -0.15),
-              osmTags: const {'amenity': 'pub'},
+              position: LatLng(52.05, -0.15),
+              osmTags: {'amenity': 'pub'},
               discoveredAt: null,
             ),
           ],
@@ -303,13 +303,13 @@ void main() {
         await repository.savePOIs(_buildDiscoveries(), _bounds);
         await repository.savePOIs(
           [
-            Discovery(
+            const Discovery(
               id: 'node/99',
               name: 'Remote Pub',
               category: 'pub',
               rarity: RarityTier.common,
-              position: const LatLng(52.05, -0.15),
-              osmTags: const {'amenity': 'pub'},
+              position: LatLng(52.05, -0.15),
+              osmTags: {'amenity': 'pub'},
               discoveredAt: null,
             ),
           ],
