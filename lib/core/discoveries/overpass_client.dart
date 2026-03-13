@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
@@ -34,26 +36,43 @@ class HttpOverpassClient implements OverpassClient {
   static final Uri _endpoint =
       Uri.parse('https://overpass-api.de/api/interpreter');
 
+  static const Duration _requestTimeout = Duration(seconds: 30);
+
   final http.Client _http;
+
+  /// Releases the underlying [http.Client].  Call when this client is no
+  /// longer needed to avoid leaking socket connections.
+  void dispose() {
+    _http.close();
+  }
 
   @override
   Future<List<Discovery>> fetchPOIs(LatLngBounds bounds) async {
     final query = _buildQuery(bounds);
     http.Response response;
     try {
-      response = await _http.post(
-        _endpoint,
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'data=${Uri.encodeComponent(query)}',
-      );
+      response = await _http
+          .post(
+            _endpoint,
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'data=${Uri.encodeComponent(query)}',
+          )
+          .timeout(
+            _requestTimeout,
+            onTimeout: () => throw OverpassException('Request timed out'),
+          );
+    } on OverpassException {
+      rethrow;
     } catch (e) {
       throw OverpassException('Network error: $e');
     }
 
     if (response.statusCode != 200) {
-      throw OverpassException(
-        'HTTP ${response.statusCode}: ${response.body}',
+      debugPrint(
+        'OverpassClient: HTTP ${response.statusCode} response body: '
+        '${response.body}',
       );
+      throw OverpassException('HTTP ${response.statusCode}: request failed');
     }
 
     return _parseResponse(response.body);

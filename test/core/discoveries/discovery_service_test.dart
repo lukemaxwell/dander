@@ -63,7 +63,7 @@ void main() {
     test('fetches from Overpass when no cache exists', () async {
       when(() => mockRepo.hasCache(any())).thenAnswer((_) async => false);
       when(() => mockClient.fetchPOIs(any())).thenAnswer((_) async => []);
-      when(() => mockRepo.savePOIs(any())).thenAnswer((_) async {});
+      when(() => mockRepo.savePOIs(any(), any())).thenAnswer((_) async {});
 
       await service.loadPOIsForArea(bounds);
 
@@ -74,11 +74,11 @@ void main() {
       final pois = [buildPoi()];
       when(() => mockRepo.hasCache(any())).thenAnswer((_) async => false);
       when(() => mockClient.fetchPOIs(any())).thenAnswer((_) async => pois);
-      when(() => mockRepo.savePOIs(any())).thenAnswer((_) async {});
+      when(() => mockRepo.savePOIs(any(), any())).thenAnswer((_) async {});
 
       await service.loadPOIsForArea(bounds);
 
-      verify(() => mockRepo.savePOIs(any())).called(1);
+      verify(() => mockRepo.savePOIs(any(), any())).called(1);
     });
 
     test('uses cached data when cache exists (no Overpass call)', () async {
@@ -98,7 +98,7 @@ void main() {
     test('delegates to repository.getPOIs with current bounds', () async {
       when(() => mockRepo.hasCache(any())).thenAnswer((_) async => false);
       when(() => mockClient.fetchPOIs(any())).thenAnswer((_) async => []);
-      when(() => mockRepo.savePOIs(any())).thenAnswer((_) async {});
+      when(() => mockRepo.savePOIs(any(), any())).thenAnswer((_) async {});
       when(() => mockRepo.getPOIs(any())).thenAnswer((_) async => [buildPoi()]);
 
       await service.loadPOIsForArea(bounds);

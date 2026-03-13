@@ -7,8 +7,8 @@ import 'discovery.dart';
 
 /// Abstract persistence interface for [Discovery] records.
 abstract class DiscoveryRepository {
-  /// Persists [discoveries] to local storage, keyed by a derived bounds key.
-  Future<void> savePOIs(List<Discovery> discoveries);
+  /// Persists [discoveries] to local storage, keyed by [bounds].
+  Future<void> savePOIs(List<Discovery> discoveries, LatLngBounds bounds);
 
   /// Returns all cached [Discovery] records that fall within [bounds].
   Future<List<Discovery>> getPOIs(LatLngBounds bounds);
@@ -27,13 +27,16 @@ abstract class DiscoveryRepository {
 
 /// Hive-backed implementation of [DiscoveryRepository].
 ///
-/// POI lists are stored as JSON strings.  The cache key is derived from the
+/// POI lists are stored as JSON strings under a key derived from the
 /// bounding box coordinates, rounded to three decimal places.  This keeps
 /// cache hits coarse-grained enough to be useful while preventing unbounded
 /// key growth for pixel-level bound differences.
 ///
-/// A secondary `__discovered__` key holds the JSON list of all discovered IDs
-/// so that [getDiscovered] can scan across cached regions.
+/// All bounds-derived keys share the prefix 'pois_'.
+///
+/// A secondary [_discoveredKey] stores a JSON list of all discovered POI IDs.
+/// [markDiscovered] appends to this list; [getDiscovered] scans every 'pois_'
+/// key and returns POIs whose IDs appear in the discovered-IDs list.
 class HiveDiscoveryRepository implements DiscoveryRepository {
   HiveDiscoveryRepository({String boxName = 'discoveries'})
       : _box = null,
@@ -44,7 +47,8 @@ class HiveDiscoveryRepository implements DiscoveryRepository {
       : _box = box,
         _boxName = 'discoveries';
 
-  static const String _poisKey = '__pois__';
+  /// Key used to persist the set of all discovered POI IDs.
+  static const String _discoveredKey = '__discovered__';
 
   final Box<dynamic>? _box;
   final String _boxName;
@@ -55,21 +59,35 @@ class HiveDiscoveryRepository implements DiscoveryRepository {
     return Hive.openBox(_boxName);
   }
 
+  /// Derives a stable Hive key from [bounds] coordinates rounded to 3 d.p.
+  String _boundsKey(LatLngBounds bounds) {
+    final s = bounds.south.toStringAsFixed(3);
+    final w = bounds.west.toStringAsFixed(3);
+    final n = bounds.north.toStringAsFixed(3);
+    final e = bounds.east.toStringAsFixed(3);
+    return 'pois_${s}_${w}_${n}_${e}';
+  }
+
   // ---------------------------------------------------------------------------
   // DiscoveryRepository
   // ---------------------------------------------------------------------------
 
   @override
-  Future<void> savePOIs(List<Discovery> discoveries) async {
+  Future<void> savePOIs(
+    List<Discovery> discoveries,
+    LatLngBounds bounds,
+  ) async {
     final box = await _openBox();
+    final key = _boundsKey(bounds);
     final encoded = jsonEncode(discoveries.map((d) => d.toJson()).toList());
-    await box.put(_poisKey, encoded);
+    await box.put(key, encoded);
   }
 
   @override
   Future<List<Discovery>> getPOIs(LatLngBounds bounds) async {
     final box = await _openBox();
-    final raw = box.get(_poisKey);
+    final key = _boundsKey(bounds);
+    final raw = box.get(key);
     if (raw == null) return [];
     return _decodeList(raw as String);
   }
@@ -77,32 +95,48 @@ class HiveDiscoveryRepository implements DiscoveryRepository {
   @override
   Future<void> markDiscovered(String id, DateTime at) async {
     final box = await _openBox();
-    final raw = box.get(_poisKey);
-    if (raw == null) return;
 
-    final discoveries = _decodeList(raw as String);
-    final updated = discoveries.map((d) {
-      if (d.id == id) return d.markDiscovered(at);
-      return d;
-    }).toList();
+    final rawIds = box.get(_discoveredKey);
+    final discoveredIds = rawIds != null
+        ? (jsonDecode(rawIds as String) as List<dynamic>)
+            .map((e) => e as String)
+            .toSet()
+        : <String>{};
 
-    final encoded = jsonEncode(updated.map((d) => d.toJson()).toList());
-    await box.put(_poisKey, encoded);
+    if (discoveredIds.contains(id)) return;
+    discoveredIds.add(id);
+
+    await box.put(_discoveredKey, jsonEncode(discoveredIds.toList()));
   }
 
   @override
   Future<List<Discovery>> getDiscovered() async {
     final box = await _openBox();
-    final raw = box.get(_poisKey);
-    if (raw == null) return [];
-    final all = _decodeList(raw as String);
-    return all.where((d) => d.isDiscovered).toList();
+
+    final rawIds = box.get(_discoveredKey);
+    if (rawIds == null) return [];
+    final discoveredIds = (jsonDecode(rawIds as String) as List<dynamic>)
+        .map((e) => e as String)
+        .toSet();
+    if (discoveredIds.isEmpty) return [];
+
+    // Scan all bounds-keyed entries and collect matching POIs.
+    final result = <Discovery>[];
+    for (final key in box.keys) {
+      final keyStr = key as String;
+      if (!keyStr.startsWith('pois_')) continue;
+      final raw = box.get(keyStr);
+      if (raw == null) continue;
+      final pois = _decodeList(raw as String);
+      result.addAll(pois.where((d) => discoveredIds.contains(d.id)));
+    }
+    return result;
   }
 
   @override
   Future<bool> hasCache(LatLngBounds bounds) async {
     final box = await _openBox();
-    return box.get(_poisKey) != null;
+    return box.get(_boundsKey(bounds)) != null;
   }
 
   // ---------------------------------------------------------------------------

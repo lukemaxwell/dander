@@ -40,6 +40,12 @@ final _bounds = LatLngBounds(
   const LatLng(51.55, -0.10),
 );
 
+// A second, non-overlapping bounds area.
+final _boundsB = LatLngBounds(
+  const LatLng(52.00, -0.20),
+  const LatLng(52.10, -0.10),
+);
+
 void main() {
   late MockBox mockBox;
   late HiveDiscoveryRepository repository;
@@ -51,13 +57,65 @@ void main() {
 
   group('HiveDiscoveryRepository', () {
     // -------------------------------------------------------------------------
+    // bounds key isolation
+    // -------------------------------------------------------------------------
+    group('bounds key isolation', () {
+      test('two different bounds produce different cache keys', () async {
+        final storedKeys = <String>[];
+        when(() => mockBox.put(any(), any())).thenAnswer((inv) async {
+          storedKeys.add(inv.positionalArguments[0] as String);
+        });
+
+        await repository.savePOIs(_buildDiscoveries(), _bounds);
+        await repository.savePOIs(
+          [
+            Discovery(
+              id: 'node/99',
+              name: 'Remote Pub',
+              category: 'pub',
+              rarity: RarityTier.common,
+              position: const LatLng(52.05, -0.15),
+              osmTags: const {'amenity': 'pub'},
+              discoveredAt: null,
+            ),
+          ],
+          _boundsB,
+        );
+
+        expect(storedKeys, hasLength(2));
+        expect(storedKeys[0], isNot(equals(storedKeys[1])));
+        expect(storedKeys[0], startsWith('pois_'));
+        expect(storedKeys[1], startsWith('pois_'));
+      });
+
+      test('savePOIs for bounds A does not affect getPOIs for bounds B',
+          () async {
+        final storage = <String, String>{};
+        when(() => mockBox.put(any(), any())).thenAnswer((inv) async {
+          storage[inv.positionalArguments[0] as String] =
+              inv.positionalArguments[1] as String;
+        });
+        when(() => mockBox.get(any())).thenAnswer(
+          (inv) => storage[inv.positionalArguments[0] as String],
+        );
+
+        // Save discoveries only under _bounds (area A).
+        await repository.savePOIs(_buildDiscoveries(), _bounds);
+
+        // getPOIs for _boundsB should return empty — nothing was saved there.
+        final result = await repository.getPOIs(_boundsB);
+        expect(result, isEmpty);
+      });
+    });
+
+    // -------------------------------------------------------------------------
     // savePOIs
     // -------------------------------------------------------------------------
     group('savePOIs', () {
       test('stores JSON-encoded list under a bounds-derived key', () async {
         when(() => mockBox.put(any(), any())).thenAnswer((_) async {});
 
-        await repository.savePOIs(_buildDiscoveries());
+        await repository.savePOIs(_buildDiscoveries(), _bounds);
 
         verify(() => mockBox.put(any(), any())).called(greaterThanOrEqualTo(1));
       });
@@ -69,7 +127,7 @@ void main() {
           stored = inv.positionalArguments[1] as String;
         });
 
-        await repository.savePOIs(discoveries);
+        await repository.savePOIs(discoveries, _bounds);
         expect(stored, isNotNull);
 
         // Verify it's valid JSON containing our IDs.
@@ -100,7 +158,7 @@ void main() {
         when(() => mockBox.put(any(), any())).thenAnswer((inv) async {
           stored = inv.positionalArguments[1] as String;
         });
-        await repository.savePOIs(discoveries);
+        await repository.savePOIs(discoveries, _bounds);
 
         // Now stub get to return what was stored.
         when(() => mockBox.get(any())).thenReturn(stored);
@@ -116,7 +174,7 @@ void main() {
         when(() => mockBox.put(any(), any())).thenAnswer((inv) async {
           stored = inv.positionalArguments[1] as String;
         });
-        await repository.savePOIs(discoveries);
+        await repository.savePOIs(discoveries, _bounds);
         when(() => mockBox.get(any())).thenReturn(stored);
 
         final result = await repository.getPOIs(_bounds);
@@ -141,7 +199,7 @@ void main() {
         when(() => mockBox.put(any(), any())).thenAnswer((inv) async {
           stored = inv.positionalArguments[1] as String;
         });
-        await repository.savePOIs(discoveries);
+        await repository.savePOIs(discoveries, _bounds);
         when(() => mockBox.get(any())).thenReturn(stored);
 
         final result = await repository.getPOIs(_bounds);
@@ -153,59 +211,48 @@ void main() {
     // markDiscovered
     // -------------------------------------------------------------------------
     group('markDiscovered', () {
-      test('updates the discovery with the given id and sets discoveredAt',
-          () async {
-        final discoveries = _buildDiscoveries();
+      test('adds id to the __discovered__ key', () async {
         final storedData = <String, String>{};
         when(() => mockBox.put(any(), any())).thenAnswer((inv) async {
           storedData[inv.positionalArguments[0] as String] =
               inv.positionalArguments[1] as String;
         });
-        await repository.savePOIs(discoveries);
-
-        // Stub get to return what was stored under any key.
-        when(() => mockBox.get(any())).thenAnswer(
-          (inv) => storedData[inv.positionalArguments[0] as String],
-        );
-
-        final discoveredAt = DateTime(2024, 6, 1);
-        await repository.markDiscovered('node/1', discoveredAt);
-
-        // Retrieve and check that node/1 is now marked.
-        final stored = storedData.values.first;
-        final decoded =
-            (jsonDecode(stored) as List<dynamic>).cast<Map<String, dynamic>>();
-        final node1 = decoded.firstWhere((m) => m['id'] == 'node/1');
-        expect(node1['discoveredAt'], isNotNull);
-      });
-
-      test('does not affect other discoveries in the same cache', () async {
-        final discoveries = _buildDiscoveries();
-        final storedData = <String, String>{};
-        when(() => mockBox.put(any(), any())).thenAnswer((inv) async {
-          storedData[inv.positionalArguments[0] as String] =
-              inv.positionalArguments[1] as String;
-        });
-        await repository.savePOIs(discoveries);
-
         when(() => mockBox.get(any())).thenAnswer(
           (inv) => storedData[inv.positionalArguments[0] as String],
         );
 
         await repository.markDiscovered('node/1', DateTime(2024, 6, 1));
 
-        final stored = storedData.values.first;
-        final decoded =
-            (jsonDecode(stored) as List<dynamic>).cast<Map<String, dynamic>>();
-        final node2 = decoded.firstWhere((m) => m['id'] == 'node/2');
-        expect(node2['discoveredAt'], isNull);
+        expect(storedData.containsKey('__discovered__'), isTrue);
+        final ids =
+            (jsonDecode(storedData['__discovered__']!) as List<dynamic>)
+                .cast<String>();
+        expect(ids, contains('node/1'));
       });
 
-      test('is a no-op when id does not exist', () async {
+      test('does not add duplicate ids to the discovered list', () async {
+        final storedData = <String, String>{};
+        when(() => mockBox.put(any(), any())).thenAnswer((inv) async {
+          storedData[inv.positionalArguments[0] as String] =
+              inv.positionalArguments[1] as String;
+        });
+        when(() => mockBox.get(any())).thenAnswer(
+          (inv) => storedData[inv.positionalArguments[0] as String],
+        );
+
+        await repository.markDiscovered('node/1', DateTime(2024, 6, 1));
+        await repository.markDiscovered('node/1', DateTime(2024, 6, 2));
+
+        final ids =
+            (jsonDecode(storedData['__discovered__']!) as List<dynamic>)
+                .cast<String>();
+        expect(ids.where((id) => id == 'node/1'), hasLength(1));
+      });
+
+      test('is a no-op when id does not exist — does not throw', () async {
         when(() => mockBox.get(any())).thenReturn(null);
         when(() => mockBox.put(any(), any())).thenAnswer((_) async {});
 
-        // Should not throw.
         await expectLater(
           () => repository.markDiscovered('nonexistent', DateTime.now()),
           returnsNormally,
@@ -217,42 +264,69 @@ void main() {
     // getDiscovered
     // -------------------------------------------------------------------------
     group('getDiscovered', () {
-      test('returns only discoveries with non-null discoveredAt', () async {
-        final timestamp = DateTime(2024, 6, 1);
-        final discoveries = [
-          Discovery(
-            id: 'node/1',
-            name: 'Discovered',
-            category: 'cafe',
-            rarity: RarityTier.common,
-            position: const LatLng(51.51, -0.12),
-            osmTags: const {'amenity': 'cafe'},
-            discoveredAt: timestamp,
-          ),
-          Discovery(
-            id: 'node/2',
-            name: 'Not Discovered',
-            category: 'viewpoint',
-            rarity: RarityTier.rare,
-            position: const LatLng(51.54, -0.16),
-            osmTags: const {'tourism': 'viewpoint'},
-            discoveredAt: null,
-          ),
-        ];
-        String? stored;
+      test('returns only discoveries with ids in the __discovered__ list',
+          () async {
+        final storage = <String, dynamic>{};
         when(() => mockBox.put(any(), any())).thenAnswer((inv) async {
-          stored = inv.positionalArguments[1] as String;
+          storage[inv.positionalArguments[0] as String] =
+              inv.positionalArguments[1];
         });
-        await repository.savePOIs(discoveries);
-        when(() => mockBox.get(any())).thenReturn(stored);
+        when(() => mockBox.get(any())).thenAnswer(
+          (inv) => storage[inv.positionalArguments[0] as String],
+        );
+        when(() => mockBox.keys).thenAnswer((_) => storage.keys.toList());
+
+        // Save two POIs under _bounds.
+        await repository.savePOIs(_buildDiscoveries(), _bounds);
+        // Mark only node/1 as discovered.
+        await repository.markDiscovered('node/1', DateTime(2024, 6, 1));
 
         final result = await repository.getDiscovered();
         expect(result, hasLength(1));
         expect(result.first.id, equals('node/1'));
       });
 
+      test(
+          'returns discoveries across multiple bounds areas when both '
+          'have discovered POIs', () async {
+        final storage = <String, dynamic>{};
+        when(() => mockBox.put(any(), any())).thenAnswer((inv) async {
+          storage[inv.positionalArguments[0] as String] =
+              inv.positionalArguments[1];
+        });
+        when(() => mockBox.get(any())).thenAnswer(
+          (inv) => storage[inv.positionalArguments[0] as String],
+        );
+        when(() => mockBox.keys).thenAnswer((_) => storage.keys.toList());
+
+        // Save POIs in two separate areas.
+        await repository.savePOIs(_buildDiscoveries(), _bounds);
+        await repository.savePOIs(
+          [
+            Discovery(
+              id: 'node/99',
+              name: 'Remote Pub',
+              category: 'pub',
+              rarity: RarityTier.common,
+              position: const LatLng(52.05, -0.15),
+              osmTags: const {'amenity': 'pub'},
+              discoveredAt: null,
+            ),
+          ],
+          _boundsB,
+        );
+
+        // Mark one POI from each area.
+        await repository.markDiscovered('node/1', DateTime(2024, 6, 1));
+        await repository.markDiscovered('node/99', DateTime(2024, 6, 2));
+
+        final result = await repository.getDiscovered();
+        expect(result.map((d) => d.id), containsAll(['node/1', 'node/99']));
+      });
+
       test('returns empty list when no discoveries found', () async {
         when(() => mockBox.get(any())).thenReturn(null);
+        when(() => mockBox.keys).thenReturn([]);
 
         final result = await repository.getDiscovered();
         expect(result, isEmpty);

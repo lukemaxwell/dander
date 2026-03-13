@@ -47,7 +47,7 @@ class DiscoveryService {
     final cached = await _repo.hasCache(bounds);
     if (!cached) {
       final pois = await _client.fetchPOIs(bounds);
-      await _repo.savePOIs(pois);
+      await _repo.savePOIs(pois, bounds);
     }
   }
 

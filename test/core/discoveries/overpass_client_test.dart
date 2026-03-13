@@ -63,13 +63,13 @@ void main() {
     );
   }
 
-  void stubHttpError(int statusCode) {
+  void stubHttpError(int statusCode, {String body = 'Server error'}) {
     when(() => mockClient.post(
           any(),
           headers: any(named: 'headers'),
           body: any(named: 'body'),
         )).thenAnswer(
-      (_) async => http.Response('Server error', statusCode),
+      (_) async => http.Response(body, statusCode),
     );
   }
 
@@ -251,6 +251,23 @@ void main() {
         );
       });
 
+      test('exception message does NOT include response body', () async {
+        const sensitiveBody =
+            'Internal server error details: db_password=secret';
+        stubHttpError(500, body: sensitiveBody);
+
+        OverpassException? caught;
+        try {
+          await overpassClient.fetchPOIs(bounds);
+        } on OverpassException catch (e) {
+          caught = e;
+        }
+
+        expect(caught, isNotNull);
+        expect(caught!.message, isNot(contains(sensitiveBody)));
+        expect(caught.message, equals('HTTP 500: request failed'));
+      });
+
       test('throws OverpassException on network failure', () async {
         stubNetworkError();
 
@@ -258,6 +275,16 @@ void main() {
           () => overpassClient.fetchPOIs(bounds),
           throwsA(isA<OverpassException>()),
         );
+      });
+    });
+
+    group('dispose', () {
+      test('dispose closes the underlying http client without throwing',
+          () async {
+        when(() => mockClient.close()).thenReturn(null);
+
+        expect(() => overpassClient.dispose(), returnsNormally);
+        verify(() => mockClient.close()).called(1);
       });
     });
   });
