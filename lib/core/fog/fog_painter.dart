@@ -82,7 +82,8 @@ class FogPainter extends CustomPainter {
     final fogPaint = Paint()..color = fogColor;
     final clearPaint = Paint()
       ..color = const Color(0xFFFFFFFF)
-      ..blendMode = BlendMode.dstOut;
+      ..blendMode = BlendMode.dstOut
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
 
     canvas.saveLayer(Offset.zero & size, Paint());
 
