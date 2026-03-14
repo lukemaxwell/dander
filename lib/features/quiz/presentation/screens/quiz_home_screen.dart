@@ -4,6 +4,7 @@ import 'package:dander/core/quiz/quiz_scheduler.dart';
 import 'package:dander/core/quiz/street_memory_record.dart';
 import 'package:dander/core/streets/street.dart';
 import 'package:dander/core/theme/app_theme.dart';
+import 'package:dander/shared/widgets/screen_header.dart';
 
 /// The mastery level label shown next to each street in the quiz home list.
 enum MasteryLevel {
@@ -147,10 +148,14 @@ class QuizHomeScreen extends StatelessWidget {
         bottom: false,
         child: Column(
           children: [
+            ScreenHeader(
+              title: 'Quiz',
+              subtitle: dueCount > 0 ? '$dueCount due today' : null,
+            ),
             // Stats header
             Padding(
               padding: DanderSpacing.pagePadding.copyWith(
-                top: DanderSpacing.xl,
+                top: DanderSpacing.sm,
               ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,

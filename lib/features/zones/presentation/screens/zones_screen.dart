@@ -5,6 +5,7 @@ import 'package:dander/core/zone/zone.dart';
 import 'package:dander/core/zone/zone_repository.dart';
 import 'package:dander/features/zones/presentation/widgets/zone_card.dart';
 import 'package:dander/features/zones/presentation/widgets/zones_loading_skeleton.dart';
+import 'package:dander/shared/widgets/screen_header.dart';
 
 /// Screen that lists all zones loaded from [ZoneRepository].
 ///
@@ -196,24 +197,34 @@ class _ZoneList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      padding: DanderSpacing.pagePadding.copyWith(
-        top: DanderSpacing.pagePadding.top +
-            MediaQuery.of(context).padding.top,
-      ),
-      itemCount: zones.length,
-      separatorBuilder: (_, __) => const SizedBox(height: DanderSpacing.md),
-      itemBuilder: (context, index) {
-        final zone = zones[index];
-        final isActive = zone.id == activeZoneId;
-        return ZoneCard(
-          zone: zone,
-          isActive: isActive,
-          onTap: () => onZoneTapped?.call(zone.id),
-          onDelete: () => onZoneDelete(zone),
-          onRename: (newName) => onZoneRename(zone, newName),
-        );
-      },
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
+          child: ScreenHeader(
+            title: 'Zones',
+            subtitle: '${zones.length} zone${zones.length == 1 ? '' : 's'}',
+          ),
+        ),
+        const SliverToBoxAdapter(child: SizedBox(height: DanderSpacing.lg)),
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: DanderSpacing.lg),
+          sliver: SliverList.separated(
+            separatorBuilder: (_, __) => const SizedBox(height: DanderSpacing.md),
+            itemCount: zones.length,
+            itemBuilder: (context, index) {
+              final zone = zones[index];
+              final isActive = zone.id == activeZoneId;
+              return ZoneCard(
+                zone: zone,
+                isActive: isActive,
+                onTap: () => onZoneTapped?.call(zone.id),
+                onDelete: () => onZoneDelete(zone),
+                onRename: (newName) => onZoneRename(zone, newName),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

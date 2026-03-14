@@ -11,6 +11,8 @@ import 'package:dander/core/progress/streak_tracker.dart';
 import 'package:dander/core/theme/app_theme.dart';
 import 'package:dander/core/theme/rarity_colors.dart';
 import 'package:dander/features/profile/presentation/widgets/badge_detail_sheet.dart';
+import 'package:dander/shared/widgets/bottom_sheet_handle.dart';
+import 'package:dander/shared/widgets/screen_header.dart';
 
 
 /// Profile screen showing exploration progress, streak, badges, and discoveries.
@@ -56,14 +58,16 @@ class ProfileScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: DanderColors.surfaceElevated,
       body: ListView(
-        padding: DanderSpacing.pagePadding.copyWith(
-          top: DanderSpacing.pagePadding.top +
-              MediaQuery.of(context).padding.top,
-          bottom: DanderSpacing.pagePadding.bottom +
+        padding: EdgeInsets.only(
+          left: DanderSpacing.lg,
+          right: DanderSpacing.lg,
+          bottom: DanderSpacing.lg +
               MediaQuery.of(context).padding.bottom +
               kBottomNavigationBarHeight,
         ),
         children: [
+          ScreenHeader(title: 'Profile', subtitle: zoneName),
+          const SizedBox(height: DanderSpacing.lg),
           _ExplorationRing(pct: explorationPct, zoneName: zoneName),
           const SizedBox(height: DanderSpacing.lg),
           _WalkStatsCard(
@@ -99,33 +103,43 @@ class _ExplorationRing extends StatelessWidget {
     final percentage = (pct * 100).round();
     final label = zoneName != null ? '$zoneName Explored' : 'Area Explored';
     return Container(
-      padding: DanderSpacing.cardPadding.copyWith(
-        top: DanderSpacing.xl,
-        bottom: DanderSpacing.xl,
+      padding: const EdgeInsets.symmetric(
+        horizontal: DanderSpacing.xl,
+        vertical: DanderSpacing.xxl,
       ),
       decoration: BoxDecoration(
         color: DanderColors.cardBackground,
         borderRadius: BorderRadius.circular(DanderSpacing.borderRadiusLg),
+        border: Border.all(color: DanderColors.cardBorder, width: 0.5),
+        boxShadow: [
+          BoxShadow(
+            color: DanderColors.accent.withValues(alpha: 0.08),
+            blurRadius: 48,
+            spreadRadius: 8,
+          ),
+        ],
       ),
       child: Column(
         children: [
-          Text(
-            label,
-            style: DanderTextStyles.titleMedium,
-          ),
-          const SizedBox(height: DanderSpacing.lg),
+          Text(label, style: DanderTextStyles.bodySmall),
+          const SizedBox(height: DanderSpacing.xl),
           SizedBox(
-            width: 120,
-            height: 120,
+            width: 160,
+            height: 160,
             child: CustomPaint(
               painter: _RingPainter(fraction: pct),
               child: Center(
                 child: Text(
                   '$percentage%',
-                  style: DanderTextStyles.headlineMedium,
+                  style: DanderTextStyles.headlineLarge,
                 ),
               ),
             ),
+          ),
+          const SizedBox(height: DanderSpacing.md),
+          Text(
+            'of your neighbourhood',
+            style: DanderTextStyles.bodySmall,
           ),
         ],
       ),
@@ -146,12 +160,12 @@ class _RingPainter extends CustomPainter {
     final trackPaint = Paint()
       ..color = DanderColors.divider
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 10;
+      ..strokeWidth = 12;
 
     final progressPaint = Paint()
-      ..color = DanderColors.secondary
+      ..color = DanderColors.accent
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 10
+      ..strokeWidth = 12
       ..strokeCap = StrokeCap.round;
 
     canvas.drawCircle(center, radius, trackPaint);
@@ -400,15 +414,22 @@ class _BadgeGrid extends StatelessWidget {
   void _showBadgeDetail(BuildContext context, Badge badge) {
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       backgroundColor: DanderColors.surfaceElevated,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
-          top: Radius.circular(DanderSpacing.borderRadiusLg),
+          top: Radius.circular(DanderSpacing.borderRadiusXl),
         ),
       ),
-      builder: (_) => BadgeDetailSheet(
-        badge: badge,
-        currentExplorationPct: explorationPct,
+      builder: (_) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const BottomSheetHandle(),
+          BadgeDetailSheet(
+            badge: badge,
+            currentExplorationPct: explorationPct,
+          ),
+        ],
       ),
     );
   }

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:dander/core/haptics/haptic_service.dart';
 import 'package:dander/core/navigation/app_router.dart';
 import 'package:dander/core/theme/app_theme.dart';
+import 'package:dander/shared/widgets/pressable.dart';
 
 /// Persistent shell wrapping all top-level routes with a bottom navigation bar.
 ///
@@ -73,11 +74,11 @@ class _BlurredNavBar extends StatelessWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
-          color: DanderColors.surfaceElevated.withValues(alpha: 0.85),
+          color: DanderColors.surfaceElevated.withValues(alpha: 0.88),
           child: SafeArea(
             top: false,
             child: SizedBox(
-              height: 64,
+              height: 72,
               child: Row(
                 children: [
                   _NavItem(
@@ -151,13 +152,11 @@ class _NavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final isActive = index == currentIndex;
     return Expanded(
-      child: GestureDetector(
+      child: Pressable(
         onTap: () => onTap(index),
-        behavior: HitTestBehavior.opaque,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Active indicator pill behind the icon
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               curve: Curves.easeOut,
@@ -186,8 +185,7 @@ class _NavItem extends StatelessWidget {
                 color: isActive
                     ? DanderColors.accent
                     : DanderColors.onSurfaceMuted,
-                fontWeight:
-                    isActive ? FontWeight.w600 : FontWeight.normal,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
           ],
@@ -201,7 +199,10 @@ class _NavItem extends StatelessWidget {
 // DanderCard
 // ---------------------------------------------------------------------------
 
-/// A themed card with rounded corners, brand background, and elevation shadow.
+/// A themed card with rounded corners, subtle border, and elevation shadow.
+///
+/// The 0.5px [DanderColors.cardBorder] is essential on dark surfaces — it
+/// provides the visual separation that shadows alone cannot on OLED displays.
 class DanderCard extends StatelessWidget {
   const DanderCard({
     super.key,
@@ -222,6 +223,7 @@ class DanderCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: DanderColors.cardBackground,
         borderRadius: BorderRadius.circular(DanderSpacing.borderRadiusLg),
+        border: Border.all(color: DanderColors.cardBorder, width: 0.5),
         boxShadow: DanderElevation.level1,
       ),
       child: child,
@@ -234,6 +236,8 @@ class DanderCard extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 /// A themed primary action button with optional leading icon.
+///
+/// Uses [Pressable] for scale + opacity press feedback.
 class DanderButton extends StatelessWidget {
   const DanderButton({
     super.key,
@@ -256,18 +260,16 @@ class DanderButton extends StatelessWidget {
     final fgColor =
         enabled ? DanderColors.onSurface : DanderColors.onSurfaceMuted;
 
-    return GestureDetector(
+    return Pressable(
       onTap: onPressed,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
+      child: Container(
         padding: const EdgeInsets.symmetric(
           horizontal: DanderSpacing.xl,
           vertical: DanderSpacing.md,
         ),
         decoration: BoxDecoration(
           color: bgColor,
-          borderRadius:
-              BorderRadius.circular(DanderSpacing.borderRadiusFull),
+          borderRadius: BorderRadius.circular(DanderSpacing.borderRadiusFull),
           boxShadow: enabled ? DanderElevation.level1 : null,
         ),
         child: Row(
