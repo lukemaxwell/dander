@@ -6,12 +6,17 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../../core/fog/fog_grid.dart';
 import '../../../../core/fog/fog_painter.dart';
+import '../../../../core/motion/dander_motion.dart';
 
 /// A widget that renders the fog-of-war overlay over the visible map area.
 ///
 /// Listens to [fogGridNotifier] for reactive grid updates and, when
 /// [locationStream] is provided, automatically expands explored areas as new
 /// positions arrive.
+///
+/// When [mysteryPois] is non-empty, pulsing markers are drawn in fogged cells
+/// to hint at nearby undiscovered POIs. Markers disappear when the surrounding
+/// fog is cleared.
 ///
 /// Place this inside [FlutterMap.children] wrapped in a [Builder] so that
 /// [bounds] can be sourced from [MapCamera.of(context).visibleBounds] — this
@@ -24,6 +29,7 @@ class FogLayer extends StatefulWidget {
     this.locationStream,
     this.exploreRadius = 50.0,
     this.onFogExpanded,
+    this.mysteryPois = const [],
   });
 
   final ValueNotifier<FogGrid> fogGridNotifier;
@@ -32,17 +38,60 @@ class FogLayer extends StatefulWidget {
   final double exploreRadius;
   final VoidCallback? onFogExpanded;
 
+  /// Positions of undiscovered POIs — rendered as pulsing fog markers.
+  final List<LatLng> mysteryPois;
+
   @override
   State<FogLayer> createState() => _FogLayerState();
 }
 
-class _FogLayerState extends State<FogLayer> {
+class _FogLayerState extends State<FogLayer> with TickerProviderStateMixin {
   StreamSubscription<LatLng>? _locationSub;
+
+  /// Drives the mystery-marker pulse (1.5 s reverse-loop).
+  late final AnimationController _pulseController;
+
+  /// Drives the fog boundary shimmer sweep (4 s forward-loop).
+  late final AnimationController _shimmerController;
+
+  late final Animation<double> _pulseAnim;
+  late final Animation<double> _shimmerAnim;
+
+  bool _reduced = false;
 
   @override
   void initState() {
     super.initState();
+
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    );
+
+    _pulseAnim = CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut);
+    _shimmerAnim = _shimmerController;
+
     _subscribeToLocation();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reduced = DanderMotion.isReduced(context);
+    if (reduced == _reduced) return;
+    _reduced = reduced;
+    if (_reduced) {
+      _pulseController.stop();
+      _shimmerController.stop();
+    } else {
+      _pulseController.repeat(reverse: true);
+      _shimmerController.repeat();
+    }
   }
 
   @override
@@ -83,26 +132,40 @@ class _FogLayerState extends State<FogLayer> {
   @override
   void dispose() {
     _locationSub?.cancel();
+    _pulseController.dispose();
+    _shimmerController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<FogGrid>(
-      valueListenable: widget.fogGridNotifier,
-      builder: (context, grid, _) {
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final viewport = FogViewport(
-              bounds: widget.bounds,
-              canvasSize: Size(
-                constraints.maxWidth.isFinite ? constraints.maxWidth : 1.0,
-                constraints.maxHeight.isFinite ? constraints.maxHeight : 1.0,
-              ),
-            );
-            return CustomPaint(
-              painter: FogPainter(fogGrid: grid, viewport: viewport),
-              child: const SizedBox.expand(),
+    return AnimatedBuilder(
+      animation: Listenable.merge([_pulseAnim, _shimmerAnim]),
+      builder: (context, _) {
+        return ValueListenableBuilder<FogGrid>(
+          valueListenable: widget.fogGridNotifier,
+          builder: (context, grid, __) {
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                final viewport = FogViewport(
+                  bounds: widget.bounds,
+                  canvasSize: Size(
+                    constraints.maxWidth.isFinite ? constraints.maxWidth : 1.0,
+                    constraints.maxHeight.isFinite ? constraints.maxHeight : 1.0,
+                  ),
+                );
+                return CustomPaint(
+                  painter: FogPainter(
+                    fogGrid: grid,
+                    viewport: viewport,
+                    mysteryPois: widget.mysteryPois,
+                    pulseValue: _pulseAnim.value,
+                    shimmerValue: _shimmerAnim.value,
+                    reducedMotion: _reduced,
+                  ),
+                  child: const SizedBox.expand(),
+                );
+              },
             );
           },
         );
