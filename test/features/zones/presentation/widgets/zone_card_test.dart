@@ -46,21 +46,21 @@ void main() {
         // 0 XP → Level 1
         final zone = _buildZone(xp: 0);
         await tester.pumpWidget(_wrap(ZoneCard(zone: zone, isActive: false)));
-        expect(find.textContaining('L1'), findsOneWidget);
+        expect(find.textContaining('L1'), findsAtLeastNWidgets(1));
       });
 
       testWidgets('displays level badge for level 3 zone', (tester) async {
         // 300 XP → Level 3
         final zone = _buildZone(xp: 300);
         await tester.pumpWidget(_wrap(ZoneCard(zone: zone, isActive: false)));
-        expect(find.textContaining('L3'), findsOneWidget);
+        expect(find.textContaining('L3'), findsAtLeastNWidgets(1));
       });
 
       testWidgets('displays level badge for max level zone', (tester) async {
         // 1500+ XP → Level 5
         final zone = _buildZone(xp: 1500);
         await tester.pumpWidget(_wrap(ZoneCard(zone: zone, isActive: false)));
-        expect(find.textContaining('L5'), findsOneWidget);
+        expect(find.textContaining('L5'), findsAtLeastNWidgets(1));
       });
 
       testWidgets('displays current XP value', (tester) async {
@@ -204,6 +204,30 @@ void main() {
         final zone = _buildZone(xp: 0);
         await tester.pumpWidget(_wrap(ZoneCard(zone: zone, isActive: false)));
         expect(tester.takeException(), isNull);
+      });
+    });
+
+    group('level explainer', () {
+      testWidgets('shows current and next level radius at L1', (tester) async {
+        final zone = _buildZone(xp: 50);
+        await tester.pumpWidget(_wrap(ZoneCard(zone: zone, isActive: false)));
+        // L1: 500m → L2: 1.5km (50 XP needed)
+        expect(find.textContaining('L1'), findsAtLeastNWidgets(1));
+        expect(find.textContaining('500m'), findsAtLeastNWidgets(1));
+        expect(find.textContaining('L2'), findsAtLeastNWidgets(1));
+      });
+
+      testWidgets('shows max at L5', (tester) async {
+        final zone = _buildZone(xp: 1500);
+        await tester.pumpWidget(_wrap(ZoneCard(zone: zone, isActive: false)));
+        expect(find.textContaining('max'), findsAtLeastNWidgets(1));
+      });
+
+      testWidgets('shows XP needed for next level', (tester) async {
+        // At 50 XP, need 50 more to reach L2 (100 XP)
+        final zone = _buildZone(xp: 50);
+        await tester.pumpWidget(_wrap(ZoneCard(zone: zone, isActive: false)));
+        expect(find.textContaining('50 XP needed'), findsOneWidget);
       });
     });
   });

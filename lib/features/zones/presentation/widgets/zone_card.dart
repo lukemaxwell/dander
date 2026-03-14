@@ -110,6 +110,8 @@ class ZoneCard extends StatelessWidget {
                   BorderRadius.circular(DanderSpacing.borderRadiusFull),
             ),
             const SizedBox(height: DanderSpacing.sm),
+            _LevelExplainer(zone: zone),
+            const SizedBox(height: DanderSpacing.sm),
             _Footer(zone: zone),
           ],
         ),
@@ -285,6 +287,47 @@ class _XpRow extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+class _LevelExplainer extends StatelessWidget {
+  const _LevelExplainer({required this.zone});
+
+  final Zone zone;
+
+  String _formatRadius(double meters) {
+    if (meters >= 1000) {
+      final km = meters / 1000;
+      return km == km.truncateToDouble() ? '${km.toInt()}km' : '${km}km';
+    }
+    return '${meters.toInt()}m';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final currentRadius = _formatRadius(zone.radiusMeters);
+    final nextLevelXp = zone.xpForNextLevel;
+
+    if (nextLevelXp == null) {
+      // Max level
+      return Text(
+        'L${zone.level}: $currentRadius radius (max)',
+        style: DanderTextStyles.labelSmall.copyWith(
+          color: DanderColors.accent,
+        ),
+      );
+    }
+
+    final nextLevel = zone.level + 1;
+    final nextRadius = _formatRadius(ZoneLevel.radiusForXp(nextLevelXp));
+    final xpNeeded = nextLevelXp - zone.xp;
+
+    return Text(
+      'L${zone.level}: $currentRadius → L$nextLevel: $nextRadius ($xpNeeded XP needed)',
+      style: DanderTextStyles.labelSmall.copyWith(
+        color: DanderColors.onSurfaceMuted,
+      ),
     );
   }
 }
