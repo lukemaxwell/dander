@@ -5,6 +5,7 @@ import 'package:dander/core/theme/rarity_colors.dart';
 import 'package:dander/features/discoveries/presentation/widgets/discovery_card.dart';
 import 'package:dander/features/discoveries/presentation/widgets/discovery_detail_sheet.dart';
 import 'package:dander/features/discoveries/presentation/widgets/rarity_legend.dart';
+import 'package:dander/shared/widgets/pressable.dart';
 
 /// The collection screen — shows all found discoveries with filter chips.
 class DiscoveriesScreen extends StatefulWidget {
@@ -153,7 +154,7 @@ class _DiscoveriesScreenState extends State<DiscoveriesScreen> {
                             padding: const EdgeInsets.only(
                               bottom: DanderSpacing.md,
                             ),
-                            child: GestureDetector(
+                            child: Pressable(
                               onTap: () => _showDetail(discovery),
                               child: DiscoveryCard(
                                 discovery: discovery,

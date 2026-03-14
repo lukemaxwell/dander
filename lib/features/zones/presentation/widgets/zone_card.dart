@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dander/core/zone/zone.dart';
 import 'package:dander/core/zone/zone_level.dart';
 import 'package:dander/core/theme/app_theme.dart';
+import 'package:dander/shared/widgets/pressable.dart';
 
 // ---------------------------------------------------------------------------
 // Month name helper (immutable constant — no mutation)
@@ -68,7 +69,7 @@ class ZoneCard extends StatelessWidget {
     final nextXp = zone.xpForNextLevel;
     final isMaxLevel = nextXp == null;
 
-    return GestureDetector(
+    return Pressable(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
