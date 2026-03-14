@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart' hide Badge;
 import 'package:go_router/go_router.dart';
 
+import 'package:dander/core/challenges/challenge.dart';
 import 'package:dander/core/discoveries/discovery.dart';
 import 'package:dander/core/navigation/app_router.dart';
 import 'package:dander/core/progress/badge.dart';
@@ -11,6 +12,7 @@ import 'package:dander/core/progress/streak_tracker.dart';
 import 'package:dander/core/theme/app_theme.dart';
 import 'package:dander/core/theme/rarity_colors.dart';
 import 'package:dander/features/profile/presentation/widgets/badge_detail_sheet.dart';
+import 'package:dander/features/profile/presentation/widgets/weekly_challenges_card.dart';
 import 'package:dander/shared/widgets/bottom_sheet_handle.dart';
 import 'package:dander/shared/widgets/screen_header.dart';
 
@@ -27,6 +29,7 @@ class ProfileScreen extends StatelessWidget {
     this.totalSteps = 0,
     this.totalDistanceMeters = 0.0,
     this.streakShield,
+    this.weeklyChallenges = const [],
   });
 
   /// All discoveries the user has collected.
@@ -53,6 +56,9 @@ class ProfileScreen extends StatelessWidget {
   /// Current streak shield state (null if feature not loaded).
   final StreakShield? streakShield;
 
+  /// Current week's challenges.
+  final List<Challenge> weeklyChallenges;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -78,6 +84,10 @@ class ProfileScreen extends StatelessWidget {
           _ViewWalkHistoryButton(),
           const SizedBox(height: DanderSpacing.lg),
           _StreakCard(streak: streak, shield: streakShield),
+          if (weeklyChallenges.isNotEmpty) ...[
+            const SizedBox(height: DanderSpacing.lg),
+            WeeklyChallengesCard(challenges: weeklyChallenges),
+          ],
           const SizedBox(height: DanderSpacing.lg),
           _BadgeGrid(badges: badges, explorationPct: explorationPct),
           const SizedBox(height: DanderSpacing.lg),
