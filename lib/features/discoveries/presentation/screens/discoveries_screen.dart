@@ -6,7 +6,9 @@ import 'package:dander/features/discoveries/presentation/widgets/category_progre
 import 'package:dander/features/discoveries/presentation/widgets/discovery_card.dart';
 import 'package:dander/features/discoveries/presentation/widgets/discovery_detail_sheet.dart';
 import 'package:dander/features/discoveries/presentation/widgets/rarity_legend.dart';
+import 'package:dander/shared/widgets/bottom_sheet_handle.dart';
 import 'package:dander/shared/widgets/pressable.dart';
+import 'package:dander/shared/widgets/screen_header.dart';
 
 /// The collection screen — shows all found discoveries with filter chips.
 class DiscoveriesScreen extends StatefulWidget {
@@ -76,13 +78,20 @@ class _DiscoveriesScreenState extends State<DiscoveriesScreen> {
   void _showDetail(Discovery discovery) {
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       backgroundColor: DanderColors.surfaceElevated,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
-          top: Radius.circular(DanderSpacing.borderRadiusLg),
+          top: Radius.circular(DanderSpacing.borderRadiusXl),
         ),
       ),
-      builder: (_) => DiscoveryDetailSheet(discovery: discovery),
+      builder: (_) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const BottomSheetHandle(),
+          DiscoveryDetailSheet(discovery: discovery),
+        ],
+      ),
     );
   }
 
@@ -97,36 +106,11 @@ class _DiscoveriesScreenState extends State<DiscoveriesScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          // Count header
-          if (widget.discoveries.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                DanderSpacing.lg,
-                DanderSpacing.sm,
-                DanderSpacing.lg,
-                0,
-              ),
-              child: Text(
-                _buildCountHeader(),
-                style: DanderTextStyles.bodySmall,
-              ),
-            ),
-          // Collection progress (per-category counts)
-          if (widget.discoveries.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                DanderSpacing.lg,
-                DanderSpacing.xs,
-                DanderSpacing.lg,
-                0,
-              ),
-              child: Text(
-                _buildCategoryProgress(),
-                style: DanderTextStyles.labelSmall.copyWith(
-                  color: DanderColors.onSurfaceMuted,
-                ),
-              ),
-            ),
+          ScreenHeader(
+            title: 'Discoveries',
+            subtitle: widget.discoveries.isEmpty ? null : _buildCountHeader(),
+          ),
+          const SizedBox(height: DanderSpacing.md),
           // Category progress (silhouettes + found counts)
           if (widget.allPois.isNotEmpty)
             CategoryProgressSection(

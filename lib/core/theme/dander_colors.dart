@@ -12,10 +12,10 @@ abstract final class DanderColors {
   /// Deep navy — primary brand background and app bar.
   static const Color primary = Color(0xFF1A1A2E);
 
-  /// Bold amber — secondary brand color for CTAs, walk buttons, quiz actions.
+  /// Bold amber — action-only CTA color: walk start/stop, primary buttons.
   static const Color secondary = Color(0xFFFF8F00);
 
-  /// Sky blue — interactive accent (links, icons, progress).
+  /// Sky blue — information/state color: nav active, progress, XP, links.
   static const Color accent = Color(0xFF4FC3F7);
 
   // ---------------------------------------------------------------------------
@@ -23,13 +23,16 @@ abstract final class DanderColors {
   // ---------------------------------------------------------------------------
 
   /// Deepest background (scaffold).
-  static const Color surface = Color(0xFF0D0D1A);
+  static const Color surface = Color(0xFF0A0A14);
 
   /// Slightly elevated surface — app bars, bottom nav.
-  static const Color surfaceElevated = Color(0xFF12121F);
+  static const Color surfaceElevated = Color(0xFF111120);
 
   /// Card / container background.
-  static const Color cardBackground = Color(0xFF1E1E2E);
+  static const Color cardBackground = Color(0xFF1A1A2C);
+
+  /// Subtle 0.5px border on cards — separates them from background on OLED.
+  static const Color cardBorder = Color(0x18FFFFFF); // 9% white
 
   // ---------------------------------------------------------------------------
   // On-surface text
@@ -108,7 +111,7 @@ abstract final class DanderColors {
   // ---------------------------------------------------------------------------
 
   /// Standard divider / separator color.
-  static const Color divider = Color(0x1FE8EAF6); // ~12% white
+  static const Color divider = Color(0x2EE8EAF6); // ~18% white
 
   /// Overlay used for modals and bottom sheets.
   static const Color scrim = Color(0xCC000000);

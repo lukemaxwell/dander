@@ -10,7 +10,7 @@ void main() {
     });
 
     test('surface is darker than primary', () {
-      expect(DanderColors.surface, const Color(0xFF0D0D1A));
+      expect(DanderColors.surface, const Color(0xFF0A0A14));
     });
 
     test('surfaceElevated is between surface and primary', () {

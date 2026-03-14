@@ -37,6 +37,7 @@ abstract final class DanderTextStyles {
     fontWeight: FontWeight.bold,
     color: DanderColors.onSurface,
     height: 1.25,
+    letterSpacing: -0.5,
   );
 
   static const TextStyle headlineMedium = TextStyle(
@@ -44,6 +45,7 @@ abstract final class DanderTextStyles {
     fontWeight: FontWeight.bold,
     color: DanderColors.onSurface,
     height: 1.29,
+    letterSpacing: -0.25,
   );
 
   static const TextStyle headlineSmall = TextStyle(
@@ -51,6 +53,7 @@ abstract final class DanderTextStyles {
     fontWeight: FontWeight.w600,
     color: DanderColors.onSurface,
     height: 1.33,
+    letterSpacing: -0.15,
   );
 
   // ---------------------------------------------------------------------------
@@ -69,7 +72,7 @@ abstract final class DanderTextStyles {
     fontWeight: FontWeight.w600,
     color: DanderColors.onSurface,
     height: 1.5,
-    letterSpacing: 0.15,
+    letterSpacing: 0.0,
   );
 
   static const TextStyle titleSmall = TextStyle(
@@ -77,7 +80,7 @@ abstract final class DanderTextStyles {
     fontWeight: FontWeight.w600,
     color: DanderColors.onSurface,
     height: 1.43,
-    letterSpacing: 0.1,
+    letterSpacing: 0.0,
   );
 
   // ---------------------------------------------------------------------------
@@ -89,7 +92,7 @@ abstract final class DanderTextStyles {
     fontWeight: FontWeight.normal,
     color: DanderColors.onSurface,
     height: 1.5,
-    letterSpacing: 0.5,
+    letterSpacing: 0.15,
   );
 
   static const TextStyle bodyLargeMuted = TextStyle(
@@ -97,7 +100,7 @@ abstract final class DanderTextStyles {
     fontWeight: FontWeight.normal,
     color: DanderColors.onSurfaceMuted,
     height: 1.5,
-    letterSpacing: 0.5,
+    letterSpacing: 0.15,
   );
 
   static const TextStyle bodyMedium = TextStyle(
@@ -105,7 +108,7 @@ abstract final class DanderTextStyles {
     fontWeight: FontWeight.normal,
     color: DanderColors.onSurface,
     height: 1.43,
-    letterSpacing: 0.25,
+    letterSpacing: 0.0,
   );
 
   static const TextStyle bodyMediumMuted = TextStyle(
@@ -113,7 +116,7 @@ abstract final class DanderTextStyles {
     fontWeight: FontWeight.normal,
     color: DanderColors.onSurfaceMuted,
     height: 1.43,
-    letterSpacing: 0.25,
+    letterSpacing: 0.0,
   );
 
   static const TextStyle bodySmall = TextStyle(
@@ -121,7 +124,7 @@ abstract final class DanderTextStyles {
     fontWeight: FontWeight.normal,
     color: DanderColors.onSurfaceMuted,
     height: 1.33,
-    letterSpacing: 0.4,
+    letterSpacing: 0.1,
   );
 
   // ---------------------------------------------------------------------------
@@ -141,7 +144,7 @@ abstract final class DanderTextStyles {
     fontWeight: FontWeight.w600,
     color: DanderColors.onSurface,
     height: 1.33,
-    letterSpacing: 0.5,
+    letterSpacing: 0.2,
   );
 
   static const TextStyle labelSmall = TextStyle(
@@ -149,6 +152,6 @@ abstract final class DanderTextStyles {
     fontWeight: FontWeight.w500,
     color: DanderColors.onSurfaceMuted,
     height: 1.45,
-    letterSpacing: 0.5,
+    letterSpacing: 0.2,
   );
 }

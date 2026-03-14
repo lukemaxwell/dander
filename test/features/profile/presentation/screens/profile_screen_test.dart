@@ -95,6 +95,9 @@ void main() {
         badges: sampleBadges,
       )));
 
+      await tester.drag(find.byType(ListView), const Offset(0, -600));
+      await tester.pump();
+
       expect(
         find.textContaining(RegExp(r'[Bb]adge', caseSensitive: false)),
         findsAtLeastNWidgets(1),
@@ -108,6 +111,9 @@ void main() {
         streak: StreakTracker.empty(),
         badges: sampleBadges,
       )));
+
+      await tester.drag(find.byType(ListView), const Offset(0, -600));
+      await tester.pump();
 
       for (final badge in sampleBadges) {
         expect(find.textContaining(badge.name), findsAtLeastNWidgets(1),
@@ -168,6 +174,9 @@ void main() {
         streak: StreakTracker.empty(),
         badges: recentBadges,
       )));
+
+      await tester.drag(find.byType(ListView), const Offset(0, -600));
+      await tester.pump();
 
       expect(find.text('NEW'), findsOneWidget);
     });
