@@ -36,4 +36,7 @@ abstract final class HiveBoxes {
 
   /// Stores compass charge state (current charges and partial distance).
   static const String compassCharges = 'compass_charges';
+
+  /// Stores weekly challenge progress and rotation state.
+  static const String challenges = 'challenges';
 }
