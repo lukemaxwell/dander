@@ -23,6 +23,10 @@ abstract class DiscoveryRepository {
 
   /// Returns `true` if there is cached POI data for [bounds].
   Future<bool> hasCache(LatLngBounds bounds);
+
+  /// Returns every cached [Discovery] across all stored bounds, regardless of
+  /// discovery status.  Useful for computing per-category totals.
+  Future<List<Discovery>> getAllCached();
 }
 
 /// Hive-backed implementation of [DiscoveryRepository].
@@ -137,6 +141,20 @@ class HiveDiscoveryRepository implements DiscoveryRepository {
   Future<bool> hasCache(LatLngBounds bounds) async {
     final box = await _openBox();
     return box.get(_boundsKey(bounds)) != null;
+  }
+
+  @override
+  Future<List<Discovery>> getAllCached() async {
+    final box = await _openBox();
+    final result = <Discovery>[];
+    for (final key in box.keys) {
+      final keyStr = key as String;
+      if (!keyStr.startsWith('pois_')) continue;
+      final raw = box.get(keyStr);
+      if (raw == null) continue;
+      result.addAll(_decodeList(raw as String));
+    }
+    return result;
   }
 
   // ---------------------------------------------------------------------------

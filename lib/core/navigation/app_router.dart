@@ -105,26 +105,46 @@ GlobalKey<NavigatorState> get routerNavigatorKey =>
 class _DiscoveriesLoader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Discovery>>(
+    return FutureBuilder<_DiscoveriesData>(
       future: _loadDiscoveries(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const DiscoveriesLoadingSkeleton();
         }
-        final discoveries = snapshot.data ?? const [];
-        return DiscoveriesScreen(discoveries: discoveries);
+        final data = snapshot.data;
+        return DiscoveriesScreen(
+          discoveries: data?.discovered ?? const [],
+          allPois: data?.allPois ?? const [],
+        );
       },
     );
   }
 
-  Future<List<Discovery>> _loadDiscoveries() async {
+  Future<_DiscoveriesData> _loadDiscoveries() async {
     try {
       final repo = GetIt.instance<DiscoveryRepository>();
-      return await repo.getDiscovered();
+      final results = await Future.wait([
+        repo.getDiscovered(),
+        repo.getAllCached(),
+      ]);
+      return _DiscoveriesData(
+        discovered: results[0],
+        allPois: results[1],
+      );
     } catch (_) {
-      return const [];
+      return const _DiscoveriesData(discovered: [], allPois: []);
     }
   }
+}
+
+class _DiscoveriesData {
+  const _DiscoveriesData({
+    required this.discovered,
+    required this.allPois,
+  });
+
+  final List<Discovery> discovered;
+  final List<Discovery> allPois;
 }
 
 class _ProfileLoader extends StatelessWidget {

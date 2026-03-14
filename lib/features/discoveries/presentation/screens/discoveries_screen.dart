@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dander/core/discoveries/discovery.dart';
 import 'package:dander/core/theme/app_theme.dart';
 import 'package:dander/core/theme/rarity_colors.dart';
+import 'package:dander/features/discoveries/presentation/widgets/category_progress_section.dart';
 import 'package:dander/features/discoveries/presentation/widgets/discovery_card.dart';
 import 'package:dander/features/discoveries/presentation/widgets/discovery_detail_sheet.dart';
 import 'package:dander/features/discoveries/presentation/widgets/rarity_legend.dart';
@@ -12,10 +13,18 @@ class DiscoveriesScreen extends StatefulWidget {
   const DiscoveriesScreen({
     super.key,
     required this.discoveries,
+    this.allPois = const [],
+    this.zoneName,
   });
 
   /// All discovered POIs to display.
   final List<Discovery> discoveries;
+
+  /// All cached POIs (including undiscovered) for category progress display.
+  final List<Discovery> allPois;
+
+  /// Name of the active zone — shown in exploration hints.
+  final String? zoneName;
 
   @override
   State<DiscoveriesScreen> createState() => _DiscoveriesScreenState();
@@ -117,6 +126,13 @@ class _DiscoveriesScreenState extends State<DiscoveriesScreen> {
                   color: DanderColors.onSurfaceMuted,
                 ),
               ),
+            ),
+          // Category progress (silhouettes + found counts)
+          if (widget.allPois.isNotEmpty)
+            CategoryProgressSection(
+              discovered: widget.discoveries,
+              allPois: widget.allPois,
+              zoneName: widget.zoneName,
             ),
           // Rarity legend
           if (widget.discoveries.isNotEmpty) const RarityLegend(),

@@ -351,5 +351,42 @@ void main() {
         expect(result, isTrue);
       });
     });
+
+    group('getAllCached', () {
+      test('returns empty list when no pois_ keys exist', () async {
+        when(() => mockBox.keys).thenReturn([]);
+        final result = await repository.getAllCached();
+        expect(result, isEmpty);
+      });
+
+      test('returns all POIs from all pois_ keys regardless of discovery state',
+          () async {
+        final discoveries = _buildDiscoveries();
+        final encoded = jsonEncode(discoveries.map((d) => d.toJson()).toList());
+
+        when(() => mockBox.keys).thenReturn(['pois_51.510_-0.120_51.540_-0.160']);
+        when(() => mockBox.get('pois_51.510_-0.120_51.540_-0.160'))
+            .thenReturn(encoded);
+
+        final result = await repository.getAllCached();
+        expect(result, hasLength(discoveries.length));
+        expect(result.map((d) => d.id).toSet(),
+            equals(discoveries.map((d) => d.id).toSet()));
+      });
+
+      test('skips non-pois_ keys', () async {
+        final discoveries = _buildDiscoveries();
+        final encoded = jsonEncode(discoveries.map((d) => d.toJson()).toList());
+
+        when(() => mockBox.keys)
+            .thenReturn(['__discovered__', 'pois_51.510_-0.120_51.540_-0.160']);
+        when(() => mockBox.get('__discovered__')).thenReturn(null);
+        when(() => mockBox.get('pois_51.510_-0.120_51.540_-0.160'))
+            .thenReturn(encoded);
+
+        final result = await repository.getAllCached();
+        expect(result, hasLength(discoveries.length));
+      });
+    });
   });
 }
