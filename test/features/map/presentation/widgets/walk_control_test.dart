@@ -228,5 +228,37 @@ void main() {
         expect(tester.takeException(), isNull);
       });
     });
+
+    group('session XP', () {
+      testWidgets('shows XP stat label in active state', (tester) async {
+        final session = _activeSession();
+        await tester.pumpWidget(
+          _wrap(
+            WalkControl(
+              session: session,
+              onStart: () {},
+              onStop: (_) {},
+              sessionXp: 30,
+            ),
+          ),
+        );
+        expect(find.text('XP'), findsOneWidget);
+        expect(find.text('30'), findsOneWidget);
+      });
+
+      testWidgets('defaults to 0 XP', (tester) async {
+        final session = _activeSession();
+        await tester.pumpWidget(
+          _wrap(
+            WalkControl(
+              session: session,
+              onStart: () {},
+              onStop: (_) {},
+            ),
+          ),
+        );
+        expect(find.text('XP'), findsOneWidget);
+      });
+    });
   });
 }

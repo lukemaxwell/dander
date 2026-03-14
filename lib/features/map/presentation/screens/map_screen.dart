@@ -86,6 +86,9 @@ class _MapScreenState extends State<MapScreen>
   // Floating XP text controller.
   final FloatingXpController _xpController = FloatingXpController();
 
+  // Session XP counter — reset on walk start.
+  int _sessionXp = 0;
+
   // Fog save debounce — saves at most once every 5 seconds.
   Timer? _fogSaveTimer;
 
@@ -300,6 +303,7 @@ class _MapScreenState extends State<MapScreen>
       if (mounted) {
         _xpController.show(ZoneLevel.xpPerPoi);
         setState(() {
+          _sessionXp += ZoneLevel.xpPerPoi;
           _activeZone = after;
           if (event != null) _levelUpEvent = event;
         });
@@ -393,6 +397,7 @@ class _MapScreenState extends State<MapScreen>
       if (mounted) {
         _xpController.show(ZoneLevel.xpPerStreet);
         setState(() {
+          _sessionXp += ZoneLevel.xpPerStreet;
           _activeZone = after;
           if (event != null) _levelUpEvent = event;
         });
@@ -540,6 +545,7 @@ class _MapScreenState extends State<MapScreen>
 
   void _startWalk() {
     setState(() {
+      _sessionXp = 0;
       _walkSession = WalkSession.start(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         startTime: DateTime.now(),
@@ -597,6 +603,7 @@ class _MapScreenState extends State<MapScreen>
               session: _walkSession,
               onStart: _startWalk,
               onStop: _stopWalk,
+              sessionXp: _sessionXp,
             ),
             // Floating XP text overlay — positioned top-center.
             Positioned(

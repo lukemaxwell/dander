@@ -16,6 +16,7 @@ class WalkSummaryCard extends StatelessWidget {
     required this.discoveriesWaiting,
     required this.onDone,
     required this.onShare,
+    this.xpEarned = 0,
   });
 
   /// The completed [WalkSession].
@@ -35,6 +36,9 @@ class WalkSummaryCard extends StatelessWidget {
 
   /// Called when the user taps "Share" (placeholder for Issue #8).
   final VoidCallback onShare;
+
+  /// XP earned during this walk session.
+  final int xpEarned;
 
   @override
   Widget build(BuildContext context) {
@@ -98,6 +102,7 @@ class WalkSummaryCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
+              _StatTile(label: 'XP Earned', value: '+$xpEarned'),
               _StatTile(
                 label: 'Still Waiting',
                 value: '$discoveriesWaiting',

@@ -18,6 +18,7 @@ class WalkControl extends StatelessWidget {
     required this.onStart,
     required this.onStop,
     this.discoveriesThisWalk = 0,
+    this.sessionXp = 0,
   });
 
   /// The active [WalkSession], or `null` when no walk is in progress.
@@ -31,6 +32,9 @@ class WalkControl extends StatelessWidget {
 
   /// Number of discoveries found during the active walk.
   final int discoveriesThisWalk;
+
+  /// XP earned during the active walk session.
+  final int sessionXp;
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +50,7 @@ class WalkControl extends StatelessWidget {
         onStart: onStart,
         onStop: onStop,
         discoveriesThisWalk: discoveriesThisWalk,
+        sessionXp: sessionXp,
       ),
     );
   }
@@ -61,12 +66,14 @@ class _Panel extends StatelessWidget {
     required this.onStart,
     required this.onStop,
     required this.discoveriesThisWalk,
+    required this.sessionXp,
   });
 
   final WalkSession? session;
   final VoidCallback onStart;
   final void Function(WalkSession) onStop;
   final int discoveriesThisWalk;
+  final int sessionXp;
 
   @override
   Widget build(BuildContext context) {
@@ -79,6 +86,7 @@ class _Panel extends StatelessWidget {
               session: session!,
               onStop: onStop,
               discoveriesThisWalk: discoveriesThisWalk,
+              sessionXp: sessionXp,
             ),
     );
   }
@@ -133,11 +141,13 @@ class _ActivePanel extends StatelessWidget {
     required this.session,
     required this.onStop,
     required this.discoveriesThisWalk,
+    required this.sessionXp,
   });
 
   final WalkSession session;
   final void Function(WalkSession) onStop;
   final int discoveriesThisWalk;
+  final int sessionXp;
 
   @override
   Widget build(BuildContext context) {
@@ -169,6 +179,8 @@ class _ActivePanel extends StatelessWidget {
                 label: 'Discoveries',
                 value: '$discoveriesThisWalk',
               ),
+              _StatDivider(),
+              _StatCell(label: 'XP', value: '$sessionXp'),
             ],
           ),
           const SizedBox(height: DanderSpacing.md),
