@@ -16,6 +16,7 @@ import 'package:dander/features/quiz/presentation/screens/quiz_home_screen.dart'
 import 'package:dander/features/splash/presentation/screens/splash_screen.dart';
 import 'package:dander/features/walks/presentation/screens/walk_history_screen.dart';
 import 'package:dander/features/zones/presentation/screens/zones_screen.dart';
+import 'package:dander/core/navigation/page_transitions.dart';
 import 'package:dander/shared/widgets/app_shell.dart';
 
 /// Named route paths used throughout the app.
@@ -47,18 +48,18 @@ final GoRouter router = GoRouter(
         GoRoute(
           path: AppRoutes.home,
           pageBuilder: (context, state) =>
-              const NoTransitionPage(child: MapScreen()),
+              danderCrossfadePage(context, const MapScreen()),
         ),
         GoRoute(
           path: AppRoutes.discoveries,
-          pageBuilder: (context, state) => NoTransitionPage(
-            child: _DiscoveriesLoader(),
-          ),
+          pageBuilder: (context, state) =>
+              danderCrossfadePage(context, _DiscoveriesLoader()),
         ),
         GoRoute(
           path: AppRoutes.quiz,
-          pageBuilder: (context, state) => const NoTransitionPage(
-            child: QuizHomeScreen(
+          pageBuilder: (context, state) => danderCrossfadePage(
+            context,
+            const QuizHomeScreen(
               walkedStreets: [],
               records: [],
               onStartReview: _noop,
@@ -68,25 +69,22 @@ final GoRouter router = GoRouter(
         ),
         GoRoute(
           path: AppRoutes.zones,
-          pageBuilder: (context, state) => NoTransitionPage(
-            child: ZonesScreen(
-              repository: GetIt.instance<ZoneRepository>(),
-            ),
+          pageBuilder: (context, state) => danderCrossfadePage(
+            context,
+            ZonesScreen(repository: GetIt.instance<ZoneRepository>()),
           ),
         ),
         GoRoute(
           path: AppRoutes.profile,
-          pageBuilder: (context, state) => NoTransitionPage(
-            child: _ProfileLoader(),
-          ),
+          pageBuilder: (context, state) =>
+              danderCrossfadePage(context, _ProfileLoader()),
         ),
       ],
     ),
     GoRoute(
       path: AppRoutes.walkHistory,
-      pageBuilder: (context, state) => NoTransitionPage(
-        child: _WalkHistoryLoader(),
-      ),
+      pageBuilder: (context, state) =>
+          danderSlideRightPage(context, _WalkHistoryLoader()),
     ),
     GoRoute(path: '/', redirect: (context, state) => AppRoutes.home),
   ],
