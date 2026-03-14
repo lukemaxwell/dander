@@ -9,6 +9,7 @@ import 'package:dander/core/zone/zone_repository.dart';
 import 'package:dander/core/zone/zone_service.dart';
 import 'package:dander/features/quiz/presentation/widgets/choice_button.dart';
 import 'package:dander/features/quiz/presentation/widgets/quiz_map_snippet.dart';
+import 'package:dander/features/quiz/presentation/widgets/quiz_streak_badge.dart';
 import 'package:dander/shared/widgets/floating_xp_text.dart';
 
 /// Screen displaying a single quiz question.
@@ -42,6 +43,7 @@ class _QuizQuestionScreenState extends State<QuizQuestionScreen> {
   int? _selectedIndex;
   late QuizSession _session;
   final FloatingXpController _xpController = FloatingXpController();
+  int _quizStreak = 0;
 
   @override
   void initState() {
@@ -80,6 +82,11 @@ class _QuizQuestionScreenState extends State<QuizQuestionScreen> {
     setState(() {
       _session = updated;
       _selectedIndex = null;
+      if (result == QuizResult.correct) {
+        _quizStreak++;
+      } else {
+        _quizStreak = 0;
+      }
     });
   }
 
@@ -137,7 +144,19 @@ class _QuizQuestionScreenState extends State<QuizQuestionScreen> {
                 children: [
                   // Map snippet
                   QuizMapSnippet(street: question.targetStreet),
-                  const SizedBox(height: DanderSpacing.lg),
+                  const SizedBox(height: DanderSpacing.sm),
+                  // Streak badge
+                  if (_quizStreak > 0)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: DanderSpacing.xl,
+                      ),
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: QuizStreakBadge(streak: _quizStreak),
+                      ),
+                    ),
+                  const SizedBox(height: DanderSpacing.sm),
                   // Question prompt
                   Padding(
                     padding: const EdgeInsets.symmetric(
