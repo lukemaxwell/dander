@@ -735,13 +735,15 @@ class _MapScreenState extends State<MapScreen>
                   _burstCategory = null;
                 }),
               ),
-            WalkControl(
-              session: _walkSession,
-              onStart: _startWalk,
-              onStop: _stopWalk,
-              sessionXp: _sessionXp,
-            ),
-            // First-launch exploration chip.
+            // Hide walk control during first-launch onboarding overlays.
+            if (!_showWalkPreview && !_showExplorationChip)
+              WalkControl(
+                session: _walkSession,
+                onStart: _startWalk,
+                onStop: _stopWalk,
+                sessionXp: _sessionXp,
+              ),
+            // First-launch exploration chip — replaces walk control.
             if (_showExplorationChip)
               Positioned(
                 bottom: 180,
@@ -762,6 +764,7 @@ class _MapScreenState extends State<MapScreen>
                       _firstLaunchService?.completeWalkPreview();
                   setState(() {
                     _showWalkPreview = false;
+                    _showExplorationChip = false;
                     _showFirstWalkContract =
                         _firstLaunchService?.showFirstWalkContract ?? false;
                   });
