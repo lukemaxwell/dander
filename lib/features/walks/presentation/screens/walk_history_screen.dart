@@ -56,21 +56,18 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
 
     return Scaffold(
       backgroundColor: DanderColors.surfaceElevated,
-      appBar: AppBar(
-        backgroundColor: DanderColors.surfaceElevated,
-        foregroundColor: DanderColors.onSurface,
-        title: Text('Walk History', style: DanderTextStyles.titleLarge),
-        elevation: 0,
+      body: SafeArea(
+        bottom: false,
+        child: sorted.isEmpty
+            ? _EmptyState()
+            : _WalkList(
+                walks: sorted,
+                expandedId: _expandedId,
+                onTap: (id) => setState(() {
+                  _expandedId = _expandedId == id ? null : id;
+                }),
+              ),
       ),
-      body: sorted.isEmpty
-          ? _EmptyState()
-          : _WalkList(
-              walks: sorted,
-              expandedId: _expandedId,
-              onTap: (id) => setState(() {
-                _expandedId = _expandedId == id ? null : id;
-              }),
-            ),
     );
   }
 }

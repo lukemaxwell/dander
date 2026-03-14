@@ -6,7 +6,7 @@
 /// Charges are capped at [maxCharges].
 class CompassCharges {
   const CompassCharges({
-    this.currentCharges = 0,
+    this.currentCharges = 1,
     this.metersSinceLastCharge = 0.0,
   });
 

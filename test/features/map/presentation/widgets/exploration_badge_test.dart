@@ -52,5 +52,49 @@ void main() {
       );
       expect(indicator.value, closeTo(0.5, 0.001));
     });
+
+    testWidgets('renders "43 discoveries waiting" when discoveriesWaiting is 43',
+        (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: ExplorationBadge(
+              percentageExplored: 30,
+              discoveriesWaiting: 43,
+            ),
+          ),
+        ),
+      );
+      expect(find.text('43 discoveries waiting'), findsOneWidget);
+    });
+
+    testWidgets(
+        'does not show discoveries waiting text when discoveriesWaiting is 0',
+        (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: ExplorationBadge(
+              percentageExplored: 30,
+              discoveriesWaiting: 0,
+            ),
+          ),
+        ),
+      );
+      expect(find.textContaining('discoveries waiting'), findsNothing);
+    });
+
+    testWidgets(
+        'does not show discoveries waiting text when discoveriesWaiting is null (omitted)',
+        (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: ExplorationBadge(percentageExplored: 30),
+          ),
+        ),
+      );
+      expect(find.textContaining('discoveries waiting'), findsNothing);
+    });
   });
 }

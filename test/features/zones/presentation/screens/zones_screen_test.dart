@@ -229,12 +229,12 @@ void main() {
     });
 
     group('screen structure', () {
-      testWidgets('has an AppBar with "Zones" title', (tester) async {
+      testWidgets('renders without AppBar (title removed)', (tester) async {
         final repo = _FakeZoneRepository([]);
         await tester.pumpWidget(_wrap(ZonesScreen(repository: repo)));
         await tester.pumpAndSettle();
 
-        expect(find.text('Zones'), findsOneWidget);
+        expect(find.byType(AppBar), findsNothing);
       });
     });
 

@@ -89,16 +89,17 @@ class _ZonesScreenState extends State<ZonesScreen> {
     }
   }
 
+  Future<void> _renameZone(Zone zone, String newName) async {
+    final renamed = zone.rename(newName);
+    await widget.repository.save(renamed);
+    if (!mounted) return;
+    _reload();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: DanderColors.surfaceElevated,
-      appBar: AppBar(
-        backgroundColor: DanderColors.surfaceElevated,
-        foregroundColor: DanderColors.onSurface,
-        title: Text('Zones', style: DanderTextStyles.titleLarge),
-        elevation: 0,
-      ),
       body: FutureBuilder<List<Zone>>(
         future: _zonesFuture,
         builder: (context, snapshot) {
@@ -126,6 +127,7 @@ class _ZonesScreenState extends State<ZonesScreen> {
             activeZoneId: widget.activeZoneId,
             onZoneTapped: widget.onZoneTapped,
             onZoneDelete: _confirmDelete,
+            onZoneRename: _renameZone,
           );
         },
       ),
@@ -182,17 +184,22 @@ class _ZoneList extends StatelessWidget {
     required this.activeZoneId,
     required this.onZoneTapped,
     required this.onZoneDelete,
+    required this.onZoneRename,
   });
 
   final List<Zone> zones;
   final String? activeZoneId;
   final void Function(String id)? onZoneTapped;
   final void Function(Zone zone) onZoneDelete;
+  final void Function(Zone zone, String newName) onZoneRename;
 
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
-      padding: DanderSpacing.pagePadding,
+      padding: DanderSpacing.pagePadding.copyWith(
+        top: DanderSpacing.pagePadding.top +
+            MediaQuery.of(context).padding.top,
+      ),
       itemCount: zones.length,
       separatorBuilder: (_, __) => const SizedBox(height: DanderSpacing.md),
       itemBuilder: (context, index) {
@@ -203,6 +210,7 @@ class _ZoneList extends StatelessWidget {
           isActive: isActive,
           onTap: () => onZoneTapped?.call(zone.id),
           onDelete: () => onZoneDelete(zone),
+          onRename: (newName) => onZoneRename(zone, newName),
         );
       },
     );

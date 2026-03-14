@@ -58,15 +58,11 @@ class _DiscoveriesScreenState extends State<DiscoveriesScreen> {
 
     return Scaffold(
       backgroundColor: DanderColors.surfaceElevated,
-      appBar: AppBar(
-        backgroundColor: DanderColors.surfaceElevated,
-        foregroundColor: DanderColors.onSurface,
-        title: Text('Discoveries', style: DanderTextStyles.titleLarge),
-        elevation: 0,
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           // Count header
           if (widget.discoveries.isNotEmpty)
             Padding(
@@ -124,6 +120,7 @@ class _DiscoveriesScreenState extends State<DiscoveriesScreen> {
                       ),
           ),
         ],
+        ),
       ),
     );
   }

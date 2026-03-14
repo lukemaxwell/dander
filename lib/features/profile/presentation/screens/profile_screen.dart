@@ -6,7 +6,7 @@ import 'package:dander/core/progress/badge.dart';
 import 'package:dander/core/progress/streak_tracker.dart';
 import 'package:dander/core/theme/app_theme.dart';
 import 'package:dander/core/theme/rarity_colors.dart';
-import 'package:dander/shared/widgets/dander_logo.dart';
+
 
 /// Profile screen showing exploration progress, streak, badges, and discoveries.
 class ProfileScreen extends StatelessWidget {
@@ -16,6 +16,9 @@ class ProfileScreen extends StatelessWidget {
     required this.explorationPct,
     required this.streak,
     required this.badges,
+    this.zoneName,
+    this.totalSteps = 0,
+    this.totalDistanceMeters = 0.0,
   });
 
   /// All discoveries the user has collected.
@@ -30,34 +33,34 @@ class ProfileScreen extends StatelessWidget {
   /// Badge definitions with unlock state.
   final List<Badge> badges;
 
+  /// Name of the active zone (null if no zone yet).
+  final String? zoneName;
+
+  /// Lifetime estimated step count.
+  final int totalSteps;
+
+  /// Lifetime distance walked in metres.
+  final double totalDistanceMeters;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: DanderColors.surfaceElevated,
-      appBar: AppBar(
-        backgroundColor: DanderColors.surfaceElevated,
-        foregroundColor: DanderColors.onSurface,
-        title: Text(
-          'Profile',
-          style: DanderTextStyles.titleLarge,
-        ),
-        elevation: 0,
-      ),
       body: ListView(
         padding: DanderSpacing.pagePadding.copyWith(
+          top: DanderSpacing.pagePadding.top +
+              MediaQuery.of(context).padding.top,
           bottom: DanderSpacing.pagePadding.bottom +
               MediaQuery.of(context).padding.bottom +
               kBottomNavigationBarHeight,
         ),
         children: [
-          // Logo header
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: DanderSpacing.xl),
-              child: DanderLogo(size: 72),
-            ),
+          _ExplorationRing(pct: explorationPct, zoneName: zoneName),
+          const SizedBox(height: DanderSpacing.lg),
+          _WalkStatsCard(
+            totalSteps: totalSteps,
+            totalDistanceMeters: totalDistanceMeters,
           ),
-          _ExplorationRing(pct: explorationPct),
           const SizedBox(height: DanderSpacing.lg),
           _StreakCard(streak: streak),
           const SizedBox(height: DanderSpacing.lg),
@@ -75,13 +78,15 @@ class ProfileScreen extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _ExplorationRing extends StatelessWidget {
-  const _ExplorationRing({required this.pct});
+  const _ExplorationRing({required this.pct, this.zoneName});
 
   final double pct;
+  final String? zoneName;
 
   @override
   Widget build(BuildContext context) {
     final percentage = (pct * 100).round();
+    final label = zoneName != null ? '$zoneName Explored' : 'Area Explored';
     return Container(
       padding: DanderSpacing.cardPadding.copyWith(
         top: DanderSpacing.xl,
@@ -94,7 +99,7 @@ class _ExplorationRing extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'Neighbourhood Explored',
+            label,
             style: DanderTextStyles.titleMedium,
           ),
           const SizedBox(height: DanderSpacing.lg),
@@ -152,6 +157,87 @@ class _RingPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_RingPainter old) => old.fraction != fraction;
+}
+
+// ---------------------------------------------------------------------------
+// Walk stats card (steps + distance)
+// ---------------------------------------------------------------------------
+
+class _WalkStatsCard extends StatelessWidget {
+  const _WalkStatsCard({
+    required this.totalSteps,
+    required this.totalDistanceMeters,
+  });
+
+  final int totalSteps;
+  final double totalDistanceMeters;
+
+  String _formatDistance(double meters) {
+    if (meters >= 1000) {
+      return '${(meters / 1000).toStringAsFixed(1)} km';
+    }
+    return '${meters.round()} m';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: DanderSpacing.cardPadding,
+      decoration: BoxDecoration(
+        color: DanderColors.cardBackground,
+        borderRadius: BorderRadius.circular(DanderSpacing.borderRadiusLg),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _StatColumn(
+              icon: Icons.directions_walk,
+              value: totalSteps >= 1000
+                  ? '${(totalSteps / 1000).toStringAsFixed(1)}k'
+                  : '$totalSteps',
+              label: 'Steps',
+            ),
+          ),
+          Container(
+            width: 1,
+            height: 40,
+            color: DanderColors.divider,
+          ),
+          Expanded(
+            child: _StatColumn(
+              icon: Icons.straighten,
+              value: _formatDistance(totalDistanceMeters),
+              label: 'Distance',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatColumn extends StatelessWidget {
+  const _StatColumn({
+    required this.icon,
+    required this.value,
+    required this.label,
+  });
+
+  final IconData icon;
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Icon(icon, color: DanderColors.accent, size: 24),
+        const SizedBox(height: DanderSpacing.xs),
+        Text(value, style: DanderTextStyles.titleLarge),
+        Text(label, style: DanderTextStyles.bodySmall),
+      ],
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------

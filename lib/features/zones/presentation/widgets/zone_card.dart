@@ -44,6 +44,7 @@ class ZoneCard extends StatelessWidget {
     required this.isActive,
     this.onTap,
     this.onDelete,
+    this.onRename,
   });
 
   /// The zone to display.
@@ -57,6 +58,9 @@ class ZoneCard extends StatelessWidget {
 
   /// Called when the user confirms deletion of this zone.
   final VoidCallback? onDelete;
+
+  /// Called when the user wants to rename this zone.
+  final void Function(String newName)? onRename;
 
   @override
   Widget build(BuildContext context) {
@@ -81,7 +85,12 @@ class ZoneCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _Header(zone: zone, isMaxLevel: isMaxLevel, onDelete: onDelete),
+            _Header(
+              zone: zone,
+              isMaxLevel: isMaxLevel,
+              onDelete: onDelete,
+              onRename: onRename,
+            ),
             const SizedBox(height: DanderSpacing.sm),
             _XpRow(
               zone: zone,
@@ -118,11 +127,58 @@ class _Header extends StatelessWidget {
     required this.zone,
     required this.isMaxLevel,
     this.onDelete,
+    this.onRename,
   });
 
   final Zone zone;
   final bool isMaxLevel;
   final VoidCallback? onDelete;
+  final void Function(String newName)? onRename;
+
+  void _showRenameDialog(BuildContext context) {
+    final controller = TextEditingController(text: zone.name);
+    showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: DanderColors.surfaceElevated,
+        title: Text('Rename zone', style: DanderTextStyles.titleMedium),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          style: DanderTextStyles.bodyMedium,
+          decoration: InputDecoration(
+            hintText: 'Zone name',
+            hintStyle: DanderTextStyles.bodyMediumMuted,
+          ),
+          onSubmitted: (value) => Navigator.of(context).pop(value),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              'Cancel',
+              style: DanderTextStyles.labelLarge.copyWith(
+                color: DanderColors.onSurfaceMuted,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(controller.text),
+            child: Text(
+              'Save',
+              style: DanderTextStyles.labelLarge.copyWith(
+                color: DanderColors.accent,
+              ),
+            ),
+          ),
+        ],
+      ),
+    ).then((newName) {
+      if (newName != null && newName.trim().isNotEmpty) {
+        onRename?.call(newName.trim());
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -138,6 +194,21 @@ class _Header extends StatelessWidget {
         ),
         const SizedBox(width: DanderSpacing.sm),
         _LevelBadge(level: zone.level),
+        if (onRename != null) ...[
+          const SizedBox(width: DanderSpacing.sm),
+          GestureDetector(
+            onTap: () => _showRenameDialog(context),
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: const EdgeInsets.all(DanderSpacing.xs),
+              child: Icon(
+                Icons.edit_outlined,
+                color: DanderColors.onSurfaceMuted,
+                size: 20,
+              ),
+            ),
+          ),
+        ],
         if (onDelete != null) ...[
           const SizedBox(width: DanderSpacing.sm),
           GestureDetector(

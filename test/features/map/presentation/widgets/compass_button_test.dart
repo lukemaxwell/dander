@@ -87,6 +87,27 @@ void main() {
       expect(tapped, isFalse);
     });
 
+    testWidgets('shows explanation snackbar when tapped with 0 charges',
+        (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: CompassButton(
+              charges: 0,
+              onPressed: () {},
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.byType(CompassButton));
+      await tester.pump();
+
+      expect(find.byType(SnackBar), findsOneWidget);
+      expect(find.textContaining('Compass charges'), findsOneWidget);
+      expect(find.textContaining('Walk 500m'), findsOneWidget);
+    });
+
     testWidgets(
         'icon uses DanderColors.onSurfaceDisabled color when charges = 0',
         (tester) async {

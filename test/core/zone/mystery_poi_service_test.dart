@@ -5,9 +5,11 @@ import 'package:mocktail/mocktail.dart';
 
 import 'package:dander/core/discoveries/overpass_client.dart';
 import 'package:dander/core/discoveries/discovery.dart';
+import 'package:dander/core/zone/generate_result.dart';
 import 'package:dander/core/zone/mystery_poi.dart';
 import 'package:dander/core/zone/mystery_poi_repository.dart';
 import 'package:dander/core/zone/mystery_poi_service.dart';
+import 'package:dander/core/zone/poi_wave_manager.dart';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -150,7 +152,7 @@ void main() {
   // ---------------------------------------------------------------------------
 
   group('generatePois', () {
-    test('returns new MysteryPoi list from overpass discoveries', () async {
+    test('returns GenerateResult from overpass discoveries', () async {
       final centre = LatLng(51.5074, -0.1278);
       final discoveries = [
         makeDiscovery(id: 'node/1', name: 'The Crown', category: 'pub'),
@@ -160,8 +162,27 @@ void main() {
 
       final result = await service.generatePois(centre, 500.0);
 
-      expect(result, isNotEmpty);
-      expect(result.every((p) => !p.isRevealed), isTrue);
+      expect(result, isA<GenerateResult>());
+      expect(result.activePois, isNotEmpty);
+      expect(result.activePois.every((p) => !p.isRevealed), isTrue);
+    });
+
+    test('totalCount equals the number of filtered overpass results', () async {
+      final centre = LatLng(51.5074, -0.1278);
+      // Place each POI >100 m apart (0.001° lat ≈ 111 m) so spacing filter keeps all.
+      final discoveries = [
+        makeDiscovery(id: 'node/1', name: 'The Crown', category: 'pub',
+            lat: 51.50, lng: -0.10),
+        makeDiscovery(id: 'node/2', name: 'Victoria Park', category: 'park',
+            lat: 51.51, lng: -0.10),
+        makeDiscovery(id: 'node/3', name: 'Old Library', category: 'library',
+            lat: 51.52, lng: -0.10),
+      ];
+      when(() => overpass.fetchPOIs(any())).thenAnswer((_) async => discoveries);
+
+      final result = await service.generatePois(centre, 5000.0);
+
+      expect(result.totalCount, 3);
     });
 
     test('generated pois have names null (unrevealed)', () async {
@@ -173,10 +194,10 @@ void main() {
 
       final result = await service.generatePois(centre, 500.0);
 
-      expect(result.every((p) => p.name == null), isTrue);
+      expect(result.activePois.every((p) => p.name == null), isTrue);
     });
 
-    test('returns at most 3 pois regardless of overpass results', () async {
+    test('activePois capped at 3 regardless of overpass results', () async {
       final centre = LatLng(51.5074, -0.1278);
       final discoveries = List.generate(
         10,
@@ -186,16 +207,35 @@ void main() {
 
       final result = await service.generatePois(centre, 500.0);
 
-      expect(result.length, lessThanOrEqualTo(3));
+      expect(result.activePois.length, lessThanOrEqualTo(3));
     });
 
-    test('returns empty list when overpass returns no results', () async {
+    test('totalCount reflects curated count (after PoiCurator filters)', () async {
+      final centre = LatLng(51.5074, -0.1278);
+      // 10 POIs all same category 'pub' → category diversity cap limits to 3.
+      // totalCount = curated count (3), not raw Overpass count (10).
+      final discoveries = List.generate(
+        10,
+        (i) => makeDiscovery(id: 'node/$i', name: 'POI $i'),
+      );
+      when(() => overpass.fetchPOIs(any())).thenAnswer((_) async => discoveries);
+
+      final result = await service.generatePois(centre, 500.0);
+
+      // After curation: category diversity cap leaves ≤3 (all are 'pub').
+      expect(result.totalCount, lessThanOrEqualTo(3));
+      expect(result.activePois.length, lessThanOrEqualTo(3));
+    });
+
+    test('empty overpass response returns GenerateResult with empty activePois and totalCount 0',
+        () async {
       final centre = LatLng(51.5074, -0.1278);
       when(() => overpass.fetchPOIs(any())).thenAnswer((_) async => []);
 
       final result = await service.generatePois(centre, 500.0);
 
-      expect(result, isEmpty);
+      expect(result.activePois, isEmpty);
+      expect(result.totalCount, 0);
     });
 
     test('propagates OverpassException when fetch fails', () async {
@@ -219,7 +259,7 @@ void main() {
 
       final result = await service.generatePois(centre, 500.0);
 
-      expect(result.first.category, 'historic');
+      expect(result.activePois.first.category, 'historic');
     });
 
     test('generated pois have unique ids matching discovery ids', () async {
@@ -232,8 +272,8 @@ void main() {
 
       final result = await service.generatePois(centre, 500.0);
 
-      final ids = result.map((p) => p.id).toSet();
-      expect(ids.length, result.length); // all unique
+      final ids = result.activePois.map((p) => p.id).toSet();
+      expect(ids.length, result.activePois.length); // all unique
     });
   });
 
@@ -377,6 +417,119 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
+  // loadOrGenerate
+  // ---------------------------------------------------------------------------
+
+  group('loadOrGenerate', () {
+    test('returns cached data when POIs and totalCount exist', () async {
+      final cachedPois = [
+        makeMysteryPoi(id: 'poi_1'),
+        makeMysteryPoi(id: 'poi_2'),
+      ];
+      when(() => repo.loadPois('zone_1')).thenAnswer((_) async => cachedPois);
+      when(() => repo.loadTotalCount('zone_1')).thenAnswer((_) async => 50);
+      when(() => repo.loadWaveState('zone_1')).thenAnswer((_) async => null);
+
+      final result = await service.loadOrGenerate(
+        'zone_1',
+        LatLng(51.5074, -0.1278),
+        500.0,
+      );
+
+      expect(result.activePois, hasLength(2));
+      expect(result.totalCount, 50);
+      verifyNever(() => overpass.fetchPOIs(any()));
+    });
+
+    test('fetches from Overpass when no cached POIs', () async {
+      when(() => repo.loadPois('zone_1')).thenAnswer((_) async => []);
+      when(() => repo.loadTotalCount('zone_1')).thenAnswer((_) async => null);
+      when(() => repo.savePois(any(), any())).thenAnswer((_) async {});
+      when(() => repo.saveTotalCount(any(), any())).thenAnswer((_) async {});
+      when(() => repo.saveWaveState(any(), any(), any())).thenAnswer((_) async {});
+
+      // Space POIs >100 m apart so spacing filter keeps both.
+      final discoveries = [
+        makeDiscovery(id: 'node/1', category: 'pub', lat: 51.50, lng: -0.10),
+        makeDiscovery(id: 'node/2', category: 'park', lat: 51.51, lng: -0.10),
+      ];
+      when(() => overpass.fetchPOIs(any())).thenAnswer((_) async => discoveries);
+
+      final result = await service.loadOrGenerate(
+        'zone_1',
+        LatLng(51.5074, -0.1278),
+        500.0,
+      );
+
+      expect(result.activePois, isNotEmpty);
+      expect(result.totalCount, 2);
+      verify(() => repo.savePois('zone_1', any())).called(1);
+      verify(() => repo.saveTotalCount('zone_1', 2)).called(1);
+    });
+
+    test('fetches from Overpass when cached totalCount is null', () async {
+      final cachedPois = [makeMysteryPoi(id: 'poi_1')];
+      when(() => repo.loadPois('zone_1')).thenAnswer((_) async => cachedPois);
+      when(() => repo.loadTotalCount('zone_1')).thenAnswer((_) async => null);
+      when(() => repo.savePois(any(), any())).thenAnswer((_) async {});
+      when(() => repo.saveTotalCount(any(), any())).thenAnswer((_) async {});
+      when(() => repo.saveWaveState(any(), any(), any())).thenAnswer((_) async {});
+
+      final discoveries = [
+        makeDiscovery(id: 'node/1', category: 'pub'),
+      ];
+      when(() => overpass.fetchPOIs(any())).thenAnswer((_) async => discoveries);
+
+      final result = await service.loadOrGenerate(
+        'zone_1',
+        LatLng(51.5074, -0.1278),
+        500.0,
+      );
+
+      verify(() => overpass.fetchPOIs(any())).called(1);
+      expect(result.totalCount, 1);
+    });
+
+    test('caps cached active POIs at 3', () async {
+      final cachedPois = List.generate(
+        5,
+        (i) => makeMysteryPoi(id: 'poi_$i'),
+      );
+      when(() => repo.loadPois('zone_1')).thenAnswer((_) async => cachedPois);
+      when(() => repo.loadTotalCount('zone_1')).thenAnswer((_) async => 100);
+      when(() => repo.loadWaveState('zone_1')).thenAnswer((_) async => null);
+
+      final result = await service.loadOrGenerate(
+        'zone_1',
+        LatLng(51.5074, -0.1278),
+        500.0,
+      );
+
+      expect(result.activePois.length, lessThanOrEqualTo(3));
+      expect(result.totalCount, 100);
+    });
+
+    test('excludes revealed POIs from cached active list', () async {
+      final cachedPois = [
+        makeMysteryPoi(id: 'poi_1', state: PoiState.revealed, name: 'Found'),
+        makeMysteryPoi(id: 'poi_2'),
+      ];
+      when(() => repo.loadPois('zone_1')).thenAnswer((_) async => cachedPois);
+      when(() => repo.loadTotalCount('zone_1')).thenAnswer((_) async => 50);
+      when(() => repo.loadWaveState('zone_1')).thenAnswer((_) async => null);
+
+      final result = await service.loadOrGenerate(
+        'zone_1',
+        LatLng(51.5074, -0.1278),
+        500.0,
+      );
+
+      expect(result.activePois, hasLength(1));
+      expect(result.activePois.first.id, 'poi_2');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // max 3 active POIs constraint (integration)
   // ---------------------------------------------------------------------------
 
@@ -393,7 +546,7 @@ void main() {
       expect(result.length, lessThanOrEqualTo(3));
     });
 
-    test('generatePois never returns more than 3 items', () async {
+    test('generatePois activePois never exceeds 3 items', () async {
       final centre = LatLng(51.5074, -0.1278);
       final discoveries = List.generate(
         20,
@@ -403,7 +556,235 @@ void main() {
 
       final result = await service.generatePois(centre, 2000.0);
 
-      expect(result.length, lessThanOrEqualTo(3));
+      expect(result.activePois.length, lessThanOrEqualTo(3));
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // generatePois with PoiCurator (Issue #82)
+  // ---------------------------------------------------------------------------
+
+  group('generatePois curates results via PoiCurator', () {
+    test('totalCount equals curated count not raw overpass count', () async {
+      final centre = LatLng(51.5074, -0.1278);
+      // 2 named discoveries, different categories, >100 m apart → both survive.
+      final discoveries = [
+        makeDiscovery(id: 'node/1', name: 'The Crown', category: 'pub',
+            lat: 51.50, lng: -0.10),
+        makeDiscovery(id: 'node/2', name: 'Victoria Park', category: 'park',
+            lat: 51.51, lng: -0.10),
+      ];
+      when(() => overpass.fetchPOIs(any())).thenAnswer((_) async => discoveries);
+
+      final result = await service.generatePois(centre, 5000.0);
+
+      // Both survive curation (named, different categories, ~1 km apart).
+      expect(result.totalCount, 2);
+    });
+
+    test('unnamed discoveries are excluded by curation', () async {
+      final centre = LatLng(51.5074, -0.1278);
+      // One named, one unnamed (empty name).
+      final discoveries = [
+        makeDiscovery(id: 'node/1', name: 'The Crown', category: 'pub'),
+        makeDiscovery(id: 'node/2', name: '', category: 'park'),
+      ];
+      when(() => overpass.fetchPOIs(any())).thenAnswer((_) async => discoveries);
+
+      final result = await service.generatePois(centre, 500.0);
+
+      // Unnamed one is filtered out by curation.
+      expect(result.totalCount, 1);
+      expect(result.activePois.every((p) => p.id != 'node/2'), isTrue);
+    });
+
+    test('activePois reflects curated set limited by _maxActivePois', () async {
+      final centre = LatLng(51.5074, -0.1278);
+      // 5 named POIs with different categories, well spaced → survive curation.
+      final discoveries = [
+        makeDiscovery(id: 'node/1', name: 'Pub A', category: 'pub', lat: 51.50),
+        makeDiscovery(id: 'node/2', name: 'Park B', category: 'park', lat: 51.51),
+        makeDiscovery(id: 'node/3', name: 'Cafe C', category: 'cafe', lat: 51.52),
+        makeDiscovery(id: 'node/4', name: 'Library D', category: 'library', lat: 51.53),
+        makeDiscovery(id: 'node/5', name: 'Historic E', category: 'historic', lat: 51.54),
+      ];
+      when(() => overpass.fetchPOIs(any())).thenAnswer((_) async => discoveries);
+
+      final result = await service.generatePois(centre, 5000.0);
+
+      // activePois is capped at _maxActivePois (3) even if more survive curation.
+      expect(result.activePois.length, lessThanOrEqualTo(3));
+      // But totalCount reflects all curated survivors (up to 5).
+      expect(result.totalCount, greaterThanOrEqualTo(result.activePois.length));
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // wave-aware loadOrGenerate (Issue #81)
+  // ---------------------------------------------------------------------------
+
+  group('wave-aware loadOrGenerate', () {
+    test('fresh generation saves all curated pois and wave state', () async {
+      when(() => repo.loadPois('zone_1')).thenAnswer((_) async => []);
+      when(() => repo.loadTotalCount('zone_1')).thenAnswer((_) async => null);
+      when(() => repo.loadWaveState('zone_1')).thenAnswer((_) async => null);
+      when(() => repo.savePois(any(), any())).thenAnswer((_) async {});
+      when(() => repo.saveTotalCount(any(), any())).thenAnswer((_) async {});
+      when(() => repo.saveWaveState(any(), any(), any())).thenAnswer((_) async {});
+
+      final discoveries = [
+        makeDiscovery(id: 'node/1', name: 'Pub A', category: 'pub'),
+        makeDiscovery(id: 'node/2', name: 'Park B', category: 'park'),
+      ];
+      when(() => overpass.fetchPOIs(any())).thenAnswer((_) async => discoveries);
+
+      await service.loadOrGenerate('zone_1', LatLng(51.5074, -0.1278), 500.0);
+
+      verify(() => repo.savePois('zone_1', any())).called(1);
+      verify(() => repo.saveWaveState('zone_1', 1, 0)).called(1);
+    });
+
+    test('loads from cache at wave 1 when no wave state exists', () async {
+      final cachedPois = List.generate(
+        10,
+        (i) => makeMysteryPoi(id: 'poi_$i'),
+      );
+      when(() => repo.loadPois('zone_1')).thenAnswer((_) async => cachedPois);
+      when(() => repo.loadTotalCount('zone_1')).thenAnswer((_) async => 10);
+      when(() => repo.loadWaveState('zone_1')).thenAnswer((_) async => null);
+
+      final result = await service.loadOrGenerate(
+        'zone_1',
+        LatLng(51.5074, -0.1278),
+        500.0,
+      );
+
+      // Wave 1 = first 8 unrevealed, capped at _maxActivePois (3) for markers.
+      expect(result.activePois.length, lessThanOrEqualTo(3));
+      verifyNever(() => overpass.fetchPOIs(any()));
+    });
+
+    test('loads wave 2 set when wave state is 2', () async {
+      // 20 POIs in cache; wave 2 → first 14 are active.
+      final cachedPois = List.generate(
+        20,
+        (i) => makeMysteryPoi(id: 'poi_$i'),
+      );
+      when(() => repo.loadPois('zone_1')).thenAnswer((_) async => cachedPois);
+      when(() => repo.loadTotalCount('zone_1')).thenAnswer((_) async => 20);
+      when(() => repo.loadWaveState('zone_1')).thenAnswer(
+        (_) async => const WaveState(currentWave: 2, discoveredInWave: 0),
+      );
+
+      final result = await service.loadOrGenerate(
+        'zone_1',
+        LatLng(51.5074, -0.1278),
+        500.0,
+      );
+
+      // activePois still capped at _maxActivePois (3) for map markers.
+      expect(result.activePois.length, lessThanOrEqualTo(3));
+      // totalCount comes from cached count.
+      expect(result.totalCount, 20);
+      verifyNever(() => overpass.fetchPOIs(any()));
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // onPoiRevealed (Issue #81)
+  // ---------------------------------------------------------------------------
+
+  group('onPoiRevealed', () {
+    test('increments discoveredInWave and saves wave state', () async {
+      final cachedPois = List.generate(
+        10,
+        (i) => makeMysteryPoi(id: 'poi_$i'),
+      );
+      when(() => repo.loadPois('zone_1')).thenAnswer((_) async => cachedPois);
+      when(() => repo.loadTotalCount('zone_1')).thenAnswer((_) async => 10);
+      when(() => repo.loadWaveState('zone_1')).thenAnswer(
+        (_) async => const WaveState(currentWave: 1, discoveredInWave: 2),
+      );
+      when(() => repo.saveWaveState(any(), any(), any())).thenAnswer((_) async {});
+
+      await service.onPoiRevealed('zone_1');
+
+      // discoveredInWave goes from 2 → 3; below 50% of wave1Size (4), no unlock.
+      verify(() => repo.saveWaveState('zone_1', 1, 3)).called(1);
+    });
+
+    test('unlocks wave 2 when threshold is met', () async {
+      final cachedPois = List.generate(
+        20,
+        (i) => makeMysteryPoi(id: 'poi_$i'),
+      );
+      when(() => repo.loadPois('zone_1')).thenAnswer((_) async => cachedPois);
+      when(() => repo.loadTotalCount('zone_1')).thenAnswer((_) async => 20);
+      when(() => repo.loadWaveState('zone_1')).thenAnswer(
+        (_) async => const WaveState(currentWave: 1, discoveredInWave: 3),
+      );
+      when(() => repo.saveWaveState(any(), any(), any())).thenAnswer((_) async {});
+
+      final result = await service.onPoiRevealed('zone_1');
+
+      // 4th discovery in wave1 (3→4 = 50% of 8) triggers wave 2 unlock.
+      // New wave is 2, discoveredInWave resets to 0.
+      verify(() => repo.saveWaveState('zone_1', 2, 0)).called(1);
+      // activePois now includes wave 2 set (capped at _maxActivePois).
+      expect(result.activePois.length, lessThanOrEqualTo(3));
+    });
+
+    test('returns GenerateResult with updated active pois', () async {
+      final cachedPois = List.generate(
+        20,
+        (i) => makeMysteryPoi(id: 'poi_$i'),
+      );
+      when(() => repo.loadPois('zone_1')).thenAnswer((_) async => cachedPois);
+      when(() => repo.loadTotalCount('zone_1')).thenAnswer((_) async => 20);
+      when(() => repo.loadWaveState('zone_1')).thenAnswer(
+        (_) async => const WaveState(currentWave: 1, discoveredInWave: 0),
+      );
+      when(() => repo.saveWaveState(any(), any(), any())).thenAnswer((_) async {});
+
+      final result = await service.onPoiRevealed('zone_1');
+
+      expect(result, isA<GenerateResult>());
+      expect(result.activePois, isNotEmpty);
+    });
+
+    test('does not advance beyond wave 3', () async {
+      final cachedPois = List.generate(
+        20,
+        (i) => makeMysteryPoi(id: 'poi_$i'),
+      );
+      when(() => repo.loadPois('zone_1')).thenAnswer((_) async => cachedPois);
+      when(() => repo.loadTotalCount('zone_1')).thenAnswer((_) async => 20);
+      when(() => repo.loadWaveState('zone_1')).thenAnswer(
+        (_) async => const WaveState(currentWave: 3, discoveredInWave: 99),
+      );
+      when(() => repo.saveWaveState(any(), any(), any())).thenAnswer((_) async {});
+
+      await service.onPoiRevealed('zone_1');
+
+      // Wave stays at 3.
+      verify(() => repo.saveWaveState('zone_1', 3, any())).called(1);
+    });
+
+    test('handles missing wave state gracefully (defaults to wave 1)', () async {
+      final cachedPois = List.generate(
+        10,
+        (i) => makeMysteryPoi(id: 'poi_$i'),
+      );
+      when(() => repo.loadPois('zone_1')).thenAnswer((_) async => cachedPois);
+      when(() => repo.loadTotalCount('zone_1')).thenAnswer((_) async => 10);
+      when(() => repo.loadWaveState('zone_1')).thenAnswer((_) async => null);
+      when(() => repo.saveWaveState(any(), any(), any())).thenAnswer((_) async {});
+
+      final result = await service.onPoiRevealed('zone_1');
+
+      expect(result, isA<GenerateResult>());
+      // Should have saved wave state with wave 1.
+      verify(() => repo.saveWaveState('zone_1', 1, any())).called(1);
     });
   });
 }

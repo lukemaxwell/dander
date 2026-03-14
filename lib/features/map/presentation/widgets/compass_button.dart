@@ -31,6 +31,19 @@ class CompassButton extends StatelessWidget {
 
   bool get _isEnabled => charges > 0;
 
+  void _showExplanation(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text(
+          'Compass charges reveal nearby discoveries. '
+          'Walk 500m to earn a charge!',
+        ),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final iconColor = _isEnabled
@@ -42,7 +55,9 @@ class CompassButton extends StatelessWidget {
         : DanderColors.onSurfaceDisabled.withValues(alpha: 0.4);
 
     return GestureDetector(
-      onTap: _isEnabled ? onPressed : null,
+      onTap: _isEnabled
+          ? onPressed
+          : () => _showExplanation(context),
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(

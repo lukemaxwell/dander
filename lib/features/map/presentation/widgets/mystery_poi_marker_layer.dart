@@ -29,6 +29,7 @@ class MysteryPoiMarkerLayer extends StatefulWidget {
     super.key,
     required this.pois,
     required this.camera,
+    this.onRevealedTap,
   });
 
   /// The list of mystery POIs to render.  May be empty.
@@ -36,6 +37,9 @@ class MysteryPoiMarkerLayer extends StatefulWidget {
 
   /// The current [MapCamera] used to project [LatLng] → screen offsets.
   final MapCamera camera;
+
+  /// Called when a revealed POI marker is tapped.
+  final void Function(MysteryPoi poi)? onRevealedTap;
 
   @override
   State<MysteryPoiMarkerLayer> createState() => _MysteryPoiMarkerLayerState();
@@ -91,6 +95,9 @@ class _MysteryPoiMarkerLayerState extends State<MysteryPoiMarkerLayer>
         key: ValueKey('poi_revealed_${poi.id}'),
         screenPoint: screenPoint,
         category: poi.category,
+        onTap: widget.onRevealedTap != null
+            ? () => widget.onRevealedTap!(poi)
+            : null,
       );
     }
 
@@ -112,10 +119,12 @@ class _RevealedMarker extends StatelessWidget {
     super.key,
     required this.screenPoint,
     required this.category,
+    this.onTap,
   });
 
   final Offset screenPoint;
   final String category;
+  final VoidCallback? onTap;
 
   static const double _size = 44.0;
   static const double _bgSize = 36.0;
@@ -130,23 +139,26 @@ class _RevealedMarker extends StatelessWidget {
       top: screenPoint.dy - _size / 2,
       width: _size,
       height: _size,
-      child: Center(
-        child: Container(
-          width: _bgSize,
-          height: _bgSize,
-          decoration: BoxDecoration(
-            color: config.color.withValues(alpha: 0.9),
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: DanderColors.onSurface.withValues(alpha: 0.6),
-              width: 1.5,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Center(
+          child: Container(
+            width: _bgSize,
+            height: _bgSize,
+            decoration: BoxDecoration(
+              color: config.color.withValues(alpha: 0.9),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: DanderColors.onSurface.withValues(alpha: 0.6),
+                width: 1.5,
+              ),
             ),
-          ),
-          child: Center(
-            child: Icon(
-              config.icon,
-              color: DanderColors.onSurface,
-              size: _iconSize,
+            child: Center(
+              child: Icon(
+                config.icon,
+                color: DanderColors.onSurface,
+                size: _iconSize,
+              ),
             ),
           ),
         ),

@@ -83,6 +83,12 @@ class WalkSession {
   /// Total distance in metres computed via Haversine over all point segments.
   double get distanceMeters => dc.DistanceCalculator.totalDistance(_points);
 
+  /// Average stride length in metres (used for step estimation).
+  static const double _strideMeters = 0.762;
+
+  /// Estimated step count derived from distance walked.
+  int get estimatedSteps => (distanceMeters / _strideMeters).round();
+
   /// Walk duration.
   ///
   /// If [endTime] is set, returns [endTime] − [startTime]; otherwise returns

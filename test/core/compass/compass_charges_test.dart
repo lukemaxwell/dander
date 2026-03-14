@@ -17,9 +17,9 @@ void main() {
     });
 
     group('defaults', () {
-      test('currentCharges defaults to 0', () {
+      test('currentCharges defaults to 1 (lead-in charge)', () {
         const charges = CompassCharges();
-        expect(charges.currentCharges, 0);
+        expect(charges.currentCharges, 1);
       });
 
       test('metersSinceLastCharge defaults to 0.0', () {
@@ -30,7 +30,7 @@ void main() {
 
     group('canSpend', () {
       test('returns false when currentCharges is 0', () {
-        const charges = CompassCharges();
+        const charges = CompassCharges(currentCharges: 0);
         expect(charges.canSpend, isFalse);
       });
 
@@ -47,14 +47,14 @@ void main() {
 
     group('earnFromDistance', () {
       test('earn exactly 1 charge from 500m with 0 remainder', () {
-        const charges = CompassCharges();
+        const charges = CompassCharges(currentCharges: 0);
         final result = charges.earnFromDistance(500.0);
         expect(result.currentCharges, 1);
         expect(result.metersSinceLastCharge, 0.0);
       });
 
       test('earn 2 charges from 1100m with 100m remainder', () {
-        const charges = CompassCharges();
+        const charges = CompassCharges(currentCharges: 0);
         final result = charges.earnFromDistance(1100.0);
         expect(result.currentCharges, 2);
         expect(result.metersSinceLastCharge, closeTo(100.0, 0.001));
@@ -67,14 +67,14 @@ void main() {
       });
 
       test('partial distance 499m earns 0 charges but tracks 499m remainder', () {
-        const charges = CompassCharges();
+        const charges = CompassCharges(currentCharges: 0);
         final result = charges.earnFromDistance(499.0);
         expect(result.currentCharges, 0);
         expect(result.metersSinceLastCharge, closeTo(499.0, 0.001));
       });
 
       test('partial distances accumulate: 499m then 100m earns 1 charge with 99m remainder', () {
-        const charges = CompassCharges();
+        const charges = CompassCharges(currentCharges: 0);
         final afterFirst = charges.earnFromDistance(499.0);
         expect(afterFirst.currentCharges, 0);
         expect(afterFirst.metersSinceLastCharge, closeTo(499.0, 0.001));
@@ -99,7 +99,7 @@ void main() {
       });
 
       test('does not mutate original instance', () {
-        const charges = CompassCharges();
+        const charges = CompassCharges(currentCharges: 0);
         charges.earnFromDistance(1000.0);
         expect(charges.currentCharges, 0);
         expect(charges.metersSinceLastCharge, 0.0);
@@ -129,7 +129,7 @@ void main() {
       });
 
       test('throws StateError when charges is 0', () {
-        const charges = CompassCharges();
+        const charges = CompassCharges(currentCharges: 0);
         expect(() => charges.spend(), throwsStateError);
       });
 
@@ -162,11 +162,11 @@ void main() {
         expect(restored.metersSinceLastCharge, closeTo(charges.metersSinceLastCharge, 0.001));
       });
 
-      test('round-trip with defaults (0 charges, 0.0 meters)', () {
+      test('round-trip with defaults (1 charge, 0.0 meters)', () {
         const charges = CompassCharges();
         final json = charges.toJson();
         final restored = CompassCharges.fromJson(json);
-        expect(restored.currentCharges, 0);
+        expect(restored.currentCharges, 1);
         expect(restored.metersSinceLastCharge, 0.0);
       });
 
@@ -216,7 +216,7 @@ void main() {
     group('load', () {
       test('returns default CompassCharges when box is empty', () async {
         final loaded = await repo.load();
-        expect(loaded.currentCharges, 0);
+        expect(loaded.currentCharges, 1);
         expect(loaded.metersSinceLastCharge, 0.0);
       });
     });
@@ -236,7 +236,7 @@ void main() {
         await repo.save(charges);
 
         final loaded = await repo.load();
-        expect(loaded.currentCharges, 0);
+        expect(loaded.currentCharges, 1);
         expect(loaded.metersSinceLastCharge, 0.0);
       });
 

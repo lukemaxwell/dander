@@ -143,18 +143,15 @@ class QuizHomeScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: DanderColors.surface,
-      appBar: AppBar(
-        title: Text('Quiz', style: DanderTextStyles.titleLarge),
-        backgroundColor: DanderColors.surface,
-        foregroundColor: DanderColors.onSurface,
-      ),
-      body: Column(
-        children: [
-          // Stats header
-          Padding(
-            padding: DanderSpacing.pagePadding.copyWith(
-              top: DanderSpacing.xl,
-            ),
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            // Stats header
+            Padding(
+              padding: DanderSpacing.pagePadding.copyWith(
+                top: DanderSpacing.xl,
+              ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -289,6 +286,7 @@ class QuizHomeScreen extends StatelessWidget {
                   ),
           ),
         ],
+        ),
       ),
     );
   }

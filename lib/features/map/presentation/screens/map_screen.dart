@@ -9,12 +9,16 @@ import 'package:latlong2/latlong.dart';
 import 'package:dander/core/compass/compass_charges.dart';
 import 'package:dander/core/compass/compass_charges_repository.dart';
 import 'package:dander/core/discoveries/discovery.dart';
+import 'package:dander/core/discoveries/discovery_repository.dart';
 import 'package:dander/core/fog/fog_grid.dart';
+import 'package:dander/core/fog/fog_repository.dart';
 import 'package:dander/core/location/location_service.dart';
+import 'package:dander/core/location/walk_repository.dart';
 import 'package:dander/core/location/walk_session.dart';
 import 'package:dander/core/theme/app_theme.dart';
 import 'package:dander/core/zone/level_up_detector.dart';
 import 'package:dander/core/zone/mystery_poi.dart';
+import 'package:dander/core/zone/mystery_poi_repository.dart';
 import 'package:dander/core/zone/mystery_poi_service.dart';
 import 'package:dander/core/zone/zone.dart' as zone_model;
 import 'package:dander/core/zone/zone_detector.dart';
@@ -50,6 +54,7 @@ class _MapScreenState extends State<MapScreen>
   late final ValueNotifier<FogGrid> _fogGridNotifier;
   late final ValueNotifier<List<MysteryPoi>> _mysteryPoisNotifier;
   late final ValueNotifier<CompassCharges> _compassChargesNotifier;
+  late final ValueNotifier<int> _discoveriesWaitingNotifier;
   late final StreamController<LatLng> _locationStreamController;
   late final AnimationController _pulseController;
   late final Animation<double> _pulseAnimation;
@@ -72,6 +77,12 @@ class _MapScreenState extends State<MapScreen>
   Offset? _burstPosition;
   String? _burstCategory;
 
+  // Heading for compass arrow (degrees from north, 0–360).
+  double? _heading;
+
+  // Fog save debounce — saves at most once every 5 seconds.
+  Timer? _fogSaveTimer;
+
   @override
   void initState() {
     super.initState();
@@ -79,6 +90,7 @@ class _MapScreenState extends State<MapScreen>
     _fogGridNotifier = ValueNotifier(FogGrid(origin: _defaultCenter));
     _mysteryPoisNotifier = ValueNotifier(const []);
     _compassChargesNotifier = ValueNotifier(const CompassCharges());
+    _discoveriesWaitingNotifier = ValueNotifier(0);
     _locationStreamController = StreamController<LatLng>.broadcast();
 
     _pulseController = AnimationController(
@@ -103,7 +115,16 @@ class _MapScreenState extends State<MapScreen>
       final latLng = LatLng(position.latitude, position.longitude);
       if (mounted) {
         _mapController.move(latLng, _defaultZoom);
-        final grid = FogGrid(origin: latLng);
+
+        // Try to load persisted fog grid; create fresh if none exists.
+        FogGrid grid;
+        try {
+          final fogRepo = GetIt.instance<FogRepository>();
+          final saved = await fogRepo.load();
+          grid = saved ?? FogGrid(origin: latLng);
+        } catch (_) {
+          grid = FogGrid(origin: latLng);
+        }
         grid.markExplored(latLng, 50.0);
         setState(() {
           _currentCenter = latLng;
@@ -131,12 +152,26 @@ class _MapScreenState extends State<MapScreen>
 
     _positionSub = locationService.positionStream.listen((position) {
       final latLng = LatLng(position.latitude, position.longitude);
-      if (mounted) setState(() => _userPosition = latLng);
+      if (mounted) {
+        setState(() {
+          _userPosition = latLng;
+          if (position.heading.isFinite && position.heading != 0.0) {
+            _heading = position.heading;
+          }
+        });
+      }
       _locationStreamController.add(latLng);
       _checkZoneOnMove(latLng);
       _checkPoiArrival(latLng);
-      if (_walkSession != null) _earnChargesFromMove(latLng);
+      if (_walkSession != null) {
+        _earnChargesFromMove(latLng);
+        // Track walk points.
+        _walkSession = _walkSession!.addPoint(
+          WalkPoint(position: latLng, timestamp: DateTime.now()),
+        );
+      }
       _prevPosition = latLng;
+      _scheduleFogSave();
     });
   }
 
@@ -155,8 +190,11 @@ class _MapScreenState extends State<MapScreen>
   Future<void> _generatePoisForPosition(LatLng position) async {
     try {
       final poiService = GetIt.instance<MysteryPoiService>();
-      final pois = await poiService.generatePois(position, 500.0);
-      _mysteryPoisNotifier.value = pois;
+      final zoneId = _activeZone?.id ?? 'default';
+      final result =
+          await poiService.loadOrGenerate(zoneId, position, 500.0);
+      _mysteryPoisNotifier.value = result.activePois;
+      _discoveriesWaitingNotifier.value = result.totalCount;
     } catch (_) {
       // POI service not available — skip
     }
@@ -180,12 +218,44 @@ class _MapScreenState extends State<MapScreen>
           .toList();
       _mysteryPoisNotifier.value = updatedPois;
 
+      // Persist updated POI state to cache.
+      _savePoisToCache(updatedPois);
+
+      // Decrement discoveries waiting (clamp to 0).
+      final waiting = _discoveriesWaitingNotifier.value;
+      if (waiting > 0) {
+        _discoveriesWaitingNotifier.value = waiting - 1;
+      }
+
       _triggerDiscoveryBurst(arrived);
       _showPoiDiscoveryNotification(revealed);
       _awardPoiXp();
+
+      // Check for wave progression — may unlock additional POIs.
+      _checkWaveProgression(poiService);
     } catch (_) {
       // POI service not available — skip
     }
+  }
+
+  /// Calls [MysteryPoiService.onPoiRevealed] and updates [_mysteryPoisNotifier]
+  /// if the wave has advanced (new POIs are now active).
+  void _checkWaveProgression(MysteryPoiService poiService) {
+    final zoneId = _activeZone?.id ?? 'default';
+    poiService.onPoiRevealed(zoneId).then((result) {
+      if (!mounted) return;
+      // Only update the notifier when the active set actually changed
+      // (wave unlocked more POIs or the list composition differs).
+      final current = _mysteryPoisNotifier.value;
+      final updated = result.activePois;
+      final sameIds = current.length == updated.length &&
+          current.every((p) => updated.any((u) => u.id == p.id));
+      if (!sameIds) {
+        _mysteryPoisNotifier.value = updated;
+      }
+    }).catchError((_) {
+      // Wave progression not critical — ignore errors.
+    });
   }
 
   void _triggerDiscoveryBurst(MysteryPoi poi) {
@@ -214,6 +284,7 @@ class _MapScreenState extends State<MapScreen>
       discoveredAt: DateTime.now(),
     );
     setState(() => _pendingDiscovery = discovery);
+    _saveDiscovery(discovery);
   }
 
   Future<void> _awardPoiXp() async {
@@ -348,13 +419,57 @@ class _MapScreenState extends State<MapScreen>
     }
   }
 
+  void _scheduleFogSave() {
+    if (_fogSaveTimer?.isActive ?? false) return;
+    _fogSaveTimer = Timer(const Duration(seconds: 5), _saveFogGrid);
+  }
+
+  void _saveFogGrid() {
+    try {
+      final fogRepo = GetIt.instance<FogRepository>();
+      fogRepo.save(_fogGridNotifier.value).catchError((_) {});
+    } catch (_) {
+      // Repository not registered in tests — skip.
+    }
+  }
+
+  void _savePoisToCache(List<MysteryPoi> pois) {
+    try {
+      final repo = GetIt.instance<MysteryPoiRepository>();
+      final zoneId = _activeZone?.id ?? 'default';
+      repo.savePois(zoneId, pois).catchError((_) {});
+    } catch (_) {
+      // Repository not registered in tests — skip.
+    }
+  }
+
+  Future<void> _saveDiscovery(Discovery discovery) async {
+    try {
+      final repo = GetIt.instance<DiscoveryRepository>();
+      await repo.markDiscovered(discovery.id, discovery.discoveredAt!);
+    } catch (_) {
+      // Repository not available — skip.
+    }
+  }
+
   void _hintNearestUnrevealedPoi() {
     final charges = _compassChargesNotifier.value;
     if (!charges.canSpend) return;
 
     final pois = _mysteryPoisNotifier.value;
     final unrevealed = pois.where((p) => p.state == PoiState.unrevealed).toList();
-    if (unrevealed.isEmpty) return;
+    if (unrevealed.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Start walking to discover nearby points of interest!'),
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+      return;
+    }
 
     // Find the nearest unrevealed POI to the user's current position.
     MysteryPoi? nearest;
@@ -381,6 +496,7 @@ class _MapScreenState extends State<MapScreen>
         .map((p) => p.id == nearest!.id ? hinted : p)
         .toList();
     _mysteryPoisNotifier.value = updatedPois;
+    _savePoisToCache(updatedPois);
 
     final spentCharges = charges.spend();
     _compassChargesNotifier.value = spentCharges;
@@ -399,11 +515,15 @@ class _MapScreenState extends State<MapScreen>
 
   @override
   void dispose() {
+    _fogSaveTimer?.cancel();
+    // Fire-and-forget fog save on dispose — errors swallowed by _saveFogGrid.
+    _saveFogGrid();
     _positionSub?.cancel();
     _locationStreamController.close();
     _fogGridNotifier.dispose();
     _mysteryPoisNotifier.dispose();
     _compassChargesNotifier.dispose();
+    _discoveriesWaitingNotifier.dispose();
     _mapController.dispose();
     _pulseController.dispose();
     super.dispose();
@@ -418,8 +538,20 @@ class _MapScreenState extends State<MapScreen>
     });
   }
 
-  void _stopWalk(WalkSession session) {
+  Future<void> _stopWalk(WalkSession session) async {
+    final completed = session.complete();
     setState(() => _walkSession = null);
+
+    // Persist walk to Hive.
+    try {
+      final walkRepo = GetIt.instance<WalkRepository>();
+      await walkRepo.saveWalk(completed);
+    } catch (_) {
+      // Repository not registered in tests — skip.
+    }
+
+    // Force-save fog state immediately on walk end.
+    _saveFogGrid();
   }
 
   @override
@@ -487,31 +619,51 @@ class _MapScreenState extends State<MapScreen>
         Builder(
           builder: (context) {
             final camera = MapCamera.of(context);
-            return IgnorePointer(
-              child: Stack(
-                children: [
-                  FogLayer(
-                    fogGridNotifier: _fogGridNotifier,
-                    bounds: camera.visibleBounds,
-                    locationStream: _locationStreamController.stream,
-                    exploreRadius: 50.0,
-                    onFogExpanded: _walkSession != null ? _awardStreetXp : null,
+            return Stack(
+              children: [
+                // Fog and location dot don't need tap interaction.
+                IgnorePointer(
+                  child: Stack(
+                    children: [
+                      FogLayer(
+                        fogGridNotifier: _fogGridNotifier,
+                        bounds: camera.visibleBounds,
+                        locationStream: _locationStreamController.stream,
+                        exploreRadius: 50.0,
+                        onFogExpanded:
+                            _walkSession != null ? _awardStreetXp : null,
+                      ),
+                      if (_userPosition != null)
+                        _buildLocationDot(camera),
+                    ],
                   ),
-                  ValueListenableBuilder<List<MysteryPoi>>(
-                    valueListenable: _mysteryPoisNotifier,
-                    builder: (context, pois, _) => MysteryPoiMarkerLayer(
-                      pois: pois,
-                      camera: camera,
-                    ),
+                ),
+                // POI markers need tap handling.
+                ValueListenableBuilder<List<MysteryPoi>>(
+                  valueListenable: _mysteryPoisNotifier,
+                  builder: (context, pois, _) => MysteryPoiMarkerLayer(
+                    pois: pois,
+                    camera: camera,
+                    onRevealedTap: _onRevealedPoiTapped,
                   ),
-                  if (_userPosition != null)
-                    _buildLocationDot(camera),
-                ],
-              ),
+                ),
+              ],
             );
           },
         ),
       ],
+    );
+  }
+
+  void _onRevealedPoiTapped(MysteryPoi poi) {
+    if (!mounted) return;
+    final name = poi.name ?? poi.category;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$name — ${poi.category}'),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
     );
   }
 
@@ -525,7 +677,10 @@ class _MapScreenState extends State<MapScreen>
       child: AnimatedBuilder(
         animation: _pulseAnimation,
         builder: (context, _) => CustomPaint(
-          painter: LocationDotPainter(pulseProgress: _pulseAnimation.value),
+          painter: LocationDotPainter(
+            pulseProgress: _pulseAnimation.value,
+            headingDegrees: _heading,
+          ),
         ),
       ),
     );
@@ -541,8 +696,12 @@ class _MapScreenState extends State<MapScreen>
             // Top-left: exploration badge.
             ValueListenableBuilder<FogGrid>(
               valueListenable: _fogGridNotifier,
-              builder: (context, _, __) => ExplorationBadge(
-                percentageExplored: _explorationPct,
+              builder: (context, _, __) => ValueListenableBuilder<int>(
+                valueListenable: _discoveriesWaitingNotifier,
+                builder: (context, waiting, __) => ExplorationBadge(
+                  percentageExplored: _explorationPct,
+                  discoveriesWaiting: waiting,
+                ),
               ),
             ),
             const Spacer(),

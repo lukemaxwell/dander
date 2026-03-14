@@ -181,6 +181,90 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
+  // saveTotalCount / loadTotalCount
+  // ---------------------------------------------------------------------------
+
+  group('saveTotalCount and loadTotalCount', () {
+    test('saves and loads total count for a zone', () async {
+      await repo.saveTotalCount('zone_1', 42);
+      final count = await repo.loadTotalCount('zone_1');
+      expect(count, 42);
+    });
+
+    test('returns null when no count saved', () async {
+      final count = await repo.loadTotalCount('zone_unknown');
+      expect(count, isNull);
+    });
+
+    test('overwrites existing count', () async {
+      await repo.saveTotalCount('zone_1', 42);
+      await repo.saveTotalCount('zone_1', 99);
+      final count = await repo.loadTotalCount('zone_1');
+      expect(count, 99);
+    });
+
+    test('counts for different zones are independent', () async {
+      await repo.saveTotalCount('zone_1', 10);
+      await repo.saveTotalCount('zone_2', 20);
+      expect(await repo.loadTotalCount('zone_1'), 10);
+      expect(await repo.loadTotalCount('zone_2'), 20);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // saveWaveState / loadWaveState
+  // ---------------------------------------------------------------------------
+
+  group('saveWaveState and loadWaveState', () {
+    test('saves and loads wave state for a zone', () async {
+      await repo.saveWaveState('zone_1', 1, 3);
+      final state = await repo.loadWaveState('zone_1');
+      expect(state, isNotNull);
+      expect(state!.currentWave, 1);
+      expect(state.discoveredInWave, 3);
+    });
+
+    test('returns null when no wave state saved', () async {
+      final state = await repo.loadWaveState('zone_unknown');
+      expect(state, isNull);
+    });
+
+    test('overwrites existing wave state', () async {
+      await repo.saveWaveState('zone_1', 1, 2);
+      await repo.saveWaveState('zone_1', 2, 0);
+      final state = await repo.loadWaveState('zone_1');
+      expect(state!.currentWave, 2);
+      expect(state.discoveredInWave, 0);
+    });
+
+    test('wave states for different zones are independent', () async {
+      await repo.saveWaveState('zone_1', 1, 4);
+      await repo.saveWaveState('zone_2', 2, 1);
+
+      final state1 = await repo.loadWaveState('zone_1');
+      final state2 = await repo.loadWaveState('zone_2');
+
+      expect(state1!.currentWave, 1);
+      expect(state1.discoveredInWave, 4);
+      expect(state2!.currentWave, 2);
+      expect(state2.discoveredInWave, 1);
+    });
+
+    test('wave state survives currentWave = 3 (final wave)', () async {
+      await repo.saveWaveState('zone_1', 3, 0);
+      final state = await repo.loadWaveState('zone_1');
+      expect(state!.currentWave, 3);
+      expect(state.discoveredInWave, 0);
+    });
+
+    test('wave state with discoveredInWave = 0 is preserved', () async {
+      await repo.saveWaveState('zone_1', 1, 0);
+      final state = await repo.loadWaveState('zone_1');
+      expect(state!.discoveredInWave, 0);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // Data integrity
   // ---------------------------------------------------------------------------
 

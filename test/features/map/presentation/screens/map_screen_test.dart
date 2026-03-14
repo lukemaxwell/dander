@@ -62,11 +62,12 @@ void main() {
       expect(find.byType(CompassButton), findsOneWidget);
     });
 
-    testWidgets('CompassButton shows zero charges initially', (tester) async {
+    testWidgets('CompassButton shows one charge initially (lead-in)',
+        (tester) async {
       await tester.pumpWidget(_screen());
       await tester.pump();
       final btn = tester.widget<CompassButton>(find.byType(CompassButton));
-      expect(btn.charges, 0);
+      expect(btn.charges, 1);
     });
   });
 }
