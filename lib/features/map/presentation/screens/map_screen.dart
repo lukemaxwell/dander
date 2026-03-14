@@ -238,7 +238,7 @@ class _MapScreenState extends State<MapScreen>
 
       _triggerDiscoveryBurst(arrived);
       _showPoiDiscoveryNotification(revealed);
-      _awardPoiXp();
+      _awardPoiXp(rarity: RarityTier.uncommon);
 
       // Check for wave progression — may unlock additional POIs.
       _checkWaveProgression(poiService);
@@ -296,14 +296,17 @@ class _MapScreenState extends State<MapScreen>
     _saveDiscovery(discovery);
   }
 
-  Future<void> _awardPoiXp() async {
+  Future<void> _awardPoiXp({RarityTier rarity = RarityTier.common}) async {
     if (_activeZone == null) return;
+    final xpDuration = rarity == RarityTier.rare || rarity == RarityTier.legendary
+        ? const Duration(milliseconds: 2500)
+        : FloatingXpController.defaultDuration;
     try {
       final zoneService = GetIt.instance<ZoneService>();
       final after = await zoneService.awardPoiXp(_activeZone!.id);
       final event = LevelUpDetector.checkLevelUp(_activeZone!, after);
       if (mounted) {
-        _xpController.show(ZoneLevel.xpPerPoi);
+        _xpController.show(ZoneLevel.xpPerPoi, duration: xpDuration);
         setState(() {
           _sessionXp += ZoneLevel.xpPerPoi;
           _activeZone = after;

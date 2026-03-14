@@ -17,6 +17,7 @@ class FloatingXpText extends StatefulWidget {
     super.key,
     required this.amount,
     required this.onComplete,
+    this.duration = const Duration(milliseconds: 1500),
   });
 
   /// XP amount to display (e.g. 10, 50, 5).
@@ -25,13 +26,15 @@ class FloatingXpText extends StatefulWidget {
   /// Called when the animation completes — parent should remove this widget.
   final VoidCallback onComplete;
 
+  /// How long the text animates before removal.  Defaults to 1500ms.
+  final Duration duration;
+
   @override
   State<FloatingXpText> createState() => _FloatingXpTextState();
 }
 
 class _FloatingXpTextState extends State<FloatingXpText>
     with SingleTickerProviderStateMixin {
-  static const Duration _duration = Duration(milliseconds: 1500);
   static const double _riseDistance = 40.0;
 
   late final AnimationController _controller;
@@ -43,7 +46,8 @@ class _FloatingXpTextState extends State<FloatingXpText>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: _duration);
+    _controller =
+        AnimationController(vsync: this, duration: widget.duration);
 
     // Fade: fully visible for first 60%, then fade to 0.
     _opacity = Tween<double>(begin: 1.0, end: 0.0).animate(
@@ -126,9 +130,10 @@ class _FloatingXpTextState extends State<FloatingXpText>
 /// An XP event with a unique key for list diffing.
 @immutable
 class _XpEvent {
-  _XpEvent({required this.amount}) : key = UniqueKey();
+  _XpEvent({required this.amount, required this.duration}) : key = UniqueKey();
 
   final int amount;
+  final Duration duration;
   final Key key;
 }
 
@@ -137,12 +142,14 @@ class _XpEvent {
 /// Call [show] to add a floating "+X XP" text. The [FloatingXpTextOverlay]
 /// listens to this controller and renders/removes entries automatically.
 class FloatingXpController extends ChangeNotifier {
+  static const Duration defaultDuration = Duration(milliseconds: 1500);
+
   List<_XpEvent> _events = const [];
 
   List<_XpEvent> get events => _events;
 
-  void show(int amount) {
-    _events = [..._events, _XpEvent(amount: amount)];
+  void show(int amount, {Duration duration = defaultDuration}) {
+    _events = [..._events, _XpEvent(amount: amount, duration: duration)];
     notifyListeners();
   }
 
@@ -176,6 +183,7 @@ class FloatingXpTextOverlay extends StatelessWidget {
             return FloatingXpText(
               key: event.key,
               amount: event.amount,
+              duration: event.duration,
               onComplete: () => controller._remove(event),
             );
           }).toList(),
