@@ -4,7 +4,6 @@ import 'package:get_it/get_it.dart';
 import 'package:dander/core/quiz/quiz_result.dart';
 import 'package:dander/core/quiz/quiz_session.dart';
 import 'package:dander/core/theme/app_theme.dart';
-import 'package:dander/core/zone/zone_level.dart';
 import 'package:dander/core/zone/zone_repository.dart';
 import 'package:dander/core/zone/zone_service.dart';
 import 'package:dander/features/quiz/presentation/widgets/choice_button.dart';
@@ -103,12 +102,10 @@ class _QuizQuestionScreenState extends State<QuizQuestionScreen> {
       if (result == QuizResult.correct) {
         zoneService.incrementQuizStreak(zoneId);
         final streakBonus = zoneService.isStreakBonusActive(zoneId);
-        await zoneService.awardQuizXp(zoneId, isStreakBonus: streakBonus);
-
-        final xpAmount = streakBonus
-            ? ZoneLevel.xpPerQuizCorrect + ZoneLevel.xpPerStreakBonus
-            : ZoneLevel.xpPerQuizCorrect;
-        _xpController.show(xpAmount);
+        final beforeXp = zones.first.xp;
+        final updated =
+            await zoneService.awardQuizXp(zoneId, isStreakBonus: streakBonus);
+        _xpController.show(updated.xp - beforeXp);
       } else {
         zoneService.resetQuizStreak(zoneId);
       }
