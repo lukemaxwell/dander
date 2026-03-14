@@ -7,10 +7,11 @@ import 'package:dander/core/theme/app_theme.dart';
 /// exploration looks like — simulating fog clearing, a POI discovery,
 /// and XP appearing.
 ///
-/// Shows only on first launch. On reduced motion, shows a static card
-/// with the tagline for 3 seconds instead of the full animation.
+/// Shows only on first launch. The animation plays automatically, then
+/// a "Tap to continue" prompt appears. The user must tap to dismiss.
+/// On reduced motion, shows a static card with the tagline instead.
 ///
-/// Calls [onComplete] when the overlay should be dismissed.
+/// Calls [onComplete] when the user taps to dismiss.
 class WalkPreviewOverlay extends StatefulWidget {
   const WalkPreviewOverlay({
     super.key,
@@ -22,7 +23,7 @@ class WalkPreviewOverlay extends StatefulWidget {
   /// immediately and nothing renders.
   final bool isFirstLaunch;
 
-  /// Called when the preview finishes (or immediately if not first launch).
+  /// Called when the user taps to dismiss the overlay.
   final VoidCallback onComplete;
 
   @override
@@ -33,19 +34,18 @@ class _WalkPreviewOverlayState extends State<WalkPreviewOverlay>
     with TickerProviderStateMixin {
   static const _animationDuration = Duration(seconds: 5);
   static const _fadeOutDuration = Duration(milliseconds: 800);
-  static const _staticDisplayDuration = Duration(seconds: 3);
 
   AnimationController? _mainController;
   AnimationController? _fadeOutController;
   late final Animation<double> _fadeOut;
   bool _dismissed = false;
+  bool _animationComplete = false;
 
   @override
   void initState() {
     super.initState();
 
     if (!widget.isFirstLaunch) {
-      // Fire immediately — nothing to show.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         widget.onComplete();
       });
@@ -70,25 +70,29 @@ class _WalkPreviewOverlayState extends State<WalkPreviewOverlay>
     );
 
     if (reducedMotion) {
-      // Static card — show for 3 seconds, then fade out.
+      // No animation — show static card, ready to dismiss immediately.
       _mainController = AnimationController(
         vsync: this,
-        duration: _staticDisplayDuration,
-      )..forward().then((_) => _startFadeOut());
+        duration: Duration.zero,
+      );
+      setState(() => _animationComplete = true);
     } else {
-      // Full animation.
       _mainController = AnimationController(
         vsync: this,
         duration: _animationDuration,
-      )..forward().then((_) => _startFadeOut());
+      )..forward().then((_) {
+          if (mounted) {
+            setState(() => _animationComplete = true);
+          }
+        });
     }
   }
 
-  void _startFadeOut() {
+  void _dismiss() {
     if (_dismissed || !mounted) return;
+    _dismissed = true;
     _fadeOutController?.forward().then((_) {
-      if (!_dismissed && mounted) {
-        _dismissed = true;
+      if (mounted) {
         widget.onComplete();
       }
     });
@@ -108,61 +112,77 @@ class _WalkPreviewOverlayState extends State<WalkPreviewOverlay>
     final controller = _fadeOutController;
     if (controller == null) return const SizedBox.shrink();
 
-    return AnimatedBuilder(
-      animation: controller,
-      builder: (context, child) => Opacity(
-        opacity: _fadeOut.value,
-        child: child,
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          color: DanderColors.surface.withValues(alpha: 0.85),
+    return GestureDetector(
+      onTap: _dismiss,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedBuilder(
+        animation: controller,
+        builder: (context, child) => Opacity(
+          opacity: _fadeOut.value,
+          child: child,
         ),
-        child: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: DanderSpacing.pagePadding,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Simulated map preview area
-                  Container(
-                    width: 200,
-                    height: 200,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: DanderColors.accent.withValues(alpha: 0.3),
-                        width: 1,
+        child: Container(
+          decoration: BoxDecoration(
+            color: DanderColors.surface.withValues(alpha: 0.85),
+          ),
+          child: SafeArea(
+            child: Center(
+              child: Padding(
+                padding: DanderSpacing.pagePadding,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Simulated map preview area
+                    Container(
+                      width: 200,
+                      height: 200,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: DanderColors.accent.withValues(alpha: 0.3),
+                          width: 1,
+                        ),
+                        color: DanderColors.primary.withValues(alpha: 0.5),
                       ),
-                      color: DanderColors.primary.withValues(alpha: 0.5),
-                    ),
-                    child: _mainController != null
-                        ? AnimatedBuilder(
-                            animation: _mainController!,
-                            builder: (context, _) => CustomPaint(
-                              painter: _PreviewPainter(
-                                progress: _mainController!.value,
+                      child: _mainController != null
+                          ? AnimatedBuilder(
+                              animation: _mainController!,
+                              builder: (context, _) => CustomPaint(
+                                painter: _PreviewPainter(
+                                  progress: _mainController!.value,
+                                ),
                               ),
-                            ),
-                          )
-                        : const SizedBox.shrink(),
-                  ),
-                  const SizedBox(height: DanderSpacing.xl),
-                  Text(
-                    'Every walk reveals more of your world',
-                    style: DanderTextStyles.titleMedium.copyWith(
-                      color: DanderColors.onSurface,
+                            )
+                          : const SizedBox.shrink(),
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: DanderSpacing.sm),
-                  Text(
-                    'Walk to clear the fog and discover hidden places',
-                    style: DanderTextStyles.bodyMediumMuted,
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+                    const SizedBox(height: DanderSpacing.xl),
+                    Text(
+                      'Every walk reveals more of your world',
+                      style: DanderTextStyles.titleMedium.copyWith(
+                        color: DanderColors.onSurface,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: DanderSpacing.sm),
+                    Text(
+                      'Walk to clear the fog and discover hidden places',
+                      style: DanderTextStyles.bodyMediumMuted,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: DanderSpacing.xxl),
+                    AnimatedOpacity(
+                      opacity: _animationComplete ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 400),
+                      child: Text(
+                        'Tap to continue',
+                        key: const Key('tap_to_continue'),
+                        style: DanderTextStyles.labelMedium.copyWith(
+                          color: DanderColors.accent,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
