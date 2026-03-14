@@ -42,6 +42,14 @@ class _FakeAppStateRepository implements AppStateRepository {
   Future<LatLng?> getLastPosition() async => null;
   @override
   Future<void> saveLastPosition(LatLng position) async {}
+  @override
+  Future<void> markFirstWalkContractCompleted() async {}
+  @override
+  Future<bool> isFirstWalkContractCompleted() async => false;
+  @override
+  Future<void> markFirstWalkContractDismissed() async {}
+  @override
+  Future<bool> isFirstWalkContractDismissed() async => false;
 }
 
 void main() {
