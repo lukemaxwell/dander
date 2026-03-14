@@ -28,5 +28,25 @@ void main() {
     test('discoveryFound() returns normally', () {
       expect(() => HapticService.discoveryFound(), returnsNormally);
     });
+
+    test('navTabSwitch() returns normally', () {
+      expect(() => HapticService.navTabSwitch(), returnsNormally);
+    });
+
+    test('levelUp() returns normally', () {
+      expect(() => HapticService.levelUp(), returnsNormally);
+    });
+
+    test('rareDiscovery() returns normally', () {
+      expect(() => HapticService.rareDiscovery(), returnsNormally);
+    });
+
+    test('streakMilestone() returns normally', () {
+      expect(() => HapticService.streakMilestone(), returnsNormally);
+    });
+
+    test('discoveryCardTap() returns normally', () {
+      expect(() => HapticService.discoveryCardTap(), returnsNormally);
+    });
   });
 }

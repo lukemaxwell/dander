@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
+import 'package:dander/core/haptics/haptic_service.dart';
 import 'package:dander/core/theme/dander_colors.dart';
 import 'package:dander/core/zone/level_up_detector.dart';
 import 'package:dander/core/zone/zone_level.dart';
@@ -39,7 +39,7 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> {
 
     // Trigger haptic on new level-up event.
     if (old.event == null && widget.event != null) {
-      HapticFeedback.heavyImpact();
+      HapticService.levelUp();
     }
   }
 

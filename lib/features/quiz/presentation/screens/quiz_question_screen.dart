@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 
+import 'package:dander/core/haptics/haptic_service.dart';
 import 'package:dander/core/quiz/quiz_result.dart';
 import 'package:dander/core/quiz/quiz_session.dart';
 import 'package:dander/core/theme/app_theme.dart';
@@ -58,6 +59,12 @@ class _QuizQuestionScreenState extends State<QuizQuestionScreen> {
 
   void _onChoiceTap(int index) {
     if (_selectedIndex != null) return; // already answered
+    final isCorrect = index == _session.currentQuestion.correctIndex;
+    if (isCorrect) {
+      HapticService.quizAnswerCorrect();
+    } else {
+      HapticService.quizAnswerIncorrect();
+    }
     setState(() {
       _selectedIndex = index;
     });

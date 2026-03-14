@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dander/core/haptics/haptic_service.dart';
 import 'package:dander/core/location/walk_session.dart';
 import 'package:dander/core/location/walk_stats_formatter.dart';
 import 'package:dander/core/theme/app_theme.dart';
@@ -111,7 +112,10 @@ class _IdlePanel extends StatelessWidget {
         boxShadow: DanderElevation.level2,
       ),
       child: ElevatedButton(
-        onPressed: onStart,
+        onPressed: () {
+          HapticService.walkStarted();
+          onStart();
+        },
         style: ElevatedButton.styleFrom(
           backgroundColor: DanderColors.secondary,
           foregroundColor: DanderColors.onSurface,
@@ -186,7 +190,10 @@ class _ActivePanel extends StatelessWidget {
           const SizedBox(height: DanderSpacing.md),
           // End walk button
           ElevatedButton(
-            onPressed: () => onStop(session),
+            onPressed: () {
+              HapticService.walkEnded();
+              onStop(session);
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: DanderColors.error,
               foregroundColor: DanderColors.onSurface,
