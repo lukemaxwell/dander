@@ -142,6 +142,7 @@ class _Header extends StatelessWidget {
     final controller = TextEditingController(text: zone.name);
     showDialog<String>(
       context: context,
+      useRootNavigator: true,
       builder: (context) => AlertDialog(
         backgroundColor: DanderColors.surfaceElevated,
         title: Text('Rename zone', style: DanderTextStyles.titleMedium),

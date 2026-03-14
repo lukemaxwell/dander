@@ -56,11 +56,12 @@ void main() {
         expect(find.textContaining('Start Walk'), findsWidgets);
       });
 
-      testWidgets('renders without AppBar (title removed)', (tester) async {
+      testWidgets('renders AppBar with Walk History title', (tester) async {
         await tester.pumpWidget(
           _wrap(const WalkHistoryScreen(walks: [])),
         );
-        expect(find.byType(AppBar), findsNothing);
+        expect(find.byType(AppBar), findsOneWidget);
+        expect(find.text('Walk History'), findsOneWidget);
       });
     });
 
