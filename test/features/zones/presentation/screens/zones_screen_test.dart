@@ -5,6 +5,7 @@ import 'package:dander/core/zone/zone.dart';
 import 'package:dander/core/zone/zone_repository.dart';
 import 'package:dander/features/zones/presentation/screens/zones_screen.dart';
 import 'package:dander/features/zones/presentation/widgets/zone_card.dart';
+import 'package:dander/features/zones/presentation/widgets/zones_loading_skeleton.dart';
 
 // ---------------------------------------------------------------------------
 // Fake repository
@@ -84,12 +85,11 @@ void main() {
         expect(find.byType(ZoneCard), findsNothing);
       });
 
-      testWidgets('shows loading indicator before future resolves',
-          (tester) async {
+      testWidgets('shows skeleton before future resolves', (tester) async {
         final repo = _FakeZoneRepository([]);
         await tester.pumpWidget(_wrap(ZonesScreen(repository: repo)));
         // Do NOT call pumpAndSettle — check the initial frame.
-        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+        expect(find.byType(ZonesLoadingSkeleton), findsOneWidget);
       });
     });
 
