@@ -13,6 +13,8 @@ import 'package:dander/core/discoveries/discovery_repository.dart';
 import 'package:dander/core/fog/fog_grid.dart';
 import 'package:dander/core/fog/fog_repository.dart';
 import 'package:dander/core/location/location_service.dart';
+import 'package:dander/core/onboarding/first_launch_service.dart';
+import 'package:dander/features/map/presentation/widgets/exploration_chip.dart';
 import 'package:dander/core/location/walk_repository.dart';
 import 'package:dander/core/location/walk_session.dart';
 import 'package:dander/core/theme/app_theme.dart';
@@ -94,6 +96,10 @@ class _MapScreenState extends State<MapScreen>
   // Fog save debounce — saves at most once every 5 seconds.
   Timer? _fogSaveTimer;
 
+  // First-launch onboarding state.
+  FirstLaunchService? _firstLaunchService;
+  bool _showExplorationChip = false;
+
   @override
   void initState() {
     super.initState();
@@ -116,6 +122,13 @@ class _MapScreenState extends State<MapScreen>
   }
 
   Future<void> _initLocation() async {
+    // Load first-launch state.
+    try {
+      _firstLaunchService = GetIt.instance<FirstLaunchService>();
+    } catch (_) {
+      _firstLaunchService = const FirstLaunchService(isFirstLaunch: false);
+    }
+
     final locationService =
         widget.locationService ?? GetIt.instance<LocationService>();
     final granted = await locationService.requestPermission();
@@ -136,11 +149,13 @@ class _MapScreenState extends State<MapScreen>
         } catch (_) {
           grid = FogGrid(origin: latLng);
         }
-        grid.markExplored(latLng, 50.0);
+        final radius = _firstLaunchService!.explorationRadius;
+        grid.markExplored(latLng, radius);
         setState(() {
           _currentCenter = latLng;
           _userPosition = latLng;
           _fogGridNotifier.value = grid;
+          _showExplorationChip = _firstLaunchService!.isFirstLaunch;
         });
       }
     } catch (_) {
@@ -618,6 +633,18 @@ class _MapScreenState extends State<MapScreen>
               onStop: _stopWalk,
               sessionXp: _sessionXp,
             ),
+            // First-launch exploration chip.
+            if (_showExplorationChip)
+              Positioned(
+                bottom: 180,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: ExplorationChip(
+                    percentageExplored: _explorationPct.toDouble(),
+                  ),
+                ),
+              ),
             // Floating XP text overlay — positioned top-center.
             Positioned(
               top: MediaQuery.of(context).padding.top + 60,
@@ -667,7 +694,8 @@ class _MapScreenState extends State<MapScreen>
                         fogGridNotifier: _fogGridNotifier,
                         bounds: camera.visibleBounds,
                         locationStream: _locationStreamController.stream,
-                        exploreRadius: 50.0,
+                        exploreRadius:
+                            _firstLaunchService?.explorationRadius ?? 50.0,
                         onFogExpanded:
                             _walkSession != null ? _awardStreetXp : null,
                       ),

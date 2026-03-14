@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import 'core/app/app_initializer.dart';
 import 'core/di/service_locator.dart';
 import 'core/navigation/app_router.dart';
 import 'core/network/connectivity_service.dart';
+import 'core/onboarding/first_launch_service.dart';
 import 'core/quiz/quiz_repository.dart';
 import 'core/storage/app_state_repository.dart';
 import 'core/storage/hive_boxes.dart';
@@ -53,6 +55,14 @@ Future<void> main() async {
     // Mark first launch complete immediately so subsequent starts are fast.
     await appStateRepository.markFirstLaunchComplete();
   }
+
+  // ------------------------------------------------------------------
+  // First-launch onboarding state
+  // ------------------------------------------------------------------
+  final sl = GetIt.instance;
+  sl.registerSingleton<FirstLaunchService>(
+    FirstLaunchService(isFirstLaunch: initResult.isFirstLaunch),
+  );
 
   // ------------------------------------------------------------------
   // Dependency injection
