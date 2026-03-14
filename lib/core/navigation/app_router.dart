@@ -10,6 +10,8 @@ import 'package:dander/core/progress/streak_tracker.dart';
 import 'package:get_it/get_it.dart';
 import 'package:dander/core/zone/zone_repository.dart';
 import 'package:dander/features/discoveries/presentation/screens/discoveries_screen.dart';
+import 'package:dander/features/discoveries/presentation/widgets/discoveries_loading_skeleton.dart';
+import 'package:dander/features/profile/presentation/widgets/profile_loading_skeleton.dart';
 import 'package:dander/features/map/presentation/screens/map_screen.dart';
 import 'package:dander/features/profile/presentation/screens/profile_screen.dart';
 import 'package:dander/features/quiz/presentation/screens/quiz_home_screen.dart';
@@ -106,6 +108,9 @@ class _DiscoveriesLoader extends StatelessWidget {
     return FutureBuilder<List<Discovery>>(
       future: _loadDiscoveries(),
       builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const DiscoveriesLoadingSkeleton();
+        }
         final discoveries = snapshot.data ?? const [];
         return DiscoveriesScreen(discoveries: discoveries);
       },
@@ -128,6 +133,9 @@ class _ProfileLoader extends StatelessWidget {
     return FutureBuilder<_ProfileData>(
       future: _loadProfileData(),
       builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const ProfileLoadingSkeleton();
+        }
         final data = snapshot.data;
         return ProfileScreen(
           discoveries: data?.discoveries ?? const [],

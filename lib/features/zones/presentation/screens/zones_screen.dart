@@ -4,6 +4,7 @@ import 'package:dander/core/theme/app_theme.dart';
 import 'package:dander/core/zone/zone.dart';
 import 'package:dander/core/zone/zone_repository.dart';
 import 'package:dander/features/zones/presentation/widgets/zone_card.dart';
+import 'package:dander/features/zones/presentation/widgets/zones_loading_skeleton.dart';
 
 /// Screen that lists all zones loaded from [ZoneRepository].
 ///
@@ -104,7 +105,7 @@ class _ZonesScreenState extends State<ZonesScreen> {
         future: _zonesFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const ZonesLoadingSkeleton();
           }
 
           if (snapshot.hasError) {
