@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:dander/core/discoveries/discovery.dart';
 import 'package:dander/core/navigation/app_router.dart';
 import 'package:dander/core/progress/badge.dart';
+import 'package:dander/core/progress/streak_shield.dart';
 import 'package:dander/core/progress/streak_tracker.dart';
 import 'package:dander/core/theme/app_theme.dart';
 import 'package:dander/core/theme/rarity_colors.dart';
@@ -23,6 +24,7 @@ class ProfileScreen extends StatelessWidget {
     this.zoneName,
     this.totalSteps = 0,
     this.totalDistanceMeters = 0.0,
+    this.streakShield,
   });
 
   /// All discoveries the user has collected.
@@ -46,6 +48,9 @@ class ProfileScreen extends StatelessWidget {
   /// Lifetime distance walked in metres.
   final double totalDistanceMeters;
 
+  /// Current streak shield state (null if feature not loaded).
+  final StreakShield? streakShield;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -68,7 +73,7 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: DanderSpacing.sm),
           _ViewWalkHistoryButton(),
           const SizedBox(height: DanderSpacing.lg),
-          _StreakCard(streak: streak),
+          _StreakCard(streak: streak, shield: streakShield),
           const SizedBox(height: DanderSpacing.lg),
           _BadgeGrid(badges: badges, explorationPct: explorationPct),
           const SizedBox(height: DanderSpacing.lg),
@@ -272,9 +277,10 @@ class _ViewWalkHistoryButton extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _StreakCard extends StatelessWidget {
-  const _StreakCard({required this.streak});
+  const _StreakCard({required this.streak, this.shield});
 
   final StreakTracker streak;
+  final StreakShield? shield;
 
   /// Returns a milestone label for special streak counts, or null.
   static String? milestoneLabel(int weeks) {
@@ -338,6 +344,16 @@ class _StreakCard extends StatelessWidget {
                   style: DanderTextStyles.labelMedium.copyWith(
                     color: DanderColors.streakAtRisk,
                   ),
+                ),
+              ],
+              if (shield != null && !isAtRisk) ...[
+                const Spacer(),
+                Icon(
+                  shield!.hasShield ? Icons.shield : Icons.shield_outlined,
+                  color: shield!.hasShield
+                      ? DanderColors.secondary
+                      : DanderColors.onSurfaceDisabled,
+                  size: 24,
                 ),
               ],
             ],

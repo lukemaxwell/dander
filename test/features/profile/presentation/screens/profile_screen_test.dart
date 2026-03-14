@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:dander/core/discoveries/discovery.dart';
 import 'package:dander/core/progress/badge.dart';
+import 'package:dander/core/progress/streak_shield.dart';
 import 'package:dander/core/progress/streak_tracker.dart';
 import 'package:dander/features/profile/presentation/screens/profile_screen.dart';
 
@@ -197,6 +198,32 @@ void main() {
       )));
 
       expect(find.textContaining('1 Year'), findsAtLeastNWidgets(1));
+    });
+  });
+
+  group('ProfileScreen — streak shield', () {
+    testWidgets('shows shield icon when shield is active', (tester) async {
+      await tester.pumpWidget(_wrap(ProfileScreen(
+        discoveries: noDiscoveries,
+        explorationPct: 0.1,
+        streak: StreakTracker(currentStreak: 3, lastWalkDate: DateTime.now()),
+        badges: sampleBadges,
+        streakShield: StreakShield.empty().earn(DateTime(2024, 6, 15)),
+      )));
+
+      expect(find.byIcon(Icons.shield), findsAtLeastNWidgets(1));
+    });
+
+    testWidgets('shows greyed shield when no shield held', (tester) async {
+      await tester.pumpWidget(_wrap(ProfileScreen(
+        discoveries: noDiscoveries,
+        explorationPct: 0.1,
+        streak: StreakTracker(currentStreak: 3, lastWalkDate: DateTime.now()),
+        badges: sampleBadges,
+        streakShield: StreakShield.empty(),
+      )));
+
+      expect(find.byIcon(Icons.shield_outlined), findsAtLeastNWidgets(1));
     });
   });
 
