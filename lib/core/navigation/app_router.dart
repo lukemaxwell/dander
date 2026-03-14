@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart' hide Badge;
 import 'package:go_router/go_router.dart';
 
+import 'package:dander/core/challenges/challenge.dart';
+import 'package:dander/core/challenges/challenge_repository.dart';
 import 'package:dander/core/discoveries/discovery.dart' show Discovery;
 import 'package:dander/core/discoveries/discovery_repository.dart';
 import 'package:dander/core/location/walk_repository.dart';
@@ -165,6 +167,7 @@ class _ProfileLoader extends StatelessWidget {
           zoneName: data?.zoneName,
           totalSteps: data?.totalSteps ?? 0,
           totalDistanceMeters: data?.totalDistanceMeters ?? 0.0,
+          weeklyChallenges: data?.weeklyChallenges ?? const [],
         );
       },
     );
@@ -198,11 +201,27 @@ class _ProfileLoader extends StatelessWidget {
       }
     } catch (_) {}
 
+    var weeklyChallenges = <Challenge>[];
+    try {
+      final challengeRepo = GetIt.instance<ChallengeRepository>();
+      weeklyChallenges = await challengeRepo.loadWeeklyChallenges();
+      if (weeklyChallenges.isEmpty) {
+        // Generate challenges for the current week
+        final now = DateTime.now();
+        final weekNumber =
+            now.difference(DateTime(now.year, 1, 1)).inDays ~/ 7;
+        weeklyChallenges = ChallengeDefinitions.challengesForWeek(weekNumber);
+        await challengeRepo.saveWeeklyChallenges(weeklyChallenges);
+        await challengeRepo.saveWeekNumber(weekNumber);
+      }
+    } catch (_) {}
+
     return _ProfileData(
       discoveries: discoveries,
       totalSteps: totalSteps,
       totalDistanceMeters: totalDistanceMeters,
       zoneName: zoneName,
+      weeklyChallenges: weeklyChallenges,
     );
   }
 }
@@ -213,12 +232,14 @@ class _ProfileData {
     required this.totalSteps,
     required this.totalDistanceMeters,
     this.zoneName,
+    this.weeklyChallenges = const [],
   });
 
   final List<Discovery> discoveries;
   final int totalSteps;
   final double totalDistanceMeters;
   final String? zoneName;
+  final List<Challenge> weeklyChallenges;
 }
 
 class _WalkHistoryLoader extends StatelessWidget {

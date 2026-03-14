@@ -37,6 +37,7 @@ Future<void> main() async {
     Hive.openBox<dynamic>(HiveBoxes.zones),
     Hive.openBox<dynamic>(HiveBoxes.mysteryPois),
     Hive.openBox<dynamic>(HiveBoxes.poiCooldowns),
+    Hive.openBox<dynamic>(HiveBoxes.challenges),
   ]);
 
   // ------------------------------------------------------------------
