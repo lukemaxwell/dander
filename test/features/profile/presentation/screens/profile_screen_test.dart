@@ -127,6 +127,79 @@ void main() {
     });
   });
 
+  group('ProfileScreen — badge detail', () {
+    testWidgets('tapping a badge opens detail bottom sheet', (tester) async {
+      await tester.pumpWidget(_wrap(ProfileScreen(
+        discoveries: noDiscoveries,
+        explorationPct: 0.15,
+        streak: StreakTracker.empty(),
+        badges: unlockedBadges,
+      )));
+
+      // Scroll down to make badges visible
+      await tester.dragFrom(
+        tester.getCenter(find.byType(ListView)),
+        const Offset(0, -400),
+      );
+      await tester.pump();
+
+      // Tap the Explorer badge icon
+      final explorerIcon = find.byIcon(Icons.explore);
+      expect(explorerIcon, findsOneWidget);
+      await tester.tap(explorerIcon, warnIfMissed: false);
+      await tester.pumpAndSettle();
+
+      // Should show badge detail sheet with unlock date
+      expect(find.textContaining('Unlocked'), findsWidgets);
+    });
+
+    testWidgets('recently unlocked badge shows NEW label', (tester) async {
+      final recentBadges = BadgeDefinitions.badges.map((b) {
+        if (b.id == BadgeId.firstDander) {
+          return b.unlock(DateTime.now().subtract(const Duration(hours: 1)));
+        }
+        return b;
+      }).toList();
+
+      await tester.pumpWidget(_wrap(ProfileScreen(
+        discoveries: noDiscoveries,
+        explorationPct: 0.05,
+        streak: StreakTracker.empty(),
+        badges: recentBadges,
+      )));
+
+      expect(find.text('NEW'), findsOneWidget);
+    });
+  });
+
+  group('ProfileScreen — streak milestones', () {
+    testWidgets('shows milestone text at 4-week streak', (tester) async {
+      final streak =
+          StreakTracker(currentStreak: 4, lastWalkDate: DateTime.now());
+      await tester.pumpWidget(_wrap(ProfileScreen(
+        discoveries: noDiscoveries,
+        explorationPct: 0.1,
+        streak: streak,
+        badges: sampleBadges,
+      )));
+
+      expect(find.textContaining('1 Month'), findsAtLeastNWidgets(1));
+    });
+
+    testWidgets('shows milestone text at 52-week streak', (tester) async {
+      final streak =
+          StreakTracker(currentStreak: 52, lastWalkDate: DateTime.now());
+      await tester.pumpWidget(_wrap(ProfileScreen(
+        discoveries: noDiscoveries,
+        explorationPct: 0.1,
+        streak: streak,
+        badges: sampleBadges,
+      )));
+
+      expect(find.textContaining('1 Year'), findsAtLeastNWidgets(1));
+    });
+  });
+
   group('ProfileScreen — discoveries section', () {
     testWidgets('shows discovery count', (tester) async {
       final discoveries = [
