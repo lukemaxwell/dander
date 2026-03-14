@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:dander/core/haptics/haptic_service.dart';
 import 'package:dander/core/navigation/app_router.dart';
 import 'package:dander/core/theme/app_theme.dart';
 
@@ -24,6 +25,7 @@ class AppShell extends StatelessWidget {
   }
 
   void _onTap(BuildContext context, int index) {
+    HapticService.navTabSwitch();
     switch (index) {
       case 0:
         context.go(AppRoutes.home);
