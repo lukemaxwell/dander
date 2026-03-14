@@ -12,12 +12,16 @@ import 'package:dander/core/discoveries/discovery.dart';
 import 'package:dander/core/discoveries/discovery_repository.dart';
 import 'package:dander/core/fog/fog_grid.dart';
 import 'package:dander/core/fog/fog_repository.dart';
+import 'package:dander/core/sharing/share_service.dart';
 import 'package:dander/core/storage/app_state_repository.dart';
 import 'package:dander/core/location/location_service.dart';
 import 'package:dander/core/onboarding/first_launch_service.dart';
 import 'package:dander/features/map/presentation/widgets/exploration_chip.dart';
 import 'package:dander/features/map/presentation/widgets/first_walk_contract_overlay.dart';
+import 'package:dander/features/map/presentation/widgets/post_first_walk_overlay.dart';
 import 'package:dander/features/map/presentation/widgets/walk_preview_overlay.dart';
+import 'package:dander/features/sharing/presentation/widgets/first_walk_share_card.dart';
+import 'package:dander/features/walk/domain/models/walk_summary.dart';
 import 'package:dander/core/location/walk_repository.dart';
 import 'package:dander/core/location/walk_session.dart';
 import 'package:dander/core/theme/app_theme.dart';
@@ -54,7 +58,7 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   static const LatLng _defaultCenter = LatLng(51.5074, -0.1278);
   static const double _defaultZoom = 15.0;
 
@@ -105,6 +109,8 @@ class _MapScreenState extends State<MapScreen>
   bool _showWalkPreview = false;
   bool _showFirstWalkContract = false;
   double _firstWalkDistance = 0;
+  bool _showPostFirstWalkOverlay = false;
+  bool _isFirstWalkCompleted = false;
 
   @override
   void initState() {
@@ -423,7 +429,10 @@ class _MapScreenState extends State<MapScreen>
   /// Called when the user reaches 200m during the first walk contract.
   /// Auto-creates the first zone and fires the celebration.
   Future<void> _onFirstWalkGoalReached() async {
-    setState(() => _showFirstWalkContract = false);
+    setState(() {
+      _showFirstWalkContract = false;
+      _isFirstWalkCompleted = true;
+    });
 
     if (_userPosition == null) return;
 
@@ -607,6 +616,8 @@ class _MapScreenState extends State<MapScreen>
 
   Future<void> _stopWalk(WalkSession session) async {
     final completed = session.complete();
+    final isFirstWalk = _isFirstWalkCompleted &&
+        _firstLaunchService?.isFirstLaunch == true;
     setState(() => _walkSession = null);
 
     // Persist walk to Hive.
@@ -619,6 +630,71 @@ class _MapScreenState extends State<MapScreen>
 
     // Force-save fog state immediately on walk end.
     _saveFogGrid();
+
+    // First walk zoom-out: animate camera to neighbourhood scale, then
+    // show share prompt.
+    if (isFirstWalk && mounted) {
+      _isFirstWalkCompleted = false; // Only fire once.
+      await _animateZoomOut();
+      if (mounted) {
+        setState(() => _showPostFirstWalkOverlay = true);
+      }
+    }
+  }
+
+  /// Smoothly zooms the camera out to neighbourhood scale (~14) over 2 seconds.
+  Future<void> _animateZoomOut() async {
+    const targetZoom = 14.0;
+    final startZoom = _mapController.camera.zoom;
+    if (startZoom <= targetZoom) return; // Already zoomed out enough.
+
+    final controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
+    final animation = Tween<double>(begin: startZoom, end: targetZoom).animate(
+      CurvedAnimation(parent: controller, curve: Curves.easeOut),
+    );
+    final center = _mapController.camera.center;
+
+    animation.addListener(() {
+      if (mounted) {
+        _mapController.move(center, animation.value);
+      }
+    });
+
+    await controller.forward();
+    controller.dispose();
+
+    // Brief pause after zoom-out settles.
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+  }
+
+  /// Renders and shares the first walk share card via the native share sheet.
+  Future<void> _shareFirstWalk() async {
+    setState(() => _showPostFirstWalkOverlay = false);
+
+    try {
+      final shareService = GetIt.instance<ShareService>();
+      final summary = WalkSummary(
+        id: 'first-walk',
+        startedAt: DateTime.now().subtract(const Duration(minutes: 15)),
+        endedAt: DateTime.now(),
+        distanceMetres: _firstWalkDistance,
+        fogClearedPercent: _explorationPct.toDouble(),
+        discoveriesFound: 0,
+      );
+      final imageBytes = await shareService.captureWidget(
+        FirstWalkShareCard(walkSummary: summary),
+        size: const Size(
+          FirstWalkShareCard.cardWidth,
+          FirstWalkShareCard.cardHeight,
+        ),
+      );
+      await shareService.shareImage(imageBytes, subject: 'My first Dander walk');
+    } catch (_) {
+      // Share service not available — dismiss silently.
+    }
   }
 
   @override
@@ -703,6 +779,13 @@ class _MapScreenState extends State<MapScreen>
                       setState(() => _showFirstWalkContract = false),
                   onGoalReached: _onFirstWalkGoalReached,
                 ),
+              ),
+            // Post-first-walk share prompt.
+            if (_showPostFirstWalkOverlay)
+              PostFirstWalkOverlay(
+                onShare: _shareFirstWalk,
+                onDismiss: () =>
+                    setState(() => _showPostFirstWalkOverlay = false),
               ),
             // Floating XP text overlay — positioned top-center.
             Positioned(
