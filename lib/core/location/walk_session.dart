@@ -84,10 +84,10 @@ class WalkSession {
   double get distanceMeters => dc.DistanceCalculator.totalDistance(_points);
 
   /// Average stride length in metres (used for step estimation).
-  static const double _strideMeters = 0.762;
+  static const double strideMeters = 0.762;
 
   /// Estimated step count derived from distance walked.
-  int get estimatedSteps => (distanceMeters / _strideMeters).round();
+  int get estimatedSteps => (distanceMeters / strideMeters).round();
 
   /// Walk duration.
   ///
