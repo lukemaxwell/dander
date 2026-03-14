@@ -3,6 +3,8 @@ import 'package:dander/core/discoveries/discovery.dart';
 import 'package:dander/core/theme/app_theme.dart';
 import 'package:dander/core/theme/rarity_colors.dart';
 import 'package:dander/features/discoveries/presentation/widgets/discovery_card.dart';
+import 'package:dander/features/discoveries/presentation/widgets/discovery_detail_sheet.dart';
+import 'package:dander/features/discoveries/presentation/widgets/rarity_legend.dart';
 
 /// The collection screen — shows all found discoveries with filter chips.
 class DiscoveriesScreen extends StatefulWidget {
@@ -52,6 +54,28 @@ class _DiscoveriesScreenState extends State<DiscoveriesScreen> {
     return '$total discoveries — $rare Rare, $uncommon Uncommon, $common Common';
   }
 
+  /// Per-category count string: "cafe: 2 · park: 1 · ..."
+  String _buildCategoryProgress() {
+    final counts = <String, int>{};
+    for (final d in widget.discoveries) {
+      counts[d.category] = (counts[d.category] ?? 0) + 1;
+    }
+    return counts.entries.map((e) => '${e.key}: ${e.value}').join(' · ');
+  }
+
+  void _showDetail(Discovery discovery) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: DanderColors.surfaceElevated,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(DanderSpacing.borderRadiusLg),
+        ),
+      ),
+      builder: (_) => DiscoveryDetailSheet(discovery: discovery),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final filtered = _filtered;
@@ -77,6 +101,24 @@ class _DiscoveriesScreenState extends State<DiscoveriesScreen> {
                 style: DanderTextStyles.bodySmall,
               ),
             ),
+          // Collection progress (per-category counts)
+          if (widget.discoveries.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                DanderSpacing.lg,
+                DanderSpacing.xs,
+                DanderSpacing.lg,
+                0,
+              ),
+              child: Text(
+                _buildCategoryProgress(),
+                style: DanderTextStyles.labelSmall.copyWith(
+                  color: DanderColors.onSurfaceMuted,
+                ),
+              ),
+            ),
+          // Rarity legend
+          if (widget.discoveries.isNotEmpty) const RarityLegend(),
           // Filter chips
           if (widget.discoveries.isNotEmpty)
             _FilterRow(
@@ -111,9 +153,12 @@ class _DiscoveriesScreenState extends State<DiscoveriesScreen> {
                             padding: const EdgeInsets.only(
                               bottom: DanderSpacing.md,
                             ),
-                            child: DiscoveryCard(
-                              discovery: discovery,
-                              discoveryNumber: number,
+                            child: GestureDetector(
+                              onTap: () => _showDetail(discovery),
+                              child: DiscoveryCard(
+                                discovery: discovery,
+                                discoveryNumber: number,
+                              ),
                             ),
                           );
                         },

@@ -339,6 +339,79 @@ void main() {
       });
     });
 
+    group('rarity legend', () {
+      testWidgets('shows rarity legend when discoveries exist',
+          (tester) async {
+        final discoveries = [
+          _makeDiscovery(
+            id: '1',
+            name: 'A',
+            category: 'cafe',
+            rarity: RarityTier.common,
+          ),
+        ];
+        await tester.pumpWidget(
+          _wrap(DiscoveriesScreen(discoveries: discoveries)),
+        );
+        expect(find.textContaining('Common'), findsWidgets);
+        expect(find.textContaining('Legendary'), findsWidgets);
+      });
+    });
+
+    group('collection progress', () {
+      testWidgets('shows per-category discovery counts', (tester) async {
+        final discoveries = [
+          _makeDiscovery(
+            id: '1',
+            name: 'Cafe A',
+            category: 'cafe',
+            rarity: RarityTier.common,
+          ),
+          _makeDiscovery(
+            id: '2',
+            name: 'Cafe B',
+            category: 'cafe',
+            rarity: RarityTier.uncommon,
+          ),
+          _makeDiscovery(
+            id: '3',
+            name: 'Park A',
+            category: 'park',
+            rarity: RarityTier.common,
+          ),
+        ];
+        await tester.pumpWidget(
+          _wrap(DiscoveriesScreen(discoveries: discoveries)),
+        );
+        // Should show category counts like "cafe: 2" and "park: 1"
+        expect(find.textContaining('cafe'), findsWidgets);
+        expect(find.textContaining('park'), findsWidgets);
+      });
+    });
+
+    group('detail bottom sheet', () {
+      testWidgets('tapping a discovery card opens detail sheet',
+          (tester) async {
+        final discoveries = [
+          _makeDiscovery(
+            id: '1',
+            name: 'London Eye',
+            category: 'viewpoint',
+            rarity: RarityTier.rare,
+          ),
+        ];
+        await tester.pumpWidget(
+          _wrap(DiscoveriesScreen(discoveries: discoveries)),
+        );
+        // Tap the discovery card
+        await tester.tap(find.text('London Eye'));
+        await tester.pumpAndSettle();
+
+        // Bottom sheet should show detail fields
+        expect(find.textContaining('50 XP'), findsWidgets);
+      });
+    });
+
     group('large list performance', () {
       testWidgets('handles 50 discoveries without error', (tester) async {
         final discoveries = List.generate(
