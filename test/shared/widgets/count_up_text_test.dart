@@ -4,6 +4,15 @@ import 'package:dander/shared/widgets/count_up_text.dart';
 
 Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
 
+Widget _wrapReduced(Widget child) => MaterialApp(
+      home: Scaffold(
+        body: MediaQuery(
+          data: const MediaQueryData(disableAnimations: true),
+          child: child,
+        ),
+      ),
+    );
+
 void main() {
   group('CountUpText — basic rendering', () {
     testWidgets('renders without throwing', (tester) async {
@@ -71,6 +80,35 @@ void main() {
       await tester.pumpWidget(_wrap(const CountUpText(value: 42, suffix: '%')));
       await tester.pumpAndSettle();
       expect(find.text('42%'), findsAtLeastNWidgets(1));
+    });
+  });
+
+  group('CountUpText — reduced motion', () {
+    testWidgets('shows final value immediately without counting up',
+        (tester) async {
+      await tester.pumpWidget(_wrapReduced(const CountUpText(value: 75)));
+      // No pump — should show final value on first frame
+      expect(find.text('75'), findsAtLeastNWidgets(1));
+    });
+
+    testWidgets('never shows intermediate value when reduced motion is on',
+        (tester) async {
+      await tester.pumpWidget(_wrapReduced(const CountUpText(value: 100)));
+      await tester.pump(const Duration(milliseconds: 100));
+      // Should show 100 immediately, never 0
+      final texts = tester
+          .widgetList<Text>(find.byType(Text))
+          .map((t) => int.tryParse(t.data ?? ''))
+          .where((v) => v != null)
+          .toList();
+      expect(texts.every((v) => v == 100), isTrue,
+          reason: 'Should show final value 100, not intermediate');
+    });
+
+    testWidgets('respects suffix when reduced motion is on', (tester) async {
+      await tester
+          .pumpWidget(_wrapReduced(const CountUpText(value: 50, suffix: '%')));
+      expect(find.text('50%'), findsAtLeastNWidgets(1));
     });
   });
 }

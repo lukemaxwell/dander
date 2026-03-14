@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:dander/core/motion/dander_motion.dart';
+
 /// A column of widgets that animate in sequentially with a staggered delay.
 ///
 /// Each child fades and slides in from below. All animations share a single
@@ -96,6 +98,12 @@ class _StaggeredListState extends State<StaggeredList>
 
   @override
   Widget build(BuildContext context) {
+    if (DanderMotion.isReduced(context)) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: widget.children,
+      );
+    }
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [

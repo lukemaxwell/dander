@@ -3,6 +3,27 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:dander/shared/widgets/floating_xp_text.dart';
 
+Widget _buildReduced({
+  int amount = 10,
+  VoidCallback? onComplete,
+}) {
+  return MaterialApp(
+    home: Scaffold(
+      body: MediaQuery(
+        data: const MediaQueryData(disableAnimations: true),
+        child: Stack(
+          children: [
+            FloatingXpText(
+              amount: amount,
+              onComplete: onComplete ?? () {},
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
 void main() {
   group('FloatingXpText', () {
     Widget buildSubject({
@@ -62,6 +83,19 @@ void main() {
       final style = textWidget.style!;
       expect(style.fontWeight, FontWeight.bold);
       expect(style.fontSize, greaterThanOrEqualTo(16));
+    });
+  });
+
+  group('FloatingXpText — reduced motion', () {
+    testWidgets('calls onComplete without waiting for animation',
+        (tester) async {
+      var completed = false;
+      await tester.pumpWidget(_buildReduced(onComplete: () => completed = true));
+      // A single frame pump — should fire onComplete almost immediately
+      await tester.pump();
+      await tester.pump();
+      expect(completed, isTrue,
+          reason: 'onComplete should be called immediately with reduced motion');
     });
   });
 

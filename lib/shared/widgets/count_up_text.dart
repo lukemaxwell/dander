@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:dander/core/motion/dander_motion.dart';
+
 /// Animated text widget that counts up from 0 to [value] over [duration].
 ///
 /// Uses [AnimationController] with [Curves.easeOut] for a natural deceleration.
@@ -66,6 +68,9 @@ class _CountUpTextState extends State<CountUpText>
 
   @override
   Widget build(BuildContext context) {
+    if (DanderMotion.isReduced(context)) {
+      return Text('${widget.value}${widget.suffix}', style: widget.style);
+    }
     return AnimatedBuilder(
       animation: _countAnimation,
       builder: (context, _) {

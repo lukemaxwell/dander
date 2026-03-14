@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 
+import 'package:dander/core/motion/dander_motion.dart';
 import 'package:dander/core/theme/app_theme.dart';
 import 'package:dander/core/theme/category_pin_config.dart';
 import 'package:dander/core/zone/mystery_poi.dart';
@@ -77,17 +78,24 @@ class _MysteryPoiMarkerLayerState extends State<MysteryPoiMarkerLayer>
 
     if (visiblePois.isEmpty) return const SizedBox.shrink();
 
+    if (DanderMotion.isReduced(context)) {
+      // Static markers — no pulse animation.
+      return Stack(
+        children: visiblePois.map((p) => _buildMarker(p, pulseProgress: 0.0)).toList(),
+      );
+    }
+
     return AnimatedBuilder(
       animation: _pulseAnimation,
       builder: (context, _) {
         return Stack(
-          children: visiblePois.map(_buildMarker).toList(),
+          children: visiblePois.map((p) => _buildMarker(p)).toList(),
         );
       },
     );
   }
 
-  Widget _buildMarker(MysteryPoi poi) {
+  Widget _buildMarker(MysteryPoi poi, {double? pulseProgress}) {
     final screenPoint = widget.camera.getOffsetFromOrigin(poi.position);
 
     if (poi.isRevealed) {
@@ -105,7 +113,7 @@ class _MysteryPoiMarkerLayerState extends State<MysteryPoiMarkerLayer>
     return _HintedMarker(
       key: ValueKey('poi_hinted_${poi.id}'),
       screenPoint: screenPoint,
-      pulseProgress: _pulseAnimation.value,
+      pulseProgress: pulseProgress ?? _pulseAnimation.value,
     );
   }
 }
