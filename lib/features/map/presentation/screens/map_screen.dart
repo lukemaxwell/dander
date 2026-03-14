@@ -26,6 +26,7 @@ import 'package:dander/core/zone/zone_detector.dart';
 import 'package:dander/core/zone/zone_repository.dart';
 import 'package:dander/core/zone/zone_service.dart';
 import 'package:dander/features/discoveries/presentation/widgets/discovery_notification.dart';
+import 'package:dander/features/discoveries/presentation/widgets/discovery_reveal_overlay.dart';
 import 'package:dander/features/map/presentation/widgets/compass_button.dart';
 import 'package:dander/features/map/presentation/widgets/discovery_burst_overlay.dart';
 import 'package:dander/features/map/presentation/widgets/exploration_badge.dart';
@@ -75,6 +76,7 @@ class _MapScreenState extends State<MapScreen>
 
   // POI discovery state
   Discovery? _pendingDiscovery;
+  Discovery? _revealingDiscovery; // actively playing reveal sequence
 
   // Burst animation state
   Offset? _burstPosition;
@@ -290,7 +292,7 @@ class _MapScreenState extends State<MapScreen>
       osmTags: const {},
       discoveredAt: DateTime.now(),
     );
-    setState(() => _pendingDiscovery = discovery);
+    setState(() => _revealingDiscovery = discovery);
     _saveDiscovery(discovery);
   }
 
@@ -580,6 +582,14 @@ class _MapScreenState extends State<MapScreen>
           children: [
             _buildMap(),
             _buildOverlays(),
+            if (_revealingDiscovery != null)
+              DiscoveryRevealOverlay(
+                discovery: _revealingDiscovery!,
+                onComplete: () => setState(() {
+                  _pendingDiscovery = _revealingDiscovery;
+                  _revealingDiscovery = null;
+                }),
+              ),
             if (_pendingDiscovery != null)
               Positioned(
                 bottom: 0,
