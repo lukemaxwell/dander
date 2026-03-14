@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:dander/core/motion/dander_motion.dart';
 import 'package:dander/features/map/presentation/widgets/walk_preview_overlay.dart';
 
 void main() {
@@ -33,7 +32,6 @@ void main() {
         ),
       ));
 
-      // Should immediately call onComplete and render nothing visible
       expect(completed, isTrue);
     });
 
@@ -45,7 +43,6 @@ void main() {
         ),
       ));
 
-      // Advance past any initial delay
       await tester.pump(const Duration(seconds: 3));
 
       expect(
@@ -54,7 +51,7 @@ void main() {
       );
     });
 
-    testWidgets('calls onComplete after animation finishes', (tester) async {
+    testWidgets('does not auto-dismiss — requires tap', (tester) async {
       var completed = false;
       await tester.pumpWidget(wrap(
         WalkPreviewOverlay(
@@ -63,13 +60,54 @@ void main() {
         ),
       ));
 
-      // Animation is 5 seconds + 1s fade-out
-      await tester.pumpAndSettle(const Duration(seconds: 7));
+      // Wait well past the animation duration
+      await tester.pump(const Duration(seconds: 10));
+
+      // Should still be showing — not auto-dismissed
+      expect(completed, isFalse);
+      expect(find.textContaining('Every walk reveals'), findsOneWidget);
+    });
+
+    testWidgets('shows tap to continue after animation completes',
+        (tester) async {
+      await tester.pumpWidget(wrap(
+        WalkPreviewOverlay(
+          isFirstLaunch: true,
+          onComplete: () {},
+        ),
+      ));
+
+      // Before animation completes — prompt not yet visible
+      await tester.pump(const Duration(seconds: 1));
+
+      // After animation completes
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.byKey(const Key('tap_to_continue')), findsOneWidget);
+    });
+
+    testWidgets('tap dismisses overlay and calls onComplete', (tester) async {
+      var completed = false;
+      await tester.pumpWidget(wrap(
+        WalkPreviewOverlay(
+          isFirstLaunch: true,
+          onComplete: () => completed = true,
+        ),
+      ));
+
+      // Let animation finish
+      await tester.pump(const Duration(seconds: 6));
+
+      // Tap to dismiss
+      await tester.tap(find.byType(WalkPreviewOverlay));
+      await tester.pumpAndSettle();
 
       expect(completed, isTrue);
     });
 
-    testWidgets('reduced motion shows static card instead', (tester) async {
+    testWidgets('reduced motion shows static card with tap to dismiss',
+        (tester) async {
       var completed = false;
       await tester.pumpWidget(wrap(
         WalkPreviewOverlay(
@@ -81,27 +119,16 @@ void main() {
 
       await tester.pump();
 
-      // Should show the tagline without animation
-      expect(
-        find.textContaining('Every walk reveals'),
-        findsOneWidget,
-      );
-    });
+      expect(find.textContaining('Every walk reveals'), findsOneWidget);
+      expect(find.byKey(const Key('tap_to_continue')), findsOneWidget);
 
-    testWidgets('reduced motion calls onComplete after brief delay',
-        (tester) async {
-      var completed = false;
-      await tester.pumpWidget(wrap(
-        WalkPreviewOverlay(
-          isFirstLaunch: true,
-          onComplete: () => completed = true,
-        ),
-        reducedMotion: true,
-      ));
+      // Should not auto-dismiss
+      await tester.pump(const Duration(seconds: 5));
+      expect(completed, isFalse);
 
-      // Static card shows for 3 seconds then completes
-      await tester.pumpAndSettle(const Duration(seconds: 4));
-
+      // Tap to dismiss
+      await tester.tap(find.byType(WalkPreviewOverlay));
+      await tester.pumpAndSettle();
       expect(completed, isTrue);
     });
 
@@ -115,7 +142,6 @@ void main() {
 
       await tester.pump();
 
-      // Should have a container with semi-transparent background
       final containers = tester.widgetList<Container>(find.byType(Container));
       final hasOverlay = containers.any((c) {
         final decoration = c.decoration;
