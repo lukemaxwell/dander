@@ -24,31 +24,32 @@ class ExplorationChip extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: DanderSpacing.md,
-        vertical: DanderSpacing.sm,
+        horizontal: DanderSpacing.xl,
+        vertical: DanderSpacing.md,
       ),
       decoration: BoxDecoration(
-        color: DanderColors.primary.withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(DanderSpacing.borderRadiusFull),
+        color: DanderColors.cardBackground,
+        borderRadius: BorderRadius.circular(DanderSpacing.borderRadiusLg),
         border: Border.all(
-          color: DanderColors.accent.withValues(alpha: 0.3),
-          width: 0.5,
+          color: DanderColors.accent.withValues(alpha: 0.4),
+          width: 1,
         ),
+        boxShadow: DanderElevation.level2,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             pctText,
-            style: DanderTextStyles.headlineMedium.copyWith(
-              color: DanderColors.accent,
+            style: DanderTextStyles.headlineLarge.copyWith(
+              color: Colors.white,
             ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 4),
           Text(
             'of your neighbourhood explored',
-            style: DanderTextStyles.labelSmall.copyWith(
-              color: DanderColors.onSurfaceMuted,
+            style: DanderTextStyles.bodySmall.copyWith(
+              color: Colors.white70,
             ),
           ),
         ],
