@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:dander/core/discoveries/discovery.dart';
+import 'package:dander/core/haptics/haptic_service.dart';
 import 'package:dander/core/motion/dander_motion.dart';
 import 'package:dander/core/theme/app_theme.dart';
 import 'package:dander/core/theme/category_pin_config.dart';
@@ -106,6 +107,8 @@ class _DiscoveryRevealOverlayState extends State<DiscoveryRevealOverlay>
       });
       return;
     }
+    // Fire rarity-appropriate haptic at the start of the reveal.
+    HapticService.discoveryByRarity(widget.discovery.rarity);
     _controller.forward().then((_) {
       if (mounted) widget.onComplete();
     });

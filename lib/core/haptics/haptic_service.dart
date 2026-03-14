@@ -1,5 +1,7 @@
 import 'package:flutter/services.dart';
 
+import 'package:dander/core/discoveries/discovery.dart' show RarityTier;
+
 /// Centralised haptic feedback service.
 ///
 /// All haptic calls are routed through this class so they can be silenced
@@ -53,6 +55,23 @@ abstract final class HapticService {
   // ---------------------------------------------------------------------------
   // Heavy / celebratory
   // ---------------------------------------------------------------------------
+
+  /// Fired when a discovery is made — intensity varies by rarity tier.
+  ///
+  /// - [RarityTier.common]     → light impact
+  /// - [RarityTier.uncommon]   → medium impact
+  /// - [RarityTier.rare] / [RarityTier.legendary] → heavy impact
+  static Future<void> discoveryByRarity(RarityTier rarity) {
+    switch (rarity) {
+      case RarityTier.common:
+        return HapticFeedback.lightImpact().catchError((_) {});
+      case RarityTier.uncommon:
+        return HapticFeedback.mediumImpact().catchError((_) {});
+      case RarityTier.rare:
+      case RarityTier.legendary:
+        return HapticFeedback.heavyImpact().catchError((_) {});
+    }
+  }
 
   /// Fired when the user's zone levels up.
   static Future<void> levelUp() =>
