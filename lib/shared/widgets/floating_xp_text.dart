@@ -115,17 +115,17 @@ class _XpEvent {
 /// Call [show] to add a floating "+X XP" text. The [FloatingXpTextOverlay]
 /// listens to this controller and renders/removes entries automatically.
 class FloatingXpController extends ChangeNotifier {
-  final List<_XpEvent> _events = [];
+  List<_XpEvent> _events = const [];
 
-  List<_XpEvent> get events => List.unmodifiable(_events);
+  List<_XpEvent> get events => _events;
 
   void show(int amount) {
-    _events.add(_XpEvent(amount: amount));
+    _events = [..._events, _XpEvent(amount: amount)];
     notifyListeners();
   }
 
   void _remove(_XpEvent event) {
-    _events.remove(event);
+    _events = _events.where((e) => e != event).toList();
     notifyListeners();
   }
 }
