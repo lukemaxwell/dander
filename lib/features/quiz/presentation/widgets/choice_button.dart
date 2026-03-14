@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:dander/core/theme/app_theme.dart';
+import 'package:dander/shared/widgets/pressable.dart';
 
 /// Visual state of a [ChoiceButton].
 enum ChoiceButtonState {
@@ -37,8 +38,9 @@ class ChoiceButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = _resolveColors(state);
 
-    return GestureDetector(
+    return Pressable(
       onTap: state == ChoiceButtonState.disabled ? null : onTap,
+      enabled: state != ChoiceButtonState.disabled,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         width: double.infinity,
