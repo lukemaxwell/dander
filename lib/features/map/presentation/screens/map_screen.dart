@@ -34,6 +34,7 @@ import 'package:dander/features/map/presentation/widgets/level_up_overlay.dart';
 import 'package:dander/features/map/presentation/widgets/location_dot_painter.dart';
 import 'package:dander/features/map/presentation/widgets/mystery_poi_marker_layer.dart';
 import 'package:dander/features/map/presentation/widgets/walk_control.dart';
+import 'package:dander/features/map/presentation/widgets/xp_progress_bar.dart';
 import 'package:dander/shared/widgets/floating_xp_text.dart';
 
 class MapScreen extends StatefulWidget {
@@ -706,29 +707,44 @@ class _MapScreenState extends State<MapScreen>
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: Row(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top-left: exploration badge.
-            ValueListenableBuilder<FogGrid>(
-              valueListenable: _fogGridNotifier,
-              builder: (context, _, __) => ValueListenableBuilder<int>(
-                valueListenable: _discoveriesWaitingNotifier,
-                builder: (context, waiting, __) => ExplorationBadge(
-                  percentageExplored: _explorationPct,
-                  discoveriesWaiting: waiting,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top-left: exploration badge.
+                ValueListenableBuilder<FogGrid>(
+                  valueListenable: _fogGridNotifier,
+                  builder: (context, _, __) => ValueListenableBuilder<int>(
+                    valueListenable: _discoveriesWaitingNotifier,
+                    builder: (context, waiting, __) => ExplorationBadge(
+                      percentageExplored: _explorationPct,
+                      discoveriesWaiting: waiting,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                // Top-right: compass charge button.
+                ValueListenableBuilder<CompassCharges>(
+                  valueListenable: _compassChargesNotifier,
+                  builder: (context, charges, _) => CompassButton(
+                    charges: charges.currentCharges,
+                    onPressed: _hintNearestUnrevealedPoi,
+                  ),
+                ),
+              ],
+            ),
+            // XP progress bar below exploration badge.
+            if (_activeZone != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: XpProgressBar(
+                  currentXp: _activeZone!.xp,
+                  nextLevelXp: ZoneLevel.xpForNextLevel(_activeZone!.xp),
+                  level: _activeZone!.level,
                 ),
               ),
-            ),
-            const Spacer(),
-            // Top-right: compass charge button.
-            ValueListenableBuilder<CompassCharges>(
-              valueListenable: _compassChargesNotifier,
-              builder: (context, charges, _) => CompassButton(
-                charges: charges.currentCharges,
-                onPressed: _hintNearestUnrevealedPoi,
-              ),
-            ),
           ],
         ),
       ),
