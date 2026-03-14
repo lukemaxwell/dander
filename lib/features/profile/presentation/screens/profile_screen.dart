@@ -9,6 +9,7 @@ import 'package:dander/core/progress/badge.dart';
 import 'package:dander/core/progress/streak_tracker.dart';
 import 'package:dander/core/theme/app_theme.dart';
 import 'package:dander/core/theme/rarity_colors.dart';
+import 'package:dander/features/profile/presentation/widgets/badge_detail_sheet.dart';
 
 
 /// Profile screen showing exploration progress, streak, badges, and discoveries.
@@ -69,7 +70,7 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: DanderSpacing.lg),
           _StreakCard(streak: streak),
           const SizedBox(height: DanderSpacing.lg),
-          _BadgeGrid(badges: badges),
+          _BadgeGrid(badges: badges, explorationPct: explorationPct),
           const SizedBox(height: DanderSpacing.lg),
           _DiscoveryStatsSection(discoveries: discoveries),
         ],
@@ -275,10 +276,29 @@ class _StreakCard extends StatelessWidget {
 
   final StreakTracker streak;
 
+  /// Returns a milestone label for special streak counts, or null.
+  static String? milestoneLabel(int weeks) {
+    switch (weeks) {
+      case 4:
+        return '1 Month Streak!';
+      case 8:
+        return '2 Month Streak!';
+      case 12:
+        return '3 Month Streak!';
+      case 26:
+        return '6 Month Streak!';
+      case 52:
+        return '1 Year Streak!';
+      default:
+        return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isAtRisk = streak.isAtRisk;
     final isActive = streak.isActiveThisWeek;
+    final milestone = milestoneLabel(streak.currentStreak);
 
     return Container(
       padding: DanderSpacing.cardPadding,
@@ -286,34 +306,62 @@ class _StreakCard extends StatelessWidget {
         color: DanderColors.cardBackground,
         borderRadius: BorderRadius.circular(DanderSpacing.borderRadiusLg),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.local_fire_department,
-            color: isActive
-                ? DanderColors.streakActive
-                : isAtRisk
-                    ? DanderColors.streakAtRisk
-                    : DanderColors.onSurfaceDisabled,
-            size: 36,
-          ),
-          const SizedBox(width: DanderSpacing.md),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
             children: [
-              Text('Weekly Streak', style: DanderTextStyles.bodySmall),
-              Text(
-                '${streak.currentStreak} week${streak.currentStreak == 1 ? '' : 's'}',
-                style: DanderTextStyles.titleLarge,
+              Icon(
+                Icons.local_fire_department,
+                color: isActive
+                    ? DanderColors.streakActive
+                    : isAtRisk
+                        ? DanderColors.streakAtRisk
+                        : DanderColors.onSurfaceDisabled,
+                size: 36,
               ),
+              const SizedBox(width: DanderSpacing.md),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Weekly Streak', style: DanderTextStyles.bodySmall),
+                  Text(
+                    '${streak.currentStreak} week${streak.currentStreak == 1 ? '' : 's'}',
+                    style: DanderTextStyles.titleLarge,
+                  ),
+                ],
+              ),
+              if (isAtRisk) ...[
+                const Spacer(),
+                Text(
+                  'At risk!',
+                  style: DanderTextStyles.labelMedium.copyWith(
+                    color: DanderColors.streakAtRisk,
+                  ),
+                ),
+              ],
             ],
           ),
-          if (isAtRisk) ...[
-            const Spacer(),
-            Text(
-              'At risk!',
-              style: DanderTextStyles.labelMedium.copyWith(
-                color: DanderColors.streakAtRisk,
+          if (milestone != null) ...[
+            const SizedBox(height: DanderSpacing.sm),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                vertical: DanderSpacing.sm,
+                horizontal: DanderSpacing.md,
+              ),
+              decoration: BoxDecoration(
+                color: DanderColors.secondary.withValues(alpha: 0.1),
+                borderRadius:
+                    BorderRadius.circular(DanderSpacing.borderRadiusMd),
+              ),
+              child: Text(
+                milestone,
+                style: DanderTextStyles.labelMedium.copyWith(
+                  color: DanderColors.secondary,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
               ),
             ),
           ],
@@ -328,9 +376,26 @@ class _StreakCard extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _BadgeGrid extends StatelessWidget {
-  const _BadgeGrid({required this.badges});
+  const _BadgeGrid({required this.badges, required this.explorationPct});
 
   final List<Badge> badges;
+  final double explorationPct;
+
+  void _showBadgeDetail(BuildContext context, Badge badge) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: DanderColors.surfaceElevated,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(DanderSpacing.borderRadiusLg),
+        ),
+      ),
+      builder: (_) => BadgeDetailSheet(
+        badge: badge,
+        currentExplorationPct: explorationPct,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -355,7 +420,13 @@ class _BadgeGrid extends StatelessWidget {
               childAspectRatio: 0.85,
             ),
             itemCount: badges.length,
-            itemBuilder: (context, index) => _BadgeTile(badge: badges[index]),
+            itemBuilder: (context, index) {
+              final badge = badges[index];
+              return GestureDetector(
+                onTap: () => _showBadgeDetail(context, badge),
+                child: _BadgeTile(badge: badge),
+              );
+            },
           ),
         ],
       ),
@@ -368,32 +439,69 @@ class _BadgeTile extends StatelessWidget {
 
   final Badge badge;
 
+  /// A badge is "new" if unlocked within the last 24 hours.
+  bool get _isNew {
+    if (badge.unlockedAt == null) return false;
+    return DateTime.now().difference(badge.unlockedAt!).inHours < 24;
+  }
+
   @override
   Widget build(BuildContext context) {
     final unlocked = badge.isUnlocked;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            color: unlocked
-                ? DanderColors.secondary.withValues(alpha: 0.2)
-                : DanderColors.onSurfaceDisabled.withValues(alpha: 0.05),
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: unlocked ? DanderColors.secondary : DanderColors.divider,
-              width: 2,
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: unlocked
+                    ? DanderColors.secondary.withValues(alpha: 0.2)
+                    : DanderColors.onSurfaceDisabled.withValues(alpha: 0.05),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color:
+                      unlocked ? DanderColors.secondary : DanderColors.divider,
+                  width: 2,
+                ),
+              ),
+              child: Icon(
+                badge.icon,
+                color: unlocked
+                    ? DanderColors.secondary
+                    : DanderColors.onSurfaceDisabled,
+                size: 28,
+              ),
             ),
-          ),
-          child: Icon(
-            badge.icon,
-            color: unlocked
-                ? DanderColors.secondary
-                : DanderColors.onSurfaceDisabled,
-            size: 28,
-          ),
+            if (_isNew)
+              Positioned(
+                top: -4,
+                right: -4,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: DanderColors.secondary,
+                    borderRadius: BorderRadius.circular(
+                      DanderSpacing.borderRadiusFull,
+                    ),
+                  ),
+                  child: Text(
+                    'NEW',
+                    style: DanderTextStyles.labelSmall.copyWith(
+                      color: DanderColors.surface,
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: DanderSpacing.xs + 2),
         Text(
