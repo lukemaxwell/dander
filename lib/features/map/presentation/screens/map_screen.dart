@@ -15,6 +15,7 @@ import 'package:dander/core/fog/fog_repository.dart';
 import 'package:dander/core/location/location_service.dart';
 import 'package:dander/core/onboarding/first_launch_service.dart';
 import 'package:dander/features/map/presentation/widgets/exploration_chip.dart';
+import 'package:dander/features/map/presentation/widgets/walk_preview_overlay.dart';
 import 'package:dander/core/location/walk_repository.dart';
 import 'package:dander/core/location/walk_session.dart';
 import 'package:dander/core/theme/app_theme.dart';
@@ -99,6 +100,7 @@ class _MapScreenState extends State<MapScreen>
   // First-launch onboarding state.
   FirstLaunchService? _firstLaunchService;
   bool _showExplorationChip = false;
+  bool _showWalkPreview = false;
 
   @override
   void initState() {
@@ -156,6 +158,7 @@ class _MapScreenState extends State<MapScreen>
           _userPosition = latLng;
           _fogGridNotifier.value = grid;
           _showExplorationChip = _firstLaunchService!.isFirstLaunch;
+          _showWalkPreview = _firstLaunchService!.isFirstLaunch;
         });
       }
     } catch (_) {
@@ -644,6 +647,12 @@ class _MapScreenState extends State<MapScreen>
                     percentageExplored: _explorationPct.toDouble(),
                   ),
                 ),
+              ),
+            // First-launch walk preview overlay.
+            if (_showWalkPreview)
+              WalkPreviewOverlay(
+                isFirstLaunch: true,
+                onComplete: () => setState(() => _showWalkPreview = false),
               ),
             // Floating XP text overlay — positioned top-center.
             Positioned(
