@@ -62,6 +62,18 @@ abstract interface class AppStateRepository {
 
   /// Returns `true` if the user has never completed the first-launch flow.
   Future<bool> isFirstLaunch();
+
+  /// Records that the first walk contract (200m goal) has been completed.
+  Future<void> markFirstWalkContractCompleted();
+
+  /// Returns `true` if the user has completed the first walk contract.
+  Future<bool> isFirstWalkContractCompleted();
+
+  /// Records that the user manually dismissed the first walk contract prompt.
+  Future<void> markFirstWalkContractDismissed();
+
+  /// Returns `true` if the user dismissed the first walk contract prompt.
+  Future<bool> isFirstWalkContractDismissed();
 }
 
 // ---------------------------------------------------------------------------
@@ -79,6 +91,8 @@ class AppStateRepositoryImpl implements AppStateRepository {
   static const _keyLastPosition = 'last_position';
   static const _keyNeighbourhoodBounds = 'neighbourhood_bounds';
   static const _keyFirstLaunchComplete = 'first_launch_complete';
+  static const _keyFirstWalkContractCompleted = 'first_walk_contract_completed';
+  static const _keyFirstWalkContractDismissed = 'first_walk_contract_dismissed';
 
   @override
   Future<void> saveLastPosition(LatLng position) async {
@@ -121,5 +135,27 @@ class AppStateRepositoryImpl implements AppStateRepository {
     final value = _box.get(_keyFirstLaunchComplete);
     // Treat null or false as first-launch-not-complete
     return value != true;
+  }
+
+  @override
+  Future<void> markFirstWalkContractCompleted() async {
+    await _box.put(_keyFirstWalkContractCompleted, true);
+  }
+
+  @override
+  Future<bool> isFirstWalkContractCompleted() async {
+    final value = _box.get(_keyFirstWalkContractCompleted);
+    return value == true;
+  }
+
+  @override
+  Future<void> markFirstWalkContractDismissed() async {
+    await _box.put(_keyFirstWalkContractDismissed, true);
+  }
+
+  @override
+  Future<bool> isFirstWalkContractDismissed() async {
+    final value = _box.get(_keyFirstWalkContractDismissed);
+    return value == true;
   }
 }

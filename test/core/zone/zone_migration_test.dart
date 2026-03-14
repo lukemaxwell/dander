@@ -65,6 +65,18 @@ class FakeAppStateRepository implements AppStateRepository {
 
   @override
   Future<bool> isFirstLaunch() async => true;
+
+  @override
+  Future<void> markFirstWalkContractCompleted() async {}
+
+  @override
+  Future<bool> isFirstWalkContractCompleted() async => false;
+
+  @override
+  Future<void> markFirstWalkContractDismissed() async {}
+
+  @override
+  Future<bool> isFirstWalkContractDismissed() async => false;
 }
 
 class FakeStreetRepository implements StreetRepository {

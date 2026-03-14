@@ -12,9 +12,11 @@ import 'package:dander/core/discoveries/discovery.dart';
 import 'package:dander/core/discoveries/discovery_repository.dart';
 import 'package:dander/core/fog/fog_grid.dart';
 import 'package:dander/core/fog/fog_repository.dart';
+import 'package:dander/core/storage/app_state_repository.dart';
 import 'package:dander/core/location/location_service.dart';
 import 'package:dander/core/onboarding/first_launch_service.dart';
 import 'package:dander/features/map/presentation/widgets/exploration_chip.dart';
+import 'package:dander/features/map/presentation/widgets/first_walk_contract_overlay.dart';
 import 'package:dander/features/map/presentation/widgets/walk_preview_overlay.dart';
 import 'package:dander/core/location/walk_repository.dart';
 import 'package:dander/core/location/walk_session.dart';
@@ -101,6 +103,8 @@ class _MapScreenState extends State<MapScreen>
   FirstLaunchService? _firstLaunchService;
   bool _showExplorationChip = false;
   bool _showWalkPreview = false;
+  bool _showFirstWalkContract = false;
+  double _firstWalkDistance = 0;
 
   @override
   void initState() {
@@ -198,6 +202,12 @@ class _MapScreenState extends State<MapScreen>
         _walkSession = _walkSession!.addPoint(
           WalkPoint(position: latLng, timestamp: DateTime.now()),
         );
+        // Update first walk contract distance counter.
+        if (_showFirstWalkContract && mounted) {
+          setState(() {
+            _firstWalkDistance = _walkSession!.distanceMeters;
+          });
+        }
       }
       _prevPosition = latLng;
       _scheduleFogSave();
@@ -408,6 +418,25 @@ class _MapScreenState extends State<MapScreen>
       nameController.dispose();
     }
     _zonePromptShown = false;
+  }
+
+  /// Called when the user reaches 200m during the first walk contract.
+  /// Auto-creates the first zone and fires the celebration.
+  Future<void> _onFirstWalkGoalReached() async {
+    setState(() => _showFirstWalkContract = false);
+
+    if (_userPosition == null) return;
+
+    // Show zone naming prompt and create the first zone.
+    await _showNewZonePrompt(_userPosition!);
+
+    // Persist that the contract was completed so it doesn't reappear.
+    try {
+      final appStateRepo = GetIt.instance<AppStateRepository>();
+      await appStateRepo.markFirstWalkContractCompleted();
+    } catch (_) {
+      // Repository not available in tests.
+    }
   }
 
   Future<void> _awardStreetXp() async {
@@ -652,7 +681,28 @@ class _MapScreenState extends State<MapScreen>
             if (_showWalkPreview)
               WalkPreviewOverlay(
                 isFirstLaunch: true,
-                onComplete: () => setState(() => _showWalkPreview = false),
+                onComplete: () {
+                  _firstLaunchService =
+                      _firstLaunchService?.completeWalkPreview();
+                  setState(() {
+                    _showWalkPreview = false;
+                    _showFirstWalkContract =
+                        _firstLaunchService?.showFirstWalkContract ?? false;
+                  });
+                },
+              ),
+            // First walk contract — 200m prompt with live counter.
+            if (_showFirstWalkContract)
+              Positioned(
+                bottom: 140,
+                left: DanderSpacing.md,
+                right: DanderSpacing.md,
+                child: FirstWalkContractOverlay(
+                  distanceWalked: _firstWalkDistance,
+                  onDismissed: () =>
+                      setState(() => _showFirstWalkContract = false),
+                  onGoalReached: _onFirstWalkGoalReached,
+                ),
               ),
             // Floating XP text overlay — positioned top-center.
             Positioned(

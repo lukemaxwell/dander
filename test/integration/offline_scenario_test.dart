@@ -59,6 +59,27 @@ class InMemoryAppStateRepository implements AppStateRepository {
 
   @override
   Future<bool> isFirstLaunch() async => !_firstLaunchComplete;
+
+  bool _firstWalkContractCompleted = false;
+  bool _firstWalkContractDismissed = false;
+
+  @override
+  Future<void> markFirstWalkContractCompleted() async {
+    _firstWalkContractCompleted = true;
+  }
+
+  @override
+  Future<bool> isFirstWalkContractCompleted() async =>
+      _firstWalkContractCompleted;
+
+  @override
+  Future<void> markFirstWalkContractDismissed() async {
+    _firstWalkContractDismissed = true;
+  }
+
+  @override
+  Future<bool> isFirstWalkContractDismissed() async =>
+      _firstWalkContractDismissed;
 }
 
 // ---------------------------------------------------------------------------

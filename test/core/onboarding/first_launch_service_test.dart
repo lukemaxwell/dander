@@ -53,5 +53,48 @@ void main() {
       final service = FirstLaunchService(isFirstLaunch: false);
       expect(service.explorationRadius, 50.0);
     });
+
+    test('walkPreviewCompleted starts false', () {
+      final service = FirstLaunchService(isFirstLaunch: true);
+      expect(service.walkPreviewCompleted, isFalse);
+    });
+
+    test('completeWalkPreview sets flag to true', () {
+      final service = FirstLaunchService(isFirstLaunch: true);
+      final updated = service.completeWalkPreview();
+      expect(updated.walkPreviewCompleted, isTrue);
+    });
+
+    test('completeWalkPreview preserves other flags', () {
+      final service = FirstLaunchService(isFirstLaunch: true);
+      final updated =
+          service.completeMicroReveal().completeWalkPreview();
+      expect(updated.isFirstLaunch, isTrue);
+      expect(updated.microRevealCompleted, isTrue);
+      expect(updated.walkPreviewCompleted, isTrue);
+    });
+
+    test('showFirstWalkContract is true when first launch and preview done',
+        () {
+      final service = FirstLaunchService(isFirstLaunch: true)
+          .completeMicroReveal()
+          .completeWalkPreview();
+      expect(service.showFirstWalkContract, isTrue);
+    });
+
+    test(
+        'showFirstWalkContract is false when not first launch',
+        () {
+      final service = FirstLaunchService(isFirstLaunch: false);
+      expect(service.showFirstWalkContract, isFalse);
+    });
+
+    test(
+        'showFirstWalkContract is false when preview not completed',
+        () {
+      final service = FirstLaunchService(isFirstLaunch: true)
+          .completeMicroReveal();
+      expect(service.showFirstWalkContract, isFalse);
+    });
   });
 }

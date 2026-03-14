@@ -190,4 +190,70 @@ void main() {
       expect(result, isTrue);
     });
   });
+
+  group(
+      'AppStateRepository — markFirstWalkContractCompleted / isFirstWalkContractCompleted',
+      () {
+    test('isFirstWalkContractCompleted returns false when key absent',
+        () async {
+      when(() => mockBox.get('first_walk_contract_completed'))
+          .thenReturn(null);
+
+      final result = await repository.isFirstWalkContractCompleted();
+
+      expect(result, isFalse);
+    });
+
+    test(
+        'isFirstWalkContractCompleted returns true after markFirstWalkContractCompleted',
+        () async {
+      when(() => mockBox.put(any(), any())).thenAnswer((_) async {});
+      when(() => mockBox.get('first_walk_contract_completed'))
+          .thenReturn(true);
+
+      await repository.markFirstWalkContractCompleted();
+      final result = await repository.isFirstWalkContractCompleted();
+
+      expect(result, isTrue);
+    });
+
+    test(
+        'markFirstWalkContractCompleted stores true under expected key',
+        () async {
+      when(() => mockBox.put(any(), any())).thenAnswer((_) async {});
+
+      await repository.markFirstWalkContractCompleted();
+
+      verify(
+        () => mockBox.put('first_walk_contract_completed', true),
+      ).called(1);
+    });
+  });
+
+  group(
+      'AppStateRepository — markFirstWalkContractDismissed / isFirstWalkContractDismissed',
+      () {
+    test('isFirstWalkContractDismissed returns false when key absent',
+        () async {
+      when(() => mockBox.get('first_walk_contract_dismissed'))
+          .thenReturn(null);
+
+      final result = await repository.isFirstWalkContractDismissed();
+
+      expect(result, isFalse);
+    });
+
+    test(
+        'isFirstWalkContractDismissed returns true after markFirstWalkContractDismissed',
+        () async {
+      when(() => mockBox.put(any(), any())).thenAnswer((_) async {});
+      when(() => mockBox.get('first_walk_contract_dismissed'))
+          .thenReturn(true);
+
+      await repository.markFirstWalkContractDismissed();
+      final result = await repository.isFirstWalkContractDismissed();
+
+      expect(result, isTrue);
+    });
+  });
 }
