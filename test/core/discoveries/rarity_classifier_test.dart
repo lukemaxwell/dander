@@ -5,6 +5,83 @@ import 'package:dander/core/discoveries/rarity_classifier.dart';
 void main() {
   group('RarityClassifier.classify', () {
     // -------------------------------------------------------------------------
+    // Legendary cases (highest priority tier)
+    // -------------------------------------------------------------------------
+    group('legendary tier', () {
+      test('wikipedia tag alone → legendary', () {
+        expect(
+          RarityClassifier.classify({'wikipedia': 'en:Tower_of_London'}),
+          equals(RarityTier.legendary),
+        );
+      });
+
+      test('wikidata tag alone → legendary', () {
+        expect(
+          RarityClassifier.classify({'wikidata': 'Q29303'}),
+          equals(RarityTier.legendary),
+        );
+      });
+
+      test('heritage tag alone → legendary', () {
+        expect(
+          RarityClassifier.classify({'heritage': '1'}),
+          equals(RarityTier.legendary),
+        );
+      });
+
+      test('heritage:operator tag alone → legendary', () {
+        expect(
+          RarityClassifier.classify({'heritage:operator': 'Historic England'}),
+          equals(RarityTier.legendary),
+        );
+      });
+
+      test('historic + name + wikipedia → legendary', () {
+        expect(
+          RarityClassifier.classify({
+            'historic': 'castle',
+            'name': 'Windsor Castle',
+            'wikipedia': 'en:Windsor_Castle',
+          }),
+          equals(RarityTier.legendary),
+        );
+      });
+
+      test('historic + name + wikidata → legendary', () {
+        expect(
+          RarityClassifier.classify({
+            'historic': 'castle',
+            'name': 'Windsor Castle',
+            'wikidata': 'Q208176',
+          }),
+          equals(RarityTier.legendary),
+        );
+      });
+
+      test('legendary takes priority over rare criteria', () {
+        // tourism=viewpoint would be rare, but wikipedia makes it legendary
+        expect(
+          RarityClassifier.classify({
+            'tourism': 'viewpoint',
+            'wikipedia': 'en:Primrose_Hill',
+          }),
+          equals(RarityTier.legendary),
+        );
+      });
+
+      test('legendary takes priority over uncommon criteria', () {
+        // tourism=museum would be uncommon, but wikidata makes it legendary
+        expect(
+          RarityClassifier.classify({
+            'tourism': 'museum',
+            'wikidata': 'Q1234',
+          }),
+          equals(RarityTier.legendary),
+        );
+      });
+    });
+
+    // -------------------------------------------------------------------------
     // Rare (gold) cases
     // -------------------------------------------------------------------------
     group('rare tier', () {
@@ -166,13 +243,37 @@ void main() {
     });
 
     // -------------------------------------------------------------------------
-    // Priority: rare > uncommon > common (rare rules win if multiple match)
+    // Priority: legendary > rare > uncommon > common
     // -------------------------------------------------------------------------
     group('priority ordering', () {
       test('historic tag combined with leisure=park → rare wins', () {
         expect(
           RarityClassifier.classify({'historic': 'yes', 'leisure': 'park'}),
           equals(RarityTier.rare),
+        );
+      });
+
+      test('historic=castle without wikipedia → still rare, NOT legendary', () {
+        expect(
+          RarityClassifier.classify({'historic': 'castle'}),
+          equals(RarityTier.rare),
+        );
+      });
+
+      test('historic + name but no wikipedia/wikidata → still rare', () {
+        expect(
+          RarityClassifier.classify({
+            'historic': 'castle',
+            'name': 'Some Castle',
+          }),
+          equals(RarityTier.rare),
+        );
+      });
+
+      test('amenity=cafe → still uncommon (legendary criteria absent)', () {
+        expect(
+          RarityClassifier.classify({'amenity': 'cafe', 'name': 'Local Brew'}),
+          equals(RarityTier.uncommon),
         );
       });
     });

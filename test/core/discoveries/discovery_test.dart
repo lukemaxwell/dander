@@ -89,14 +89,15 @@ void main() {
     });
 
     group('RarityTier values', () {
-      test('has three tiers: common, uncommon, rare', () {
-        expect(RarityTier.values.length, equals(3));
+      test('has four tiers: common, uncommon, rare, legendary', () {
+        expect(RarityTier.values.length, equals(4));
         expect(
             RarityTier.values,
             containsAll([
               RarityTier.common,
               RarityTier.uncommon,
               RarityTier.rare,
+              RarityTier.legendary,
             ]));
       });
     });
@@ -113,6 +114,45 @@ void main() {
         expect(d1.id, equals(d2.id));
         expect(d1.discoveredAt, isNull);
         expect(d2.discoveredAt, equals(t));
+      });
+    });
+
+    group('toJson / fromJson serialization', () {
+      test('round-trip preserves legendary rarity tier', () {
+        final original = buildDiscovery(rarity: RarityTier.legendary);
+        final json = original.toJson();
+        final restored = Discovery.fromJson(json);
+
+        expect(restored.rarity, equals(RarityTier.legendary));
+      });
+
+      test('round-trip preserves rare rarity tier', () {
+        final original = buildDiscovery(rarity: RarityTier.rare);
+        final json = original.toJson();
+        final restored = Discovery.fromJson(json);
+
+        expect(restored.rarity, equals(RarityTier.rare));
+      });
+
+      test('toJson serializes legendary as string "legendary"', () {
+        final d = buildDiscovery(rarity: RarityTier.legendary);
+        expect(d.toJson()['rarity'], equals('legendary'));
+      });
+
+      test('fromJson with unknown rarity value defaults to common', () {
+        final json = buildDiscovery().toJson();
+        json['rarity'] = 'mythic'; // unknown future value
+        final restored = Discovery.fromJson(json);
+
+        expect(restored.rarity, equals(RarityTier.common));
+      });
+
+      test('fromJson with old data lacking legendary still parses correctly', () {
+        // Simulate data written before legendary existed (rarity = "rare")
+        final json = buildDiscovery(rarity: RarityTier.rare).toJson();
+        final restored = Discovery.fromJson(json);
+
+        expect(restored.rarity, equals(RarityTier.rare));
       });
     });
 

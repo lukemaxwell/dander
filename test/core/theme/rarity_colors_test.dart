@@ -41,7 +41,18 @@ void main() {
         );
       });
 
-      test('covers all three tiers without throwing', () {
+      test('returns legendary colour for RarityTier.legendary', () {
+        expect(
+          RarityColors.forTier(RarityTier.legendary),
+          equals(RarityColors.legendary),
+        );
+      });
+
+      test('legendary colour is distinct from rare colour', () {
+        expect(RarityColors.legendary, isNot(equals(RarityColors.rare)));
+      });
+
+      test('covers all four tiers without throwing', () {
         for (final tier in RarityTier.values) {
           expect(() => RarityColors.forTier(tier), returnsNormally);
         }
@@ -61,7 +72,11 @@ void main() {
         expect(RarityColors.label(RarityTier.rare), equals('Rare'));
       });
 
-      test('covers all three tiers without throwing', () {
+      test('returns "Legendary" for RarityTier.legendary', () {
+        expect(RarityColors.label(RarityTier.legendary), equals('Legendary'));
+      });
+
+      test('covers all four tiers without throwing', () {
         for (final tier in RarityTier.values) {
           expect(() => RarityColors.label(tier), returnsNormally);
         }

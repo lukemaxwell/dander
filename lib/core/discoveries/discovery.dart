@@ -2,8 +2,9 @@ import 'package:latlong2/latlong.dart';
 
 /// Rarity tier assigned to a point of interest.
 ///
-/// Tiers are ordered from most to least rare: [rare] > [uncommon] > [common].
-enum RarityTier { common, uncommon, rare }
+/// Tiers are ordered from most to least rare:
+/// [legendary] > [rare] > [uncommon] > [common].
+enum RarityTier { common, uncommon, rare, legendary }
 
 /// An immutable representation of a discoverable point of interest.
 ///

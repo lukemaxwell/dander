@@ -2,8 +2,9 @@ import 'discovery.dart';
 
 /// Stateless classifier that derives a [RarityTier] from a set of OSM tags.
 ///
-/// Rules are applied in priority order: [RarityTier.rare] takes precedence
-/// over [RarityTier.uncommon], which takes precedence over [RarityTier.common].
+/// Rules are applied in priority order: [RarityTier.legendary] takes highest
+/// precedence, followed by [RarityTier.rare], [RarityTier.uncommon], and
+/// finally [RarityTier.common].
 class RarityClassifier {
   RarityClassifier._();
 
@@ -13,9 +14,10 @@ class RarityClassifier {
 
   /// Determines the [RarityTier] for a node with the given [tags].
   ///
-  /// Priority: rare > uncommon > common.
+  /// Priority: legendary > rare > uncommon > common.
   /// Unknown / unrecognised tag combinations default to [RarityTier.common].
   static RarityTier classify(Map<String, String> tags) {
+    if (_isLegendary(tags)) return RarityTier.legendary;
     if (_isRare(tags)) return RarityTier.rare;
     if (_isUncommon(tags)) return RarityTier.uncommon;
     return RarityTier.common;
@@ -36,6 +38,27 @@ class RarityClassifier {
   // ---------------------------------------------------------------------------
   // Private helpers
   // ---------------------------------------------------------------------------
+
+  static bool _isLegendary(Map<String, String> tags) {
+    // Has a Wikipedia article
+    if (tags.containsKey('wikipedia')) return true;
+
+    // Has a Wikidata entry
+    if (tags.containsKey('wikidata')) return true;
+
+    // Has a heritage designation
+    if (tags.containsKey('heritage')) return true;
+    if (tags.containsKey('heritage:operator')) return true;
+
+    // Historic site with a name AND a linked knowledge-base entry
+    final hasHistoric = tags.containsKey('historic');
+    final hasName = tags.containsKey('name');
+    final hasKnowledgeLink =
+        tags.containsKey('wikipedia') || tags.containsKey('wikidata');
+    if (hasHistoric && hasName && hasKnowledgeLink) return true;
+
+    return false;
+  }
 
   static bool _isRare(Map<String, String> tags) {
     // tourism=viewpoint
