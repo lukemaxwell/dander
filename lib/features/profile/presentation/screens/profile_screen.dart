@@ -1,7 +1,10 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart' hide Badge;
+import 'package:go_router/go_router.dart';
+
 import 'package:dander/core/discoveries/discovery.dart';
+import 'package:dander/core/navigation/app_router.dart';
 import 'package:dander/core/progress/badge.dart';
 import 'package:dander/core/progress/streak_tracker.dart';
 import 'package:dander/core/theme/app_theme.dart';
@@ -61,6 +64,8 @@ class ProfileScreen extends StatelessWidget {
             totalSteps: totalSteps,
             totalDistanceMeters: totalDistanceMeters,
           ),
+          const SizedBox(height: DanderSpacing.sm),
+          _ViewWalkHistoryButton(),
           const SizedBox(height: DanderSpacing.lg),
           _StreakCard(streak: streak),
           const SizedBox(height: DanderSpacing.lg),
@@ -241,6 +246,27 @@ class _StatColumn extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
+// View walk history button
+// ---------------------------------------------------------------------------
+
+class _ViewWalkHistoryButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: TextButton.icon(
+        onPressed: () => context.push(AppRoutes.walkHistory),
+        icon: const Icon(Icons.history, size: 18),
+        label: const Text('View Walk History'),
+        style: TextButton.styleFrom(
+          foregroundColor: DanderColors.accent,
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Streak card
 // ---------------------------------------------------------------------------
 
@@ -402,6 +428,7 @@ class _DiscoveryStatsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final total = discoveries.length;
+    final legendaryCount = _count(RarityTier.legendary);
     final rareCount = _count(RarityTier.rare);
     final uncommonCount = _count(RarityTier.uncommon);
     final commonCount = _count(RarityTier.common);
@@ -419,6 +446,8 @@ class _DiscoveryStatsSection extends StatelessWidget {
           const SizedBox(height: DanderSpacing.xs),
           Text('$total total', style: DanderTextStyles.bodySmall),
           const SizedBox(height: DanderSpacing.lg),
+          _RarityRow(tier: RarityTier.legendary, count: legendaryCount),
+          const SizedBox(height: DanderSpacing.sm),
           _RarityRow(tier: RarityTier.rare, count: rareCount),
           const SizedBox(height: DanderSpacing.sm),
           _RarityRow(tier: RarityTier.uncommon, count: uncommonCount),
