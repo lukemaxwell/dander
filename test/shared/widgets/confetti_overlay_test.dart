@@ -4,6 +4,15 @@ import 'package:dander/shared/widgets/confetti_overlay.dart';
 
 Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
 
+Widget _wrapReduced(Widget child) => MaterialApp(
+      home: Scaffold(
+        body: MediaQuery(
+          data: const MediaQueryData(disableAnimations: true),
+          child: child,
+        ),
+      ),
+    );
+
 void main() {
   group('ConfettiOverlay — rendering', () {
     testWidgets('renders without throwing', (tester) async {
@@ -97,6 +106,36 @@ void main() {
       await tester.pumpWidget(_wrap(const SizedBox()));
       // No exception thrown
       expect(find.byType(ConfettiOverlay), findsNothing);
+    });
+  });
+
+  group('ConfettiOverlay — reduced motion', () {
+    testWidgets('shows no particle Stack inside ConfettiOverlay when reduced motion',
+        (tester) async {
+      await tester.pumpWidget(_wrapReduced(
+        ConfettiOverlay(
+          active: true,
+          child: const Text('beneath'),
+        ),
+      ));
+      await tester.pump(const Duration(milliseconds: 100));
+      // ConfettiOverlay should return just the child — no Stack inside it.
+      final inOverlay = find.descendant(
+        of: find.byType(ConfettiOverlay),
+        matching: find.byType(Stack),
+      );
+      expect(inOverlay, findsNothing);
+    });
+
+    testWidgets('still renders child when reduced motion is active',
+        (tester) async {
+      await tester.pumpWidget(_wrapReduced(
+        ConfettiOverlay(
+          active: true,
+          child: const Text('still here'),
+        ),
+      ));
+      expect(find.text('still here'), findsOneWidget);
     });
   });
 }

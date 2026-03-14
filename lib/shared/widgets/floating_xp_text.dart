@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'package:dander/core/motion/dander_motion.dart';
 import 'package:dander/core/theme/app_theme.dart';
 
 /// A single floating "+X XP" text that rises ~40px and fades out over 1.5s.
@@ -37,6 +38,7 @@ class _FloatingXpTextState extends State<FloatingXpText>
   late final Animation<double> _opacity;
   late final Animation<double> _offset;
   bool _completed = false;
+  bool _animationStarted = false;
 
   @override
   void initState() {
@@ -55,13 +57,30 @@ class _FloatingXpTextState extends State<FloatingXpText>
     _offset = Tween<double>(begin: 0.0, end: -_riseDistance).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOut),
     );
+  }
 
-    _controller.forward().then((_) {
-      if (mounted && !_completed) {
-        _completed = true;
-        widget.onComplete();
-      }
-    });
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_animationStarted) return;
+    _animationStarted = true;
+
+    if (DanderMotion.isReduced(context)) {
+      // Skip animation entirely — schedule immediate removal.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_completed) {
+          _completed = true;
+          widget.onComplete();
+        }
+      });
+    } else {
+      _controller.forward().then((_) {
+        if (mounted && !_completed) {
+          _completed = true;
+          widget.onComplete();
+        }
+      });
+    }
   }
 
   @override
@@ -72,6 +91,9 @@ class _FloatingXpTextState extends State<FloatingXpText>
 
   @override
   Widget build(BuildContext context) {
+    if (DanderMotion.isReduced(context)) {
+      return const SizedBox.shrink();
+    }
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {

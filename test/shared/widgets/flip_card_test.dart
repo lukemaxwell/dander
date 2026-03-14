@@ -4,6 +4,15 @@ import 'package:dander/shared/widgets/flip_card.dart';
 
 Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
 
+Widget _wrapReduced(Widget child) => MaterialApp(
+      home: Scaffold(
+        body: MediaQuery(
+          data: const MediaQueryData(disableAnimations: true),
+          child: child,
+        ),
+      ),
+    );
+
 void main() {
   group('FlipCard — rendering', () {
     testWidgets('renders without throwing', (tester) async {
@@ -92,6 +101,55 @@ void main() {
         ),
       ));
       expect(find.byType(FlipCard), findsOneWidget);
+    });
+  });
+
+  group('FlipCard — reduced motion', () {
+    testWidgets('shows front face immediately when not flipped', (tester) async {
+      await tester.pumpWidget(_wrapReduced(
+        FlipCard(
+          front: const Text('FRONT'),
+          back: const Text('BACK'),
+        ),
+      ));
+      expect(find.text('FRONT'), findsOneWidget);
+      expect(find.text('BACK'), findsNothing);
+    });
+
+    testWidgets('shows back face immediately when flipped=true', (tester) async {
+      await tester.pumpWidget(_wrapReduced(
+        FlipCard(
+          front: const Text('FRONT'),
+          back: const Text('BACK'),
+          flipped: true,
+        ),
+      ));
+      expect(find.text('BACK'), findsOneWidget);
+      expect(find.text('FRONT'), findsNothing);
+    });
+
+    testWidgets('switches face instantly when flipped changes', (tester) async {
+      var flipped = false;
+      await tester.pumpWidget(_wrapReduced(
+        StatefulBuilder(builder: (context, setState) {
+          return Column(children: [
+            FlipCard(
+              front: const Text('F'),
+              back: const Text('B'),
+              flipped: flipped,
+            ),
+            ElevatedButton(
+              onPressed: () => setState(() => flipped = !flipped),
+              child: const Text('flip'),
+            ),
+          ]);
+        }),
+      ));
+      expect(find.text('F'), findsOneWidget);
+      await tester.tap(find.text('flip'));
+      await tester.pump(); // single frame — no animation
+      expect(find.text('B'), findsOneWidget);
+      expect(find.text('F'), findsNothing);
     });
   });
 }

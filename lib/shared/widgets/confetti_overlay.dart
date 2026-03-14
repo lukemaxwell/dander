@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'package:dander/core/motion/dander_motion.dart';
+
 /// Confetti particle data.
 class _Particle {
   _Particle({
@@ -119,6 +121,9 @@ class _ConfettiOverlayState extends State<ConfettiOverlay>
 
   @override
   Widget build(BuildContext context) {
+    if (DanderMotion.isReduced(context)) {
+      return widget.child;
+    }
     return Stack(
       children: [
         widget.child,

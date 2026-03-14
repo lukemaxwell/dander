@@ -4,6 +4,15 @@ import 'package:dander/shared/widgets/staggered_list.dart';
 
 Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
 
+Widget _wrapReduced(Widget child) => MaterialApp(
+      home: Scaffold(
+        body: MediaQuery(
+          data: const MediaQueryData(disableAnimations: true),
+          child: child,
+        ),
+      ),
+    );
+
 void main() {
   group('StaggeredList — rendering', () {
     testWidgets('renders without throwing with empty list', (tester) async {
@@ -69,6 +78,44 @@ void main() {
       ));
       await tester.pumpAndSettle();
       expect(find.text('x'), findsOneWidget);
+    });
+  });
+
+  group('StaggeredList — reduced motion', () {
+    testWidgets('renders children without FadeTransition when reduced motion',
+        (tester) async {
+      await tester.pumpWidget(_wrapReduced(
+        const StaggeredList(children: [
+          Text('alpha'),
+          Text('beta'),
+        ]),
+      ));
+      // No FadeTransition or SlideTransition inside the StaggeredList subtree.
+      final inStaggered = find.descendant(
+        of: find.byType(StaggeredList),
+        matching: find.byType(FadeTransition),
+      );
+      expect(inStaggered, findsNothing);
+      final inStaggeredSlide = find.descendant(
+        of: find.byType(StaggeredList),
+        matching: find.byType(SlideTransition),
+      );
+      expect(inStaggeredSlide, findsNothing);
+    });
+
+    testWidgets('all children visible immediately when reduced motion',
+        (tester) async {
+      await tester.pumpWidget(_wrapReduced(
+        const StaggeredList(children: [
+          Text('one'),
+          Text('two'),
+          Text('three'),
+        ]),
+      ));
+      // No pump needed — children should be visible immediately
+      expect(find.text('one'), findsOneWidget);
+      expect(find.text('two'), findsOneWidget);
+      expect(find.text('three'), findsOneWidget);
     });
   });
 }

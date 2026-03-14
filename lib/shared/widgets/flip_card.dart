@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'package:dander/core/motion/dander_motion.dart';
+
 /// A card that flips between a [front] and [back] face with a 3-D rotation.
 ///
 /// The flip is triggered by changing the [flipped] property. The animation
@@ -66,6 +68,9 @@ class _FlipCardState extends State<FlipCard>
 
   @override
   Widget build(BuildContext context) {
+    if (DanderMotion.isReduced(context)) {
+      return widget.flipped ? widget.back : widget.front;
+    }
     return AnimatedBuilder(
       animation: _animation,
       builder: (context, _) {
