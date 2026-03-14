@@ -17,6 +17,7 @@ import 'package:dander/core/location/walk_repository.dart';
 import 'package:dander/core/location/walk_session.dart';
 import 'package:dander/core/theme/app_theme.dart';
 import 'package:dander/core/zone/level_up_detector.dart';
+import 'package:dander/core/zone/zone_level.dart';
 import 'package:dander/core/zone/mystery_poi.dart';
 import 'package:dander/core/zone/mystery_poi_repository.dart';
 import 'package:dander/core/zone/mystery_poi_service.dart';
@@ -33,6 +34,7 @@ import 'package:dander/features/map/presentation/widgets/level_up_overlay.dart';
 import 'package:dander/features/map/presentation/widgets/location_dot_painter.dart';
 import 'package:dander/features/map/presentation/widgets/mystery_poi_marker_layer.dart';
 import 'package:dander/features/map/presentation/widgets/walk_control.dart';
+import 'package:dander/shared/widgets/floating_xp_text.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key, this.locationService});
@@ -79,6 +81,9 @@ class _MapScreenState extends State<MapScreen>
 
   // Heading for compass arrow (degrees from north, 0–360).
   double? _heading;
+
+  // Floating XP text controller.
+  final FloatingXpController _xpController = FloatingXpController();
 
   // Fog save debounce — saves at most once every 5 seconds.
   Timer? _fogSaveTimer;
@@ -191,8 +196,7 @@ class _MapScreenState extends State<MapScreen>
     try {
       final poiService = GetIt.instance<MysteryPoiService>();
       final zoneId = _activeZone?.id ?? 'default';
-      final result =
-          await poiService.loadOrGenerate(zoneId, position, 500.0);
+      final result = await poiService.loadOrGenerate(zoneId, position, 500.0);
       _mysteryPoisNotifier.value = result.activePois;
       _discoveriesWaitingNotifier.value = result.totalCount;
     } catch (_) {
@@ -213,9 +217,8 @@ class _MapScreenState extends State<MapScreen>
       final revealed = poiService.revealPoi(arrived, revealedName);
 
       // Immutable list update — replace the arrived POI with its revealed copy.
-      final updatedPois = currentPois
-          .map((p) => p.id == arrived.id ? revealed : p)
-          .toList();
+      final updatedPois =
+          currentPois.map((p) => p.id == arrived.id ? revealed : p).toList();
       _mysteryPoisNotifier.value = updatedPois;
 
       // Persist updated POI state to cache.
@@ -294,6 +297,7 @@ class _MapScreenState extends State<MapScreen>
       final after = await zoneService.awardPoiXp(_activeZone!.id);
       final event = LevelUpDetector.checkLevelUp(_activeZone!, after);
       if (mounted) {
+        _xpController.show(ZoneLevel.xpPerPoi);
         setState(() {
           _activeZone = after;
           if (event != null) _levelUpEvent = event;
@@ -386,6 +390,7 @@ class _MapScreenState extends State<MapScreen>
       final after = await zoneService.awardStreetXp(before.id);
       final event = LevelUpDetector.checkLevelUp(before, after);
       if (mounted) {
+        _xpController.show(ZoneLevel.xpPerStreet);
         setState(() {
           _activeZone = after;
           if (event != null) _levelUpEvent = event;
@@ -402,7 +407,8 @@ class _MapScreenState extends State<MapScreen>
     try {
       final detector = GetIt.instance<ZoneDetector>();
       final deltaMeters = detector.distanceBetween(prev, newPosition);
-      final updated = _compassChargesNotifier.value.earnFromDistance(deltaMeters);
+      final updated =
+          _compassChargesNotifier.value.earnFromDistance(deltaMeters);
       _compassChargesNotifier.value = updated;
       _saveCompassCharges(updated);
     } catch (_) {
@@ -457,12 +463,14 @@ class _MapScreenState extends State<MapScreen>
     if (!charges.canSpend) return;
 
     final pois = _mysteryPoisNotifier.value;
-    final unrevealed = pois.where((p) => p.state == PoiState.unrevealed).toList();
+    final unrevealed =
+        pois.where((p) => p.state == PoiState.unrevealed).toList();
     if (unrevealed.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Start walking to discover nearby points of interest!'),
+            content:
+                Text('Start walking to discover nearby points of interest!'),
             behavior: SnackBarBehavior.floating,
             duration: Duration(seconds: 3),
           ),
@@ -492,9 +500,8 @@ class _MapScreenState extends State<MapScreen>
     if (nearest == null) return;
 
     final hinted = nearest.hint();
-    final updatedPois = pois
-        .map((p) => p.id == nearest!.id ? hinted : p)
-        .toList();
+    final updatedPois =
+        pois.map((p) => p.id == nearest!.id ? hinted : p).toList();
     _mysteryPoisNotifier.value = updatedPois;
     _savePoisToCache(updatedPois);
 
@@ -516,6 +523,7 @@ class _MapScreenState extends State<MapScreen>
   @override
   void dispose() {
     _fogSaveTimer?.cancel();
+    _xpController.dispose();
     // Fire-and-forget fog save on dispose — errors swallowed by _saveFogGrid.
     _saveFogGrid();
     _positionSub?.cancel();
@@ -589,6 +597,15 @@ class _MapScreenState extends State<MapScreen>
               onStart: _startWalk,
               onStop: _stopWalk,
             ),
+            // Floating XP text overlay — positioned top-center.
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 60,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: FloatingXpTextOverlay(controller: _xpController),
+              ),
+            ),
           ],
         ),
       ),
@@ -633,8 +650,7 @@ class _MapScreenState extends State<MapScreen>
                         onFogExpanded:
                             _walkSession != null ? _awardStreetXp : null,
                       ),
-                      if (_userPosition != null)
-                        _buildLocationDot(camera),
+                      if (_userPosition != null) _buildLocationDot(camera),
                     ],
                   ),
                 ),
@@ -719,4 +735,3 @@ class _MapScreenState extends State<MapScreen>
     );
   }
 }
-
