@@ -14,6 +14,7 @@ import 'package:dander/core/fog/fog_grid.dart';
 import 'package:dander/core/fog/fog_repository.dart';
 import 'package:dander/core/sharing/share_service.dart';
 import 'package:dander/core/storage/app_state_repository.dart';
+import 'package:dander/core/location/compass_heading_service.dart';
 import 'package:dander/core/location/location_service.dart';
 import 'package:dander/core/onboarding/first_launch_service.dart';
 import 'package:dander/features/map/presentation/widgets/exploration_chip.dart';
@@ -50,6 +51,7 @@ import 'package:dander/features/map/presentation/widgets/exploration_badge.dart'
 import 'package:dander/features/map/presentation/widgets/fog_layer.dart';
 import 'package:dander/features/map/presentation/widgets/level_up_overlay.dart';
 import 'package:dander/features/map/presentation/widgets/location_dot_painter.dart';
+import 'package:dander/features/map/presentation/widgets/mystery_marker_beacon.dart';
 import 'package:dander/features/map/presentation/widgets/mystery_poi_marker_layer.dart';
 import 'package:dander/features/map/presentation/widgets/walk_control.dart';
 import 'package:dander/features/map/presentation/widgets/xp_progress_bar.dart';
@@ -84,6 +86,8 @@ class _MapScreenState extends State<MapScreen>
   LatLng? _userPosition;
   LatLng? _prevPosition;
   StreamSubscription<Position>? _positionSub;
+  CompassHeadingService? _compassHeadingService;
+  StreamSubscription<double>? _headingSub;
   WalkSession? _walkSession;
 
   // Zone progression state
@@ -202,6 +206,17 @@ class _MapScreenState extends State<MapScreen>
     } catch (_) {
       // Repository not registered in tests — use defaults.
     }
+
+    // Wire up the dedicated compass heading service for smooth, distance-filter-
+    // independent heading updates.
+    try {
+      _compassHeadingService = GetIt.instance<CompassHeadingService>();
+    } catch (_) {
+      // Not registered in tests — heading falls back to GPS position.heading.
+    }
+    _headingSub = _compassHeadingService?.headingStream.listen((degrees) {
+      if (mounted) setState(() => _heading = degrees);
+    });
 
     _positionSub = locationService.positionStream.listen((position) {
       final latLng = LatLng(position.latitude, position.longitude);
@@ -694,6 +709,8 @@ class _MapScreenState extends State<MapScreen>
     _xpController.dispose();
     // Fire-and-forget fog save on dispose — errors swallowed by _saveFogGrid.
     _saveFogGrid();
+    _headingSub?.cancel();
+    _compassHeadingService?.dispose();
     _positionSub?.cancel();
     _locationStreamController.close();
     _fogGridNotifier.dispose();
@@ -798,6 +815,25 @@ class _MapScreenState extends State<MapScreen>
     }
   }
 
+  /// Returns the [MysteryPoi] from [pois] with the smallest Haversine distance
+  /// to [userPosition].
+  MysteryPoi _nearestPoi(List<MysteryPoi> pois, LatLng userPosition) {
+    MysteryPoi nearest = pois.first;
+    double nearestDist = double.infinity;
+    for (final poi in pois) {
+      // Approximate distance using a simple latitude/longitude delta — sufficient
+      // here because we only need the closest among a handful of nearby POIs.
+      final dLat = poi.position.latitude - userPosition.latitude;
+      final dLon = poi.position.longitude - userPosition.longitude;
+      final distSq = dLat * dLat + dLon * dLon;
+      if (distSq < nearestDist) {
+        nearestDist = distSq;
+        nearest = poi;
+      }
+    }
+    return nearest;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -845,6 +881,34 @@ class _MapScreenState extends State<MapScreen>
                   _burstCategory = null;
                 }),
               ),
+            // Mystery POI beacon — floating navigation HUD above the walk
+            // control pointing toward the nearest hinted POI.
+            ValueListenableBuilder<List<MysteryPoi>>(
+              valueListenable: _mysteryPoisNotifier,
+              builder: (context, pois, _) {
+                final hinted =
+                    pois.where((p) => p.state == PoiState.hinted).toList();
+                if (hinted.isEmpty || _userPosition == null) {
+                  return const SizedBox.shrink();
+                }
+                final nearest = _nearestPoi(hinted, _userPosition!);
+                return Positioned(
+                  bottom: 120,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: MysteryMarkerBeacon(
+                      userPosition: _userPosition!,
+                      targetPosition: LatLng(
+                        nearest.position.latitude,
+                        nearest.position.longitude,
+                      ),
+                      headingDegrees: _heading,
+                    ),
+                  ),
+                );
+              },
+            ),
             // Hide walk control during first-launch onboarding overlays.
             if (!_showWalkPreview && !_showExplorationChip)
               WalkControl(

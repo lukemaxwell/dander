@@ -10,6 +10,7 @@ import '../config/app_config.dart';
 import '../discoveries/discovery_repository.dart';
 import '../discoveries/discovery_service.dart';
 import '../discoveries/overpass_client.dart';
+import '../location/compass_heading_service.dart';
 import '../location/location_service.dart';
 import '../location/walk_repository.dart';
 import '../location/walk_service.dart';
@@ -60,6 +61,7 @@ final GetIt sl = serviceLocator;
 /// - [SubscriptionService]          — singleton: subscription state manager.
 Future<void> setupLocator() async {
   // Infrastructure
+  sl.registerSingleton<CompassHeadingService>(FlutterCompassHeadingService());
   sl.registerLazySingleton<LocationService>(GeolocatorLocationService.new);
   sl.registerLazySingleton<WalkRepository>(HiveWalkRepository.new);
   sl.registerLazySingleton<OverpassClient>(HttpOverpassClient.new);
