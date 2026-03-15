@@ -6,6 +6,7 @@ import 'package:dander/core/discoveries/discovery.dart';
 import 'package:dander/core/quiz/street_memory_record.dart';
 import 'package:dander/core/zone/zone.dart';
 import 'package:dander/core/zone/zone_stats.dart';
+import 'package:dander/core/fog/fog_grid.dart';
 import 'package:dander/core/zone/zone_stats_service.dart';
 import 'package:dander/core/streets/street_repository.dart';
 import 'package:dander/core/discoveries/discovery_repository.dart';
@@ -29,7 +30,7 @@ class _FakeZoneStatsService extends ZoneStatsService {
   final ZoneStats stats;
 
   @override
-  Future<ZoneStats> getStats(Zone zone) async => stats;
+  Future<ZoneStats> getStats(Zone zone, {FogGrid? fogGrid}) async => stats;
 }
 
 // Minimal no-op repo stubs — required by ZoneStatsService constructor.

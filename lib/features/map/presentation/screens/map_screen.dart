@@ -121,6 +121,9 @@ class _MapScreenState extends State<MapScreen>
   // Fog save debounce — saves at most once every 5 seconds.
   Timer? _fogSaveTimer;
 
+  // Distance accumulator for XP awards — 10 XP per 100 m walked.
+  double _walkXpMeters = 0.0;
+
   // First-launch onboarding state.
   FirstLaunchService? _firstLaunchService;
   bool _showExplorationChip = false;
@@ -234,6 +237,7 @@ class _MapScreenState extends State<MapScreen>
       _checkBannerVisibility(latLng);
       if (_walkSession != null) {
         _earnChargesFromMove(latLng);
+        _earnWalkXp(latLng);
         // Track walk points.
         _walkSession = _walkSession!.addPoint(
           WalkPoint(position: latLng, timestamp: DateTime.now()),
@@ -602,6 +606,25 @@ class _MapScreenState extends State<MapScreen>
     }
   }
 
+  /// Awards [ZoneLevel.xpPerStreet] XP for every 100 m walked.
+  ///
+  /// Called on each GPS update during a walk session. Accumulates fractional
+  /// metres so no distance is lost between updates.
+  void _earnWalkXp(LatLng newPosition) {
+    final prev = _prevPosition;
+    if (prev == null) return;
+    try {
+      final detector = GetIt.instance<ZoneDetector>();
+      _walkXpMeters += detector.distanceBetween(prev, newPosition);
+      while (_walkXpMeters >= 100.0) {
+        _walkXpMeters -= 100.0;
+        _awardStreetXp();
+      }
+    } catch (_) {
+      // ZoneDetector not registered — skip.
+    }
+  }
+
   Future<void> _saveCompassCharges(CompassCharges charges) async {
     try {
       final repo = GetIt.instance<CompassChargesRepository>();
@@ -726,6 +749,7 @@ class _MapScreenState extends State<MapScreen>
   }
 
   void _startWalk() {
+    _walkXpMeters = 0.0;
     setState(() {
       _sessionXp = 0;
       _walkSession = WalkSession.start(
@@ -1041,8 +1065,7 @@ class _MapScreenState extends State<MapScreen>
                         locationStream: _locationStreamController.stream,
                         exploreRadius:
                             _firstLaunchService?.explorationRadius ?? 50.0,
-                        onFogExpanded:
-                            _walkSession != null ? _awardStreetXp : null,
+                        onFogExpanded: null,
                       ),
                       if (_userPosition != null) _buildLocationDot(camera),
                     ],

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 
 import 'package:dander/core/discoveries/discovery.dart';
+import 'package:dander/core/fog/fog_grid.dart';
 import 'package:dander/core/fog/fog_repository.dart';
 import 'package:dander/core/haptics/haptic_service.dart';
 import 'package:dander/core/quiz/street_memory_record.dart';
@@ -40,7 +41,18 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen>
   @override
   void initState() {
     super.initState();
-    _statsFuture = widget.statsService.getStats(widget.zone);
+    _statsFuture = _loadStats();
+  }
+
+  Future<ZoneStats> _loadStats() async {
+    FogGrid? fogGrid;
+    try {
+      final fogRepo = GetIt.instance<FogRepository>();
+      fogGrid = await fogRepo.load();
+    } catch (_) {
+      // FogRepository not registered in tests — fall back to discovery %.
+    }
+    return widget.statsService.getStats(widget.zone, fogGrid: fogGrid);
   }
 
   Future<void> _openShareSheet(ZoneStats stats) async {

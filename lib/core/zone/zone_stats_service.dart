@@ -1,9 +1,11 @@
 import 'dart:math' as math;
 
+import 'package:flutter_map/flutter_map.dart' show LatLngBounds;
 import 'package:latlong2/latlong.dart';
 
 import 'package:dander/core/discoveries/discovery.dart';
 import 'package:dander/core/discoveries/discovery_repository.dart';
+import 'package:dander/core/fog/fog_grid.dart';
 import 'package:dander/core/location/distance_calculator.dart' as dc;
 import 'package:dander/core/location/walk_repository.dart';
 import 'package:dander/core/location/walk_session.dart';
@@ -39,7 +41,12 @@ class ZoneStatsService {
   static const double _degPerMeter = 1.0 / 111320.0;
 
   /// Returns aggregated stats for [zone], filtered by geographic proximity.
-  Future<ZoneStats> getStats(Zone zone) async {
+  ///
+  /// When [fogGrid] is provided, exploration percentage is derived from the
+  /// fraction of the zone's bounding box that has been cleared in the fog
+  /// grid. This is the authoritative metric. When [fogGrid] is null the
+  /// service falls back to a discovery-based ratio (less reliable).
+  Future<ZoneStats> getStats(Zone zone, {FogGrid? fogGrid}) async {
     final radius = zone.radiusMeters;
     final centre = zone.centre;
 
@@ -58,7 +65,6 @@ class ZoneStatsService {
 
     // --- Streets ---
     final zoneStreets = _filterStreets(allStreets, centre, radius);
-    final zoneStreetIds = zoneStreets.map((s) => s.id).toSet();
 
     // --- Discoveries ---
     final zoneDiscoveries =
@@ -75,9 +81,14 @@ class ZoneStatsService {
           (discoveriesByRarity[d.rarity] ?? 0) + 1;
     }
 
-    final explorationPct = zoneDiscoveries.isEmpty
-        ? 0.0
-        : discoveredInZone.length / zoneDiscoveries.length;
+    final double explorationPct;
+    if (fogGrid != null) {
+      explorationPct = fogGrid.explorationPercentage(_zoneBounds(centre, radius));
+    } else {
+      explorationPct = zoneDiscoveries.isEmpty
+          ? 0.0
+          : discoveredInZone.length / zoneDiscoveries.length;
+    }
 
     // --- Walks ---
     final zoneWalks = _filterWalks(allWalks, centre, radius);
@@ -133,6 +144,18 @@ class ZoneStatsService {
   // ---------------------------------------------------------------------------
   // Private geo-filtering helpers
   // ---------------------------------------------------------------------------
+
+  /// Returns a LatLngBounds square centred on [centre] with half-side ≈ [radiusMeters].
+  LatLngBounds _zoneBounds(LatLng centre, double radiusMeters) {
+    const metersPerDegLat = 111320.0;
+    final latDelta = radiusMeters / metersPerDegLat;
+    final lngDelta = radiusMeters /
+        (metersPerDegLat * math.cos(centre.latitude * math.pi / 180.0));
+    return LatLngBounds(
+      LatLng(centre.latitude - latDelta, centre.longitude - lngDelta),
+      LatLng(centre.latitude + latDelta, centre.longitude + lngDelta),
+    );
+  }
 
   /// Returns true if [point] is within [radiusMeters] of [centre].
   ///

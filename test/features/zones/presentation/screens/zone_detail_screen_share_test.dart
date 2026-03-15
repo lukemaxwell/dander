@@ -13,6 +13,7 @@ import 'package:dander/core/quiz/street_memory_record.dart';
 import 'package:dander/core/theme/dander_colors.dart';
 import 'package:dander/core/zone/zone.dart';
 import 'package:dander/core/zone/zone_stats.dart';
+import 'package:dander/core/fog/fog_grid.dart';
 import 'package:dander/core/zone/zone_stats_service.dart';
 import 'package:dander/core/streets/street_repository.dart';
 import 'package:dander/core/discoveries/discovery_repository.dart';
@@ -46,7 +47,7 @@ class _FakeZoneStatsService extends ZoneStatsService {
   final Completer<ZoneStats>? completer;
 
   @override
-  Future<ZoneStats> getStats(Zone zone) async {
+  Future<ZoneStats> getStats(Zone zone, {FogGrid? fogGrid}) async {
     if (completer != null) return completer!.future;
     return stats;
   }
