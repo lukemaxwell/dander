@@ -86,14 +86,15 @@ class MilestoneProSuggestionCard extends StatelessWidget {
               ),
               const SizedBox(width: DanderSpacing.sm),
               Expanded(
-                child: SizedBox(
-                  height: 48,
-                  child: TextButton(
-                    onPressed: onLearnAboutPro,
-                    style: TextButton.styleFrom(
-                      foregroundColor: DanderColors.secondary,
-                    ),
-                    child: const Text('Learn about Pro \u2192'),
+                child: TextButton(
+                  onPressed: onLearnAboutPro,
+                  style: TextButton.styleFrom(
+                    foregroundColor: DanderColors.secondary,
+                    minimumSize: const Size(0, 48),
+                  ),
+                  child: const Text(
+                    'Go Pro \u2192',
+                    textAlign: TextAlign.center,
                   ),
                 ),
               ),

@@ -149,6 +149,10 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> {
               ignoring: false,
               child: Center(
                 child: SingleChildScrollView(
+                  padding: EdgeInsets.only(
+                    top: 16,
+                    bottom: MediaQuery.of(context).padding.bottom + 80,
+                  ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
