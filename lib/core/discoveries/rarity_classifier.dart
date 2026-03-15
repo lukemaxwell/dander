@@ -9,6 +9,48 @@ class RarityClassifier {
   RarityClassifier._();
 
   // ---------------------------------------------------------------------------
+  // Allowlist
+  // ---------------------------------------------------------------------------
+
+  /// Categories vetted as stable, interesting, and unlikely to be
+  /// miscategorised.  Commercial businesses are excluded entirely.
+  static const Set<String> allowlist = {
+    // Historic & heritage
+    'monument', 'memorial', 'castle', 'ruins', 'archaeological_site',
+    'battlefield', 'manor', 'city_gate', 'wayside_cross', 'wayside_shrine',
+    // Art & culture
+    'artwork', 'museum', 'gallery', 'sculpture',
+    // Scenic & nature
+    'viewpoint', 'nature_reserve', 'park', 'garden',
+    // Community & civic
+    'community_centre', 'library', 'public_bookcase', 'place_of_worship',
+    'fountain', 'clock', 'drinking_water',
+    // Information
+    'information',
+  };
+
+  /// Returns `true` if [category] is in the curated allowlist.
+  static bool isAllowlisted(String category) => allowlist.contains(category);
+
+  /// Returns `true` if [tags] indicate a commercial business (cafe,
+  /// restaurant, pub, shop, bank, etc.).
+  static bool isBusiness(Map<String, String> tags) {
+    const businessAmenities = {
+      'cafe', 'restaurant', 'pub', 'bar', 'fast_food', 'food_court',
+      'ice_cream', 'bank', 'pharmacy', 'clinic', 'doctors', 'dentist',
+      'veterinary', 'fuel', 'car_wash', 'car_rental',
+    };
+    final amenity = tags['amenity'];
+    if (amenity != null && businessAmenities.contains(amenity)) return true;
+    if (tags.containsKey('shop')) return true;
+    if (tags.containsKey('brand')) return true;
+    if (tags['tourism'] == 'hotel' || tags['tourism'] == 'guest_house') {
+      return true;
+    }
+    return false;
+  }
+
+  // ---------------------------------------------------------------------------
   // Public API
   // ---------------------------------------------------------------------------
 

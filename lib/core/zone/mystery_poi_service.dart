@@ -17,6 +17,21 @@ import 'zone_detector.dart';
 /// number of visible `?` pins at any moment.
 const int _maxActivePois = 3;
 
+/// Default zone search radius in metres.
+const double defaultSearchRadius = 750.0;
+
+/// Density floor: minimum named POIs before expanding radius.
+const int _densityFloor = 15;
+
+/// Expanded radius when default yields too few POIs.
+const double _expandedRadius = 1000.0;
+
+/// Maximum radius for very sparse areas.
+const double _maxRadius = 1500.0;
+
+/// Minimum POI count at expanded radius before going to max.
+const int _expandedFloor = 10;
+
 /// Service that orchestrates mystery POI generation, retrieval, and arrival
 /// detection.
 class MysteryPoiService {
@@ -46,15 +61,19 @@ class MysteryPoiService {
   /// no cache exists.  Results are persisted so subsequent calls return
   /// consistent data.
   ///
+  /// Uses adaptive radius: starts at [defaultSearchRadius] (750 m), expands to
+  /// 1000 m if the curated count is below [_densityFloor] (15), and further to
+  /// 1500 m if still below [_expandedFloor] (10).
+  ///
   /// When loading from cache, applies [PoiWaveManager.activeForWave] to return
   /// only the current wave's POIs (further capped to [_maxActivePois] markers).
   /// When generating fresh, curates via [PoiCurator], saves the full curated
   /// set, initialises wave 1, and returns wave-1 POIs.
   Future<GenerateResult> loadOrGenerate(
     String zoneId,
-    LatLng centre,
-    double radiusMeters,
-  ) async {
+    LatLng centre, [
+    double? radiusMeters,
+  ]) async {
     final cachedPois = await _repository.loadPois(zoneId);
     final cachedCount = await _repository.loadTotalCount(zoneId);
 
@@ -62,8 +81,18 @@ class MysteryPoiService {
       return _loadFromCache(zoneId, cachedPois, cachedCount);
     }
 
-    // No cache — generate fresh, curate, persist, and return wave 1.
-    final result = await generatePois(centre, radiusMeters);
+    // No cache — generate fresh with adaptive radius.
+    final radius = radiusMeters ?? defaultSearchRadius;
+    var result = await generatePois(centre, radius);
+
+    // Adaptive expansion: if too few POIs, try wider radius.
+    if (result.totalCount < _densityFloor && radius <= defaultSearchRadius) {
+      result = await generatePois(centre, _expandedRadius);
+      if (result.totalCount < _expandedFloor) {
+        result = await generatePois(centre, _maxRadius);
+      }
+    }
+
     await _repository.savePois(zoneId, result.activePois);
     await _repository.saveTotalCount(zoneId, result.totalCount);
     await _repository.saveWaveState(zoneId, 1, 0);

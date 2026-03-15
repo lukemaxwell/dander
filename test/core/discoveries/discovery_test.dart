@@ -156,6 +156,65 @@ void main() {
       });
     });
 
+    group('osmType', () {
+      test('defaults to "node"', () {
+        final d = buildDiscovery();
+        expect(d.osmType, equals('node'));
+      });
+
+      test('can be set to "way"', () {
+        final d = Discovery(
+          id: 'way/123',
+          name: 'Park',
+          category: 'park',
+          rarity: RarityTier.common,
+          position: position,
+          osmTags: osmTags,
+          discoveredAt: null,
+          osmType: 'way',
+        );
+        expect(d.osmType, equals('way'));
+      });
+
+      test('preserved through markDiscovered', () {
+        final d = Discovery(
+          id: 'way/456',
+          name: 'Nature Reserve',
+          category: 'nature_reserve',
+          rarity: RarityTier.rare,
+          position: position,
+          osmTags: osmTags,
+          discoveredAt: null,
+          osmType: 'way',
+        );
+        final discovered = d.markDiscovered(DateTime(2024));
+        expect(discovered.osmType, equals('way'));
+      });
+
+      test('round-trip serialization preserves osmType', () {
+        final d = Discovery(
+          id: 'relation/789',
+          name: 'Big Park',
+          category: 'park',
+          rarity: RarityTier.uncommon,
+          position: position,
+          osmTags: osmTags,
+          discoveredAt: null,
+          osmType: 'relation',
+        );
+        final json = d.toJson();
+        final restored = Discovery.fromJson(json);
+        expect(restored.osmType, equals('relation'));
+      });
+
+      test('fromJson defaults osmType to "node" when absent', () {
+        final json = buildDiscovery().toJson();
+        json.remove('osmType');
+        final restored = Discovery.fromJson(json);
+        expect(restored.osmType, equals('node'));
+      });
+    });
+
     group('osmTags immutability', () {
       test('osmTags map is not the same mutable reference', () {
         final mutableTags = <String, String>{'amenity': 'cafe'};

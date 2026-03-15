@@ -12,7 +12,7 @@ import 'package:dander/core/zone/poi_curator.dart';
 Discovery makeDiscovery({
   String id = 'node/1',
   String name = 'Test Place',
-  String category = 'cafe',
+  String category = 'memorial',
   RarityTier rarity = RarityTier.common,
   double lat = 51.5074,
   double lng = -0.1278,
@@ -33,7 +33,7 @@ Discovery makeDiscovery({
 List<Discovery> makeSpreadDiscoveries({
   required int count,
   String namePrefix = 'Place',
-  String category = 'cafe',
+  String category = 'memorial',
   RarityTier rarity = RarityTier.common,
   Map<String, String> osmTags = const {},
   double baseLat = 51.5,
@@ -101,7 +101,7 @@ void main() {
 
     test('fewer than 20 named, well-spaced POIs all survive', () {
       // Use distinct categories to avoid the per-category cap of 3.
-      final categories = ['cafe', 'pub', 'park', 'museum', 'library'];
+      final categories = ['memorial', 'monument', 'park', 'museum', 'library'];
       final raw = List.generate(8, (i) => makeDiscovery(
         id: 'node/$i',
         name: 'Place $i',
@@ -285,7 +285,7 @@ void main() {
         makeDiscovery(
           id: 'node/rare/0',
           name: 'Rare Place 0',
-          category: 'historic',
+          category: 'monument',
           rarity: RarityTier.rare,
           lat: 51.5,
         ),
@@ -307,28 +307,28 @@ void main() {
     // Category diversity cap
     // -----------------------------------------------------------------------
 
-    test('10 pubs in input → at most 3 pubs in output', () {
-      final pubs = makeSpreadDiscoveries(
+    test('10 memorials in input → at most 3 in output', () {
+      final memorials = makeSpreadDiscoveries(
         count: 10,
-        namePrefix: 'Pub',
-        category: 'pub',
+        namePrefix: 'Memorial',
+        category: 'memorial',
       );
-      final result = PoiCurator.curate(pubs);
-      final pubCount = result.where((d) => d.category == 'pub').length;
-      expect(pubCount, lessThanOrEqualTo(3));
+      final result = PoiCurator.curate(memorials);
+      final memorialCount = result.where((d) => d.category == 'memorial').length;
+      expect(memorialCount, lessThanOrEqualTo(3));
     });
 
     test('category cap works across mixed categories', () {
-      final cafes = makeSpreadDiscoveries(
+      final monuments = makeSpreadDiscoveries(
         count: 5,
-        namePrefix: 'Cafe',
-        category: 'cafe',
+        namePrefix: 'Monument',
+        category: 'monument',
         baseLat: 51.5,
       );
-      final pubs = makeSpreadDiscoveries(
+      final artworks = makeSpreadDiscoveries(
         count: 5,
-        namePrefix: 'Pub',
-        category: 'pub',
+        namePrefix: 'Artwork',
+        category: 'artwork',
         baseLat: 52.5,
       );
       final parks = makeSpreadDiscoveries(
@@ -337,9 +337,9 @@ void main() {
         category: 'park',
         baseLat: 53.5,
       );
-      final result = PoiCurator.curate([...cafes, ...pubs, ...parks]);
+      final result = PoiCurator.curate([...monuments, ...artworks, ...parks]);
 
-      for (final cat in ['cafe', 'pub', 'park']) {
+      for (final cat in ['monument', 'artwork', 'park']) {
         final count = result.where((d) => d.category == cat).length;
         expect(count, lessThanOrEqualTo(3),
             reason: 'Category "$cat" should have ≤3 representatives');
@@ -383,6 +383,101 @@ void main() {
       final b = makeDiscovery(id: 'node/b', name: 'Place B', lat: 51.502, lng: -0.1);
       final result = PoiCurator.curate([a, b]);
       expect(result.length, equals(2));
+    });
+
+    // -----------------------------------------------------------------------
+    // Allowlist filter
+    // -----------------------------------------------------------------------
+
+    test('non-allowlisted categories are filtered out', () {
+      final cafe = makeDiscovery(id: 'node/1', name: 'Starbucks', category: 'cafe');
+      final pub = makeDiscovery(id: 'node/2', name: 'The Crown', category: 'pub', lat: 51.51);
+      final memorial = makeDiscovery(id: 'node/3', name: 'War Memorial', category: 'memorial', lat: 51.52);
+      final result = PoiCurator.curate([cafe, pub, memorial]);
+      expect(result.length, equals(1));
+      expect(result.first.category, equals('memorial'));
+    });
+
+    test('business POIs (brand tag) are excluded', () {
+      final branded = makeDiscovery(
+        id: 'node/1',
+        name: 'Costa Coffee',
+        category: 'memorial', // even with allowlisted category
+        osmTags: const {'brand': 'Costa'},
+      );
+      final normal = makeDiscovery(
+        id: 'node/2',
+        name: 'War Memorial',
+        category: 'memorial',
+        lat: 51.51,
+      );
+      final result = PoiCurator.curate([branded, normal]);
+      expect(result.length, equals(1));
+      expect(result.first.id, equals('node/2'));
+    });
+
+    // -----------------------------------------------------------------------
+    // Garden noise filter
+    // -----------------------------------------------------------------------
+
+    test('garden without wikipedia/wikidata is filtered out', () {
+      final garden = makeDiscovery(
+        id: 'node/1',
+        name: 'Residential Garden',
+        category: 'garden',
+      );
+      final result = PoiCurator.curate([garden]);
+      expect(result, isEmpty);
+    });
+
+    test('garden with wikipedia tag survives', () {
+      final garden = makeDiscovery(
+        id: 'node/1',
+        name: 'Kew Gardens',
+        category: 'garden',
+        osmTags: const {'wikipedia': 'en:Kew_Gardens'},
+      );
+      final result = PoiCurator.curate([garden]);
+      expect(result.length, equals(1));
+      expect(result.first.name, equals('Kew Gardens'));
+    });
+
+    test('garden with wikidata tag survives', () {
+      final garden = makeDiscovery(
+        id: 'node/1',
+        name: 'Botanical Garden',
+        category: 'garden',
+        osmTags: const {'wikidata': 'Q12345'},
+      );
+      final result = PoiCurator.curate([garden]);
+      expect(result.length, equals(1));
+    });
+
+    test('non-garden categories are not affected by garden filter', () {
+      final park = makeDiscovery(
+        id: 'node/1',
+        name: 'Victoria Park',
+        category: 'park',
+      );
+      final result = PoiCurator.curate([park]);
+      expect(result.length, equals(1));
+    });
+
+    // -----------------------------------------------------------------------
+    // Place of worship higher cap
+    // -----------------------------------------------------------------------
+
+    test('place_of_worship allows up to 5 (not default 3)', () {
+      final churches = makeSpreadDiscoveries(
+        count: 8,
+        namePrefix: 'Church',
+        category: 'place_of_worship',
+      );
+      final result = PoiCurator.curate(churches);
+      final worshipCount = result.where((d) => d.category == 'place_of_worship').length;
+      expect(worshipCount, lessThanOrEqualTo(5));
+      expect(worshipCount, greaterThan(3),
+          reason: 'place_of_worship should allow more than the default 3 cap');
     });
   });
 }
