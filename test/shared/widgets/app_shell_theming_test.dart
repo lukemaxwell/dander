@@ -9,29 +9,45 @@ Widget _wrapWithRouter({String initialLocation = '/home'}) {
   final router = GoRouter(
     initialLocation: initialLocation,
     routes: [
-      ShellRoute(
-        builder: (context, state, child) => AppShell(child: child),
-        routes: [
-          GoRoute(
-            path: '/home',
-            pageBuilder: (context, state) =>
-                const NoTransitionPage(child: SizedBox()),
-          ),
-          GoRoute(
-            path: '/discoveries',
-            pageBuilder: (context, state) =>
-                const NoTransitionPage(child: SizedBox()),
-          ),
-          GoRoute(
-            path: '/profile',
-            pageBuilder: (context, state) =>
-                const NoTransitionPage(child: SizedBox()),
-          ),
-          GoRoute(
-            path: '/quiz',
-            pageBuilder: (context, state) =>
-                const NoTransitionPage(child: SizedBox()),
-          ),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) =>
+            AppShell(navigationShell: navigationShell),
+        branches: [
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: '/home',
+              pageBuilder: (context, state) =>
+                  const NoTransitionPage(child: SizedBox()),
+            ),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: '/discoveries',
+              pageBuilder: (context, state) =>
+                  const NoTransitionPage(child: SizedBox()),
+            ),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: '/quiz',
+              pageBuilder: (context, state) =>
+                  const NoTransitionPage(child: SizedBox()),
+            ),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: '/zones',
+              pageBuilder: (context, state) =>
+                  const NoTransitionPage(child: SizedBox()),
+            ),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: '/profile',
+              pageBuilder: (context, state) =>
+                  const NoTransitionPage(child: SizedBox()),
+            ),
+          ]),
         ],
       ),
     ],
