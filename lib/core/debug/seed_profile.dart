@@ -18,9 +18,10 @@ enum SeedProfile {
   /// Returns the [SeedProfile] matching the `SEED_PROFILE` env var,
   /// or [SeedProfile.none] if unset or unrecognised.
   ///
-  /// In release builds, always returns [SeedProfile.none].
+  /// Disabled in release builds only — works in both debug and profile mode
+  /// so marketing screenshots can be captured on physical devices.
   static SeedProfile detect() {
-    if (!kDebugMode) return none;
+    if (kReleaseMode) return none;
     return fromString(_envValue);
   }
 
