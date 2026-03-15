@@ -19,7 +19,10 @@ import 'package:dander/features/profile/presentation/screens/profile_screen.dart
 import 'package:dander/features/quiz/presentation/screens/quiz_home_screen.dart';
 import 'package:dander/features/splash/presentation/screens/splash_screen.dart';
 import 'package:dander/features/walks/presentation/screens/walk_history_screen.dart';
+import 'package:dander/features/zones/presentation/screens/zone_detail_screen.dart';
 import 'package:dander/features/zones/presentation/screens/zones_screen.dart';
+import 'package:dander/core/zone/zone.dart';
+import 'package:dander/core/zone/zone_stats_service.dart';
 import 'package:dander/core/navigation/page_transitions.dart';
 import 'package:dander/shared/widgets/app_shell.dart';
 
@@ -32,6 +35,7 @@ abstract final class AppRoutes {
   static const String zones = '/zones';
   static const String profile = '/profile';
   static const String walkHistory = '/walk-history';
+  static const String zoneDetail = '/zones/:id';
 }
 
 /// The application [GoRouter] instance.
@@ -75,7 +79,10 @@ final GoRouter router = GoRouter(
           path: AppRoutes.zones,
           pageBuilder: (context, state) => danderCrossfadePage(
             context,
-            ZonesScreen(repository: GetIt.instance<ZoneRepository>()),
+            ZonesScreen(
+              repository: GetIt.instance<ZoneRepository>(),
+              onZoneTapped: (id) => router.push('/zones/$id'),
+            ),
           ),
         ),
         GoRoute(
@@ -84,6 +91,13 @@ final GoRouter router = GoRouter(
               danderCrossfadePage(context, _ProfileLoader()),
         ),
       ],
+    ),
+    GoRoute(
+      path: AppRoutes.zoneDetail,
+      pageBuilder: (context, state) {
+        final zoneId = state.pathParameters['id']!;
+        return danderSlideRightPage(context, _ZoneDetailLoader(zoneId: zoneId));
+      },
     ),
     GoRoute(
       path: AppRoutes.walkHistory,
@@ -260,6 +274,47 @@ class _WalkHistoryLoader extends StatelessWidget {
       return await repo.getWalks();
     } catch (_) {
       return const [];
+    }
+  }
+}
+
+class _ZoneDetailLoader extends StatelessWidget {
+  const _ZoneDetailLoader({required this.zoneId});
+
+  final String zoneId;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Zone?>(
+      future: _loadZone(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final zone = snapshot.data;
+        if (zone == null) {
+          return const Scaffold(
+            body: Center(child: Text('Zone not found')),
+          );
+        }
+
+        return ZoneDetailScreen(
+          zone: zone,
+          statsService: GetIt.instance<ZoneStatsService>(),
+        );
+      },
+    );
+  }
+
+  Future<Zone?> _loadZone() async {
+    try {
+      final repo = GetIt.instance<ZoneRepository>();
+      return await repo.load(zoneId);
+    } catch (_) {
+      return null;
     }
   }
 }
