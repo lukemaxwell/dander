@@ -19,6 +19,7 @@ import '../zone/poi_cooldown_repository.dart';
 import '../zone/zone_detector.dart';
 import '../zone/zone_repository.dart';
 import '../zone/zone_service.dart';
+import '../zone/zone_stats_service.dart';
 
 /// Global service locator instance.
 final GetIt serviceLocator = GetIt.instance;
@@ -87,6 +88,14 @@ Future<void> setupLocator() async {
   sl.registerLazySingleton<ZoneDetector>(ZoneDetector.new);
   sl.registerLazySingleton<ZoneService>(
     () => ZoneService(repository: sl<ZoneRepository>()),
+  );
+  sl.registerLazySingleton<ZoneStatsService>(
+    () => ZoneStatsService(
+      streetRepository: sl<StreetRepository>(),
+      discoveryRepository: sl<DiscoveryRepository>(),
+      walkRepository: sl<WalkRepository>(),
+      quizRepository: sl<QuizRepository>(),
+    ),
   );
   sl.registerLazySingleton<MysteryPoiRepository>(
       HiveMysteryPoiRepository.new);
