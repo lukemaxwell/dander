@@ -4,6 +4,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 import 'core/app/app_initializer.dart';
 import 'core/config/app_config.dart';
+import 'core/debug/seed_profile_loader.dart';
 import 'core/di/service_locator.dart';
 import 'core/navigation/app_router.dart';
 import 'core/network/connectivity_service.dart';
@@ -52,6 +53,11 @@ Future<void> main() async {
   // ------------------------------------------------------------------
   final appStateBox = Hive.box<dynamic>(HiveBoxes.appState);
   final appStateRepository = AppStateRepositoryImpl(box: appStateBox);
+
+  // ------------------------------------------------------------------
+  // Seed profile — deterministic state for testing/marketing/E2E
+  // ------------------------------------------------------------------
+  await SeedProfileLoader.load(appStateRepository: appStateRepository);
 
   // ------------------------------------------------------------------
   // App initialisation — first-launch detection
