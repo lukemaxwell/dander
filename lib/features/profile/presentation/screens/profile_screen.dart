@@ -1,6 +1,8 @@
 import 'dart:math' as math;
+import 'dart:ui';
 
 import 'package:flutter/material.dart' hide Badge;
+import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:dander/core/challenges/challenge.dart';
@@ -9,11 +11,16 @@ import 'package:dander/core/navigation/app_router.dart';
 import 'package:dander/core/progress/badge.dart';
 import 'package:dander/core/progress/streak_shield.dart';
 import 'package:dander/core/progress/streak_tracker.dart';
+import 'package:dander/core/subscription/subscription_service.dart';
+import 'package:dander/core/subscription/subscription_state.dart';
 import 'package:dander/core/theme/app_theme.dart';
 import 'package:dander/core/theme/rarity_colors.dart';
 import 'package:dander/features/profile/presentation/widgets/badge_detail_sheet.dart';
 import 'package:dander/features/profile/presentation/widgets/weekly_challenges_card.dart';
+import 'package:dander/features/subscription/paywall_trigger.dart';
+import 'package:dander/features/subscription/presentation/screens/paywall_screen.dart';
 import 'package:dander/features/subscription/presentation/widgets/pro_badge.dart';
+import 'package:dander/features/subscription/presentation/widgets/stats_tease_card.dart';
 import 'package:dander/shared/widgets/bottom_sheet_handle.dart';
 import 'package:dander/shared/widgets/screen_header.dart';
 
@@ -97,6 +104,37 @@ class ProfileScreen extends StatelessWidget {
           _BadgeGrid(badges: badges, explorationPct: explorationPct),
           const SizedBox(height: DanderSpacing.lg),
           _DiscoveryStatsSection(discoveries: discoveries),
+          ValueListenableBuilder<SubscriptionState>(
+            valueListenable:
+                GetIt.instance<SubscriptionService>().state,
+            builder: (context, state, _) {
+              if (state.isPro) return const SizedBox.shrink();
+              return Column(
+                children: [
+                  const SizedBox(height: DanderSpacing.md),
+                  StatsTeaseCard(
+                    title: 'Heat Map',
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) =>
+                            const PaywallScreen(trigger: PaywallTrigger.stats),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: DanderSpacing.md),
+                  StatsTeaseCard(
+                    title: 'Monthly Trends',
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) =>
+                            const PaywallScreen(trigger: PaywallTrigger.stats),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
         ],
       ),
     );
