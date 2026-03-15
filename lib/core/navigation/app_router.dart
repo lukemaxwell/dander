@@ -16,7 +16,14 @@ import 'package:dander/features/discoveries/presentation/widgets/discoveries_loa
 import 'package:dander/features/profile/presentation/widgets/profile_loading_skeleton.dart';
 import 'package:dander/features/map/presentation/screens/map_screen.dart';
 import 'package:dander/features/profile/presentation/screens/profile_screen.dart';
+import 'package:dander/core/quiz/quiz_repository.dart';
+import 'package:dander/core/quiz/quiz_scheduler.dart';
+import 'package:dander/core/quiz/quiz_session.dart';
+import 'package:dander/core/quiz/street_memory_record.dart';
+import 'package:dander/core/streets/street.dart';
+import 'package:dander/core/streets/street_repository.dart';
 import 'package:dander/features/quiz/presentation/screens/quiz_home_screen.dart';
+import 'package:dander/features/quiz/presentation/screens/quiz_question_screen.dart';
 import 'package:dander/features/splash/presentation/screens/splash_screen.dart';
 import 'package:dander/features/walks/presentation/screens/walk_history_screen.dart';
 import 'package:dander/features/zones/presentation/screens/zone_detail_screen.dart';
@@ -76,15 +83,8 @@ final GoRouter router = GoRouter(
           routes: [
             GoRoute(
               path: AppRoutes.quiz,
-              pageBuilder: (context, state) => danderCrossfadePage(
-                context,
-                const QuizHomeScreen(
-                  walkedStreets: [],
-                  records: [],
-                  onStartReview: _noop,
-                  onPracticeAll: _noop,
-                ),
-              ),
+              pageBuilder: (context, state) =>
+                  danderCrossfadePage(context, _QuizLoader()),
             ),
           ],
         ),
@@ -182,6 +182,72 @@ class _DiscoveriesData {
 
   final List<Discovery> discovered;
   final List<Discovery> allPois;
+}
+
+class _QuizLoader extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<_QuizData>(
+      future: _loadQuizData(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        final data = snapshot.data ?? const _QuizData(streets: [], records: []);
+
+        void startSession(List<Street> streets, List<StreetMemoryRecord> records) {
+          final session = QuizSession.create(streets, records);
+          if (session.questions.isEmpty) return;
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => QuizQuestionScreen(
+                session: session,
+                onComplete: (_) => Navigator.of(context).pop(),
+              ),
+            ),
+          );
+        }
+
+        final dueStreets = QuizScheduler.getDueToday(data.records, DateTime.now())
+            .map((r) => data.streets.where((s) => s.id == r.streetId).firstOrNull)
+            .whereType<Street>()
+            .toList();
+
+        return QuizHomeScreen(
+          walkedStreets: data.streets,
+          records: data.records,
+          onStartReview: dueStreets.isNotEmpty
+              ? () => startSession(dueStreets, data.records)
+              : _noop,
+          onPracticeAll: data.streets.isNotEmpty
+              ? () => startSession(data.streets, data.records)
+              : _noop,
+        );
+      },
+    );
+  }
+
+  Future<_QuizData> _loadQuizData() async {
+    var streets = <Street>[];
+    var records = <StreetMemoryRecord>[];
+    try {
+      final streetRepo = GetIt.instance<StreetRepository>();
+      streets = await streetRepo.getWalkedStreets();
+    } catch (_) {}
+    try {
+      final quizRepo = GetIt.instance<QuizRepository>();
+      records = await quizRepo.getAllRecords();
+    } catch (_) {}
+    return _QuizData(streets: streets, records: records);
+  }
+}
+
+class _QuizData {
+  const _QuizData({required this.streets, required this.records});
+  final List<Street> streets;
+  final List<StreetMemoryRecord> records;
 }
 
 class _ProfileLoader extends StatelessWidget {
