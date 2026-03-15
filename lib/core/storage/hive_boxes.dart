@@ -39,4 +39,7 @@ abstract final class HiveBoxes {
 
   /// Stores weekly challenge progress and rotation state.
   static const String challenges = 'challenges';
+
+  /// Stores the last-known subscription state for offline startup.
+  static const String subscription = 'subscription';
 }
