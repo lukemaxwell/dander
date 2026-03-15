@@ -15,6 +15,9 @@ class OnboardingCompleteFixture extends SeedFixture {
   String get name => 'onboarding_complete';
 
   @override
+  LatLng? get seedPosition => defaultPosition;
+
+  @override
   Future<void> seedAppState(AppStateRepository repo) async {
     await repo.saveLastPosition(defaultPosition);
   }

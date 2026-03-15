@@ -59,10 +59,14 @@ final GetIt sl = serviceLocator;
 /// - [RevenueCatPurchasesAdapter]   — singleton: one RevenueCat SDK instance.
 /// - [HiveSubscriptionStorage]      — singleton: single Hive box reference for subscription cache.
 /// - [SubscriptionService]          — singleton: subscription state manager.
-Future<void> setupLocator() async {
+Future<void> setupLocator({LocationService? locationService}) async {
   // Infrastructure
   sl.registerSingleton<CompassHeadingService>(FlutterCompassHeadingService());
-  sl.registerLazySingleton<LocationService>(GeolocatorLocationService.new);
+  if (locationService != null) {
+    sl.registerSingleton<LocationService>(locationService);
+  } else {
+    sl.registerLazySingleton<LocationService>(GeolocatorLocationService.new);
+  }
   sl.registerLazySingleton<WalkRepository>(HiveWalkRepository.new);
   sl.registerLazySingleton<OverpassClient>(HttpOverpassClient.new);
   sl.registerLazySingleton<DiscoveryRepository>(HiveDiscoveryRepository.new);

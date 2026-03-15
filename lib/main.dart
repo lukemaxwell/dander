@@ -4,6 +4,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 import 'core/app/app_initializer.dart';
 import 'core/config/app_config.dart';
+import 'core/debug/fake_location_service.dart';
 import 'core/debug/seed_profile_loader.dart';
 import 'core/di/service_locator.dart';
 import 'core/navigation/app_router.dart';
@@ -57,7 +58,9 @@ Future<void> main() async {
   // ------------------------------------------------------------------
   // Seed profile — deterministic state for testing/marketing/E2E
   // ------------------------------------------------------------------
-  await SeedProfileLoader.load(appStateRepository: appStateRepository);
+  final seedProfile =
+      await SeedProfileLoader.load(appStateRepository: appStateRepository);
+  final seedFixture = SeedProfileLoader.fixtureFor(seedProfile);
 
   // ------------------------------------------------------------------
   // App initialisation — first-launch detection
@@ -86,7 +89,12 @@ Future<void> main() async {
   // ------------------------------------------------------------------
   // Dependency injection
   // ------------------------------------------------------------------
-  await setupLocator();
+  final fakePosition = seedFixture?.seedPosition;
+  await setupLocator(
+    locationService: fakePosition != null
+        ? FakeLocationService(position: fakePosition)
+        : null,
+  );
 
   // ------------------------------------------------------------------
   // Subscription service initialisation — loads cached state and fetches

@@ -188,5 +188,16 @@ void main() {
         closeTo(-0.0005, 0.01),
       );
     });
+
+    test('OnboardingCompleteFixture exposes seedPosition', () {
+      const fixture = OnboardingCompleteFixture();
+      expect(fixture.seedPosition, isNotNull);
+      expect(fixture.seedPosition!.latitude, closeTo(51.4769, 0.01));
+    });
+
+    test('EmptyFixture has null seedPosition', () {
+      const fixture = EmptyFixture();
+      expect(fixture.seedPosition, isNull);
+    });
   });
 }
