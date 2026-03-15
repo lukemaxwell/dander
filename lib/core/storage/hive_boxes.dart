@@ -42,4 +42,10 @@ abstract final class HiveBoxes {
 
   /// Stores the last-known subscription state for offline startup.
   static const String subscription = 'subscription';
+
+  /// Stores the daily quiz question count for free-tier limiting.
+  static const String quizDailyLimit = 'quiz_daily_limit';
+
+  /// Stores the last-dismissed timestamp for the zone-expansion banner.
+  static const String bannerCooldown = 'banner_cooldown';
 }

@@ -25,6 +25,9 @@ import 'package:dander/features/walk/domain/models/walk_summary.dart';
 import 'package:dander/core/location/walk_repository.dart';
 import 'package:dander/core/location/walk_session.dart';
 import 'package:dander/core/theme/app_theme.dart';
+import 'package:dander/core/subscription/banner_cooldown_repository.dart';
+import 'package:dander/core/subscription/outside_zone_detector.dart';
+import 'package:dander/core/subscription/subscription_service.dart';
 import 'package:dander/core/zone/level_up_detector.dart';
 import 'package:dander/core/zone/zone_level.dart';
 import 'package:dander/core/zone/mystery_poi.dart';
@@ -37,6 +40,9 @@ import 'package:dander/core/zone/zone_service.dart';
 import 'package:dander/features/discoveries/presentation/widgets/discovery_notification.dart';
 import 'package:dander/features/discoveries/presentation/widgets/discovery_reveal_overlay.dart';
 import 'package:dander/features/map/presentation/widgets/compass_button.dart';
+import 'package:dander/features/subscription/paywall_trigger.dart';
+import 'package:dander/features/subscription/presentation/screens/paywall_screen.dart';
+import 'package:dander/features/subscription/presentation/widgets/zone_expansion_banner.dart';
 import 'package:dander/features/map/presentation/widgets/discovery_burst_overlay.dart';
 import 'package:dander/features/map/presentation/widgets/exploration_badge.dart';
 import 'package:dander/features/map/presentation/widgets/fog_layer.dart';
@@ -82,6 +88,9 @@ class _MapScreenState extends State<MapScreen>
   zone_model.Zone? _activeZone;
   LevelUpEvent? _levelUpEvent;
   bool _zonePromptShown = false;
+
+  // Zone-expansion banner state (shown to free users outside all zones).
+  bool _showZoneExpansionBanner = false;
 
   // POI discovery state
   Discovery? _pendingDiscovery;
@@ -202,6 +211,7 @@ class _MapScreenState extends State<MapScreen>
       _locationStreamController.add(latLng);
       _checkZoneOnMove(latLng);
       _checkPoiArrival(latLng);
+      _checkBannerVisibility(latLng);
       if (_walkSession != null) {
         _earnChargesFromMove(latLng);
         // Track walk points.
@@ -377,6 +387,65 @@ class _MapScreenState extends State<MapScreen>
     } catch (_) {
       // Zone detection not available — skip
     }
+  }
+
+  /// Evaluates whether the zone-expansion banner should be shown.
+  ///
+  /// Shows the banner when ALL of the following conditions are true:
+  /// - The user is not a Pro subscriber.
+  /// - The user is outside every configured zone.
+  /// - The banner cooldown has not been triggered within the last 48 hours.
+  /// - First-launch onboarding overlays are not active.
+  Future<void> _checkBannerVisibility(LatLng position) async {
+    if (_showBannerOnboarding) return;
+    try {
+      final subService = GetIt.instance<SubscriptionService>();
+      if (subService.state.value.isPro) {
+        if (mounted && _showZoneExpansionBanner) {
+          setState(() => _showZoneExpansionBanner = false);
+        }
+        return;
+      }
+
+      final cooldownRepo = GetIt.instance<BannerCooldownRepository>();
+      if (cooldownRepo.isOnCooldown()) return;
+
+      final zoneRepo = GetIt.instance<ZoneRepository>();
+      final zones = await zoneRepo.loadAll();
+      final outside = OutsideZoneDetector.isOutside(position, zones);
+
+      if (mounted && outside && !_showZoneExpansionBanner) {
+        setState(() => _showZoneExpansionBanner = true);
+      } else if (mounted && !outside && _showZoneExpansionBanner) {
+        setState(() => _showZoneExpansionBanner = false);
+      }
+    } catch (_) {
+      // Services not registered — skip.
+    }
+  }
+
+  /// Returns true when first-launch onboarding overlays are visible.
+  bool get _showBannerOnboarding =>
+      _showWalkPreview || _showFirstWalkContract || _showPostFirstWalkOverlay;
+
+  void _dismissZoneExpansionBanner() {
+    setState(() => _showZoneExpansionBanner = false);
+    try {
+      final cooldownRepo = GetIt.instance<BannerCooldownRepository>();
+      cooldownRepo.markDismissed();
+    } catch (_) {
+      // Repository not registered in tests — skip.
+    }
+  }
+
+  void _navigateToPaywall() {
+    setState(() => _showZoneExpansionBanner = false);
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const PaywallScreen(trigger: PaywallTrigger.zoneExpansion),
+        fullscreenDialog: true,
+      ),
+    );
   }
 
   Future<void> _showNewZonePrompt(LatLng position) async {
@@ -795,6 +864,17 @@ class _MapScreenState extends State<MapScreen>
                 onShare: _shareFirstWalk,
                 onDismiss: () =>
                     setState(() => _showPostFirstWalkOverlay = false),
+              ),
+            // Zone-expansion banner — shown just below the safe-area app bar.
+            if (_showZoneExpansionBanner)
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 56,
+                left: 0,
+                right: 0,
+                child: ZoneExpansionBanner(
+                  onNavigateToPaywall: _navigateToPaywall,
+                  onDismiss: _dismissZoneExpansionBanner,
+                ),
               ),
             // Floating XP text overlay — positioned top-center.
             Positioned(
