@@ -9,6 +9,8 @@ import '../zone/mystery_poi_repository.dart';
 import '../zone/zone_repository.dart';
 import 'fixtures/active_zone_fixture.dart';
 import 'fixtures/empty_fixture.dart';
+import 'fixtures/high_payoff_fixture.dart';
+import 'fixtures/mid_progress_fixture.dart';
 import 'fixtures/onboarding_complete_fixture.dart';
 import 'fog_seeder.dart';
 import 'seed_fixture.dart';
@@ -34,11 +36,9 @@ class SeedProfileLoader {
       case SeedProfile.activeZone:
         return const ActiveZoneFixture();
       case SeedProfile.midProgress:
-        // TODO: implement in #198
-        return const OnboardingCompleteFixture();
+        return const MidProgressFixture();
       case SeedProfile.highPayoff:
-        // TODO: implement in #198
-        return const OnboardingCompleteFixture();
+        return const HighPayoffFixture();
     }
   }
 
