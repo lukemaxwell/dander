@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
 import 'package:mocktail/mocktail.dart';
 
+import 'package:dander/core/analytics/analytics_service.dart';
+import 'package:dander/core/analytics/install_date_repository.dart';
 import 'package:dander/core/subscription/purchase_result.dart';
 import 'package:dander/core/subscription/purchases_adapter.dart';
 import 'package:dander/core/subscription/subscription_service.dart';
@@ -20,6 +22,15 @@ import 'package:dander/features/subscription/presentation/widgets/pro_badge.dart
 class _MockPurchasesAdapter extends Mock implements PurchasesAdapter {}
 
 class _MockSubscriptionStorage extends Mock implements SubscriptionStorage {}
+
+// ---------------------------------------------------------------------------
+// Fakes
+// ---------------------------------------------------------------------------
+
+class _FakeInstallDateRepository implements InstallDateRepository {
+  @override
+  Future<DateTime> getOrCreate() async => DateTime(2024, 1, 1);
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -45,10 +56,18 @@ SubscriptionService _makeService(SubscriptionState initialState) {
 /// Wraps a widget in a MaterialApp with MediaQuery (animations disabled).
 /// Registers [service] in GetIt so ProBadge can read it.
 Widget _wrap(Widget child, SubscriptionService service) {
-  if (GetIt.instance.isRegistered<SubscriptionService>()) {
-    GetIt.instance.unregister<SubscriptionService>();
+  final gi = GetIt.instance;
+  if (gi.isRegistered<SubscriptionService>()) {
+    gi.unregister<SubscriptionService>();
   }
-  GetIt.instance.registerSingleton<SubscriptionService>(service);
+  gi.registerSingleton<SubscriptionService>(service);
+
+  if (!gi.isRegistered<AnalyticsService>()) {
+    gi.registerSingleton<AnalyticsService>(const NoOpAnalyticsService());
+  }
+  if (!gi.isRegistered<InstallDateRepository>()) {
+    gi.registerSingleton<InstallDateRepository>(_FakeInstallDateRepository());
+  }
 
   return MediaQuery(
     data: const MediaQueryData(disableAnimations: true),
@@ -61,8 +80,15 @@ Widget _wrap(Widget child, SubscriptionService service) {
 
 void main() {
   tearDown(() {
-    if (GetIt.instance.isRegistered<SubscriptionService>()) {
-      GetIt.instance.unregister<SubscriptionService>();
+    final gi = GetIt.instance;
+    if (gi.isRegistered<SubscriptionService>()) {
+      gi.unregister<SubscriptionService>();
+    }
+    if (gi.isRegistered<AnalyticsService>()) {
+      gi.unregister<AnalyticsService>();
+    }
+    if (gi.isRegistered<InstallDateRepository>()) {
+      gi.unregister<InstallDateRepository>();
     }
   });
 
@@ -123,10 +149,18 @@ void main() {
       // Use a navigator so we can verify the push
       bool navigated = false;
 
-      if (GetIt.instance.isRegistered<SubscriptionService>()) {
-        GetIt.instance.unregister<SubscriptionService>();
+      final gi = GetIt.instance;
+      if (gi.isRegistered<SubscriptionService>()) {
+        gi.unregister<SubscriptionService>();
       }
-      GetIt.instance.registerSingleton<SubscriptionService>(service);
+      gi.registerSingleton<SubscriptionService>(service);
+      if (!gi.isRegistered<AnalyticsService>()) {
+        gi.registerSingleton<AnalyticsService>(const NoOpAnalyticsService());
+      }
+      if (!gi.isRegistered<InstallDateRepository>()) {
+        gi.registerSingleton<InstallDateRepository>(
+            _FakeInstallDateRepository());
+      }
 
       await tester.pumpWidget(
         MediaQuery(
@@ -163,10 +197,18 @@ void main() {
         (tester) async {
       final service = _makeService(const SubscriptionStateFree());
 
-      if (GetIt.instance.isRegistered<SubscriptionService>()) {
-        GetIt.instance.unregister<SubscriptionService>();
+      final gi = GetIt.instance;
+      if (gi.isRegistered<SubscriptionService>()) {
+        gi.unregister<SubscriptionService>();
       }
-      GetIt.instance.registerSingleton<SubscriptionService>(service);
+      gi.registerSingleton<SubscriptionService>(service);
+      if (!gi.isRegistered<AnalyticsService>()) {
+        gi.registerSingleton<AnalyticsService>(const NoOpAnalyticsService());
+      }
+      if (!gi.isRegistered<InstallDateRepository>()) {
+        gi.registerSingleton<InstallDateRepository>(
+            _FakeInstallDateRepository());
+      }
 
       await tester.pumpWidget(
         MediaQuery(

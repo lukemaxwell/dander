@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 
+import 'package:dander/core/analytics/analytics_event.dart';
+import 'package:dander/core/analytics/analytics_service.dart';
 import 'package:dander/core/subscription/subscription_service.dart';
 import 'package:dander/core/subscription/subscription_state.dart';
 import 'package:dander/core/theme/dander_colors.dart';
@@ -41,10 +43,14 @@ class ProBadge extends StatelessWidget {
       valueListenable: service.state,
       builder: (context, state, _) {
         return switch (state) {
-          SubscriptionStateFree() => _FreeBadge(onNavigate: onNavigate),
+          SubscriptionStateFree() => _FreeBadge(
+              onNavigate: onNavigate,
+              isPro: false,
+            ),
           SubscriptionStateTrial(:final daysLeft) => _TrialBadge(
               daysLeft: daysLeft,
               onNavigate: onNavigate,
+              isPro: false,
             ),
           SubscriptionStatePro() => const _ProBadge(),
         };
@@ -58,11 +64,13 @@ class ProBadge extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _FreeBadge extends StatelessWidget {
-  const _FreeBadge({this.onNavigate});
+  const _FreeBadge({this.onNavigate, required this.isPro});
 
   final void Function(PaywallTrigger trigger)? onNavigate;
+  final bool isPro;
 
   void _handleTap(BuildContext context) {
+    GetIt.instance<AnalyticsService>().track(ProBadgeTapped(isPro: isPro));
     if (onNavigate != null) {
       onNavigate!(PaywallTrigger.profile);
       return;
@@ -110,12 +118,15 @@ class _TrialBadge extends StatelessWidget {
   const _TrialBadge({
     required this.daysLeft,
     this.onNavigate,
+    required this.isPro,
   });
 
   final int daysLeft;
   final void Function(PaywallTrigger trigger)? onNavigate;
+  final bool isPro;
 
   void _handleTap(BuildContext context) {
+    GetIt.instance<AnalyticsService>().track(ProBadgeTapped(isPro: isPro));
     if (onNavigate != null) {
       onNavigate!(PaywallTrigger.profile);
       return;
