@@ -4,6 +4,7 @@ import 'purchase_result.dart';
 import 'purchases_adapter.dart';
 import 'subscription_state.dart';
 import 'subscription_storage.dart';
+import 'trial_notification_scheduler.dart';
 
 /// Hive box key for the persisted [SubscriptionState] JSON blob.
 const _kStateKey = 'subscription_state';
@@ -28,15 +29,19 @@ class SubscriptionService {
     required SubscriptionStorage storage,
     String? revenueCatApiKey,
     DateTime Function()? clock,
+    TrialNotificationScheduler? notificationScheduler,
   })  : _adapter = adapter,
         _storage = storage,
         _apiKey = revenueCatApiKey ?? '',
-        _clock = clock ?? DateTime.now;
+        _clock = clock ?? DateTime.now,
+        _notificationScheduler =
+            notificationScheduler ?? NoOpTrialNotificationScheduler();
 
   final PurchasesAdapter _adapter;
   final SubscriptionStorage _storage;
   final String _apiKey;
   final DateTime Function() _clock;
+  final TrialNotificationScheduler _notificationScheduler;
 
   /// Current subscription state, updated whenever [initialize] or a purchase
   /// method completes.
@@ -138,6 +143,24 @@ class SubscriptionService {
   void _updateState(SubscriptionState newState) {
     state.value = newState;
     _persistState(newState);
+    _handleNotifications(newState);
+  }
+
+  void _handleNotifications(SubscriptionState newState) {
+    switch (newState) {
+      case SubscriptionStateTrial():
+        _notificationScheduler
+            .scheduleForTrialStart(_clock())
+            .catchError((Object e) {
+          debugPrint('SubscriptionService: notification schedule error: $e');
+        });
+      case SubscriptionStatePro():
+        _notificationScheduler.cancelAll().catchError((Object e) {
+          debugPrint('SubscriptionService: notification cancel error: $e');
+        });
+      case SubscriptionStateFree():
+        break;
+    }
   }
 
   // ---------------------------------------------------------------------------
