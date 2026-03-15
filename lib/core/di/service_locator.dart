@@ -18,6 +18,7 @@ import '../storage/hive_boxes.dart';
 import '../streets/street_overpass_client.dart';
 import '../streets/street_repository.dart';
 import '../subscription/banner_cooldown_repository.dart';
+import '../subscription/milestone_pro_suggestion_frequency.dart';
 import '../subscription/purchases_adapter.dart';
 import '../subscription/quiz_daily_limit_repository.dart';
 import '../subscription/revenuecat_purchases_adapter.dart';
@@ -149,5 +150,8 @@ Future<void> setupLocator() async {
     () => BannerCooldownRepository.withBox(
       Hive.box<dynamic>(HiveBoxes.bannerCooldown),
     ),
+  );
+  sl.registerLazySingleton<MilestoneProSuggestionFrequency>(
+    () => MilestoneProSuggestionFrequency(),
   );
 }
