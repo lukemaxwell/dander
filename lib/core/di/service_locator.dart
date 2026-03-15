@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:hive/hive.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../analytics/analytics_service.dart';
+import '../fog/fog_repository.dart';
 import '../analytics/install_date_repository.dart';
 import '../challenges/challenge_repository.dart';
 import '../compass/compass_charges_repository.dart';
@@ -59,13 +61,24 @@ final GetIt sl = serviceLocator;
 /// - [RevenueCatPurchasesAdapter]   — singleton: one RevenueCat SDK instance.
 /// - [HiveSubscriptionStorage]      — singleton: single Hive box reference for subscription cache.
 /// - [SubscriptionService]          — singleton: subscription state manager.
-Future<void> setupLocator({LocationService? locationService}) async {
+Future<void> setupLocator({
+  LocationService? locationService,
+  LatLng? seedPosition,
+}) async {
   // Infrastructure
   sl.registerSingleton<CompassHeadingService>(FlutterCompassHeadingService());
   if (locationService != null) {
     sl.registerSingleton<LocationService>(locationService);
   } else {
     sl.registerLazySingleton<LocationService>(GeolocatorLocationService.new);
+  }
+  if (seedPosition != null) {
+    sl.registerSingleton<FogRepository>(
+      FogRepository.withBox(
+        Hive.box<dynamic>(HiveBoxes.fogState),
+        origin: seedPosition,
+      ),
+    );
   }
   sl.registerLazySingleton<WalkRepository>(HiveWalkRepository.new);
   sl.registerLazySingleton<OverpassClient>(HttpOverpassClient.new);

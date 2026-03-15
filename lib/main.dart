@@ -97,14 +97,18 @@ Future<void> main() async {
     locationService: fakePosition != null
         ? FakeLocationService(position: fakePosition)
         : null,
+    seedPosition: fakePosition,
   );
 
   // ------------------------------------------------------------------
   // Subscription service initialisation — loads cached state and fetches
   // live entitlement from RevenueCat in the background.
+  // Skip in seed mode — no valid API key and no network needed.
   // ------------------------------------------------------------------
-  // ignore: unawaited_futures
-  sl<SubscriptionService>().initialize();
+  if (!seedProfile.isActive) {
+    // ignore: unawaited_futures
+    sl<SubscriptionService>().initialize();
+  }
 
   // ------------------------------------------------------------------
   // Zone migration — convert legacy data into zone model (one-shot)
