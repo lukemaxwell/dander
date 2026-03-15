@@ -82,9 +82,12 @@ Future<void> main() async {
   );
 
   // ------------------------------------------------------------------
-  // Config validation — fails loudly in debug if API keys are missing
+  // Config validation — fails loudly in debug if API keys are missing.
+  // Skipped when a seed profile is active (no network services needed).
   // ------------------------------------------------------------------
-  AppConfig.validate();
+  if (!seedProfile.isActive) {
+    AppConfig.validate();
+  }
 
   // ------------------------------------------------------------------
   // Dependency injection
