@@ -118,6 +118,9 @@ class _MapScreenState extends State<MapScreen>
   // Session XP counter — reset on walk start.
   int _sessionXp = 0;
 
+  // Discoveries found during the active walk — reset on walk start.
+  int _walkDiscoveries = 0;
+
   // Fog save debounce — saves at most once every 5 seconds.
   Timer? _fogSaveTimer;
 
@@ -360,7 +363,10 @@ class _MapScreenState extends State<MapScreen>
       osmTags: const {},
       discoveredAt: DateTime.now(),
     );
-    setState(() => _revealingDiscovery = discovery);
+    setState(() {
+      _revealingDiscovery = discovery;
+      if (_walkSession != null) _walkDiscoveries++;
+    });
     _saveDiscovery(discovery);
   }
 
@@ -752,6 +758,7 @@ class _MapScreenState extends State<MapScreen>
     _walkXpMeters = 0.0;
     setState(() {
       _sessionXp = 0;
+      _walkDiscoveries = 0;
       _walkSession = WalkSession.start(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         startTime: DateTime.now(),
@@ -943,6 +950,7 @@ class _MapScreenState extends State<MapScreen>
                 onStart: _startWalk,
                 onStop: _stopWalk,
                 sessionXp: _sessionXp,
+                discoveriesThisWalk: _walkDiscoveries,
               ),
             // Discovery notification — rendered above walk control so it's visible.
             if (_pendingDiscovery != null)
