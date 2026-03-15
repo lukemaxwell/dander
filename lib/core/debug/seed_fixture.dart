@@ -24,6 +24,13 @@ abstract class SeedFixture {
   /// GPS service. Return `null` to use real location (e.g. the `empty` fixture).
   LatLng? get seedPosition => null;
 
+  /// Pre-walked paths to clear in the fog grid.
+  ///
+  /// Each inner list is a sequence of [LatLng] points representing a walked
+  /// route. The fog seeder marks cells along each path as explored.
+  /// Return an empty list (default) for no fog seeding.
+  List<List<LatLng>> get walkedPaths => const [];
+
   /// Populates the app state repository (onboarding flags, last position).
   Future<void> seedAppState(AppStateRepository repo) async {}
 }

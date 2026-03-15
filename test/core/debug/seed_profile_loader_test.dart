@@ -199,5 +199,15 @@ void main() {
       const fixture = EmptyFixture();
       expect(fixture.seedPosition, isNull);
     });
+
+    test('EmptyFixture has empty walkedPaths', () {
+      const fixture = EmptyFixture();
+      expect(fixture.walkedPaths, isEmpty);
+    });
+
+    test('OnboardingCompleteFixture has empty walkedPaths by default', () {
+      const fixture = OnboardingCompleteFixture();
+      expect(fixture.walkedPaths, isEmpty);
+    });
   });
 }

@@ -1,8 +1,12 @@
 import 'package:flutter/foundation.dart';
+import 'package:hive/hive.dart';
 
+import '../fog/fog_repository.dart';
 import '../storage/app_state_repository.dart';
+import '../storage/hive_boxes.dart';
 import 'fixtures/empty_fixture.dart';
 import 'fixtures/onboarding_complete_fixture.dart';
+import 'fog_seeder.dart';
 import 'seed_fixture.dart';
 import 'seed_profile.dart';
 
@@ -62,6 +66,25 @@ class SeedProfileLoader {
 
     // Let the fixture seed any additional state.
     await fixture.seedAppState(appStateRepository);
+
+    // Seed fog grid if the fixture provides walked paths and a position.
+    final position = fixture.seedPosition;
+    if (position != null && fixture.walkedPaths.isNotEmpty) {
+      final fogGrid = FogSeeder.seed(
+        origin: position,
+        walkedPaths: fixture.walkedPaths,
+      );
+      final fogBox = Hive.box<dynamic>(HiveBoxes.fogState);
+      final fogRepo = FogRepository.withBox(
+        fogBox,
+        origin: position,
+      );
+      await fogRepo.save(fogGrid);
+      debugPrint(
+        'SeedProfileLoader: seeded fog grid with '
+        '${fogGrid.exploredCount} explored cells',
+      );
+    }
 
     debugPrint('SeedProfileLoader: "${fixture.name}" loaded successfully');
     return profile;
