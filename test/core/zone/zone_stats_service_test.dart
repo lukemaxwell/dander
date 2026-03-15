@@ -58,6 +58,8 @@ class _FakeDiscoveryRepository implements DiscoveryRepository {
   Future<void> markDiscovered(String id, DateTime at) async {}
   @override
   Future<bool> hasCache(LatLngBounds bounds) async => false;
+  @override
+  Future<void> saveDiscovered(Discovery discovery) async {}
 }
 
 class _FakeWalkRepository implements WalkRepository {

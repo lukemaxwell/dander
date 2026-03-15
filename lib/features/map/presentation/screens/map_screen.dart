@@ -354,6 +354,10 @@ class _MapScreenState extends State<MapScreen>
 
   Future<void> _checkZoneOnMove(LatLng position) async {
     if (_zonePromptShown) return;
+    // Don't trigger zone prompts during first-launch onboarding overlays.
+    if (_showWalkPreview || _showFirstWalkContract || _showPostFirstWalkOverlay) {
+      return;
+    }
 
     try {
       final detector = GetIt.instance<ZoneDetector>();
@@ -519,7 +523,7 @@ class _MapScreenState extends State<MapScreen>
   Future<void> _saveDiscovery(Discovery discovery) async {
     try {
       final repo = GetIt.instance<DiscoveryRepository>();
-      await repo.markDiscovered(discovery.id, discovery.discoveredAt!);
+      await repo.saveDiscovered(discovery);
     } catch (_) {
       // Repository not available — skip.
     }
@@ -716,16 +720,6 @@ class _MapScreenState extends State<MapScreen>
                   _revealingDiscovery = null;
                 }),
               ),
-            if (_pendingDiscovery != null)
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: DiscoveryNotification(
-                  discovery: _pendingDiscovery!,
-                  onDismiss: () => setState(() => _pendingDiscovery = null),
-                ),
-              ),
             if (_burstPosition != null)
               DiscoveryBurstOverlay(
                 position: _burstPosition!,
@@ -742,6 +736,17 @@ class _MapScreenState extends State<MapScreen>
                 onStart: _startWalk,
                 onStop: _stopWalk,
                 sessionXp: _sessionXp,
+              ),
+            // Discovery notification — rendered above walk control so it's visible.
+            if (_pendingDiscovery != null)
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: DiscoveryNotification(
+                  discovery: _pendingDiscovery!,
+                  onDismiss: () => setState(() => _pendingDiscovery = null),
+                ),
               ),
             // First-launch exploration chip — only visible between
             // preview dismissal and walk contract appearing.

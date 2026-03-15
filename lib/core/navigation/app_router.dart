@@ -50,45 +50,66 @@ final GoRouter router = GoRouter(
         ),
       ),
     ),
-    ShellRoute(
-      builder: (context, state, child) => AppShell(child: child),
-      routes: [
-        GoRoute(
-          path: AppRoutes.home,
-          pageBuilder: (context, state) =>
-              danderCrossfadePage(context, const MapScreen()),
-        ),
-        GoRoute(
-          path: AppRoutes.discoveries,
-          pageBuilder: (context, state) =>
-              danderCrossfadePage(context, _DiscoveriesLoader()),
-        ),
-        GoRoute(
-          path: AppRoutes.quiz,
-          pageBuilder: (context, state) => danderCrossfadePage(
-            context,
-            const QuizHomeScreen(
-              walkedStreets: [],
-              records: [],
-              onStartReview: _noop,
-              onPracticeAll: _noop,
+    StatefulShellRoute.indexedStack(
+      builder: (context, state, navigationShell) =>
+          AppShell(navigationShell: navigationShell),
+      branches: [
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: AppRoutes.home,
+              pageBuilder: (context, state) =>
+                  danderCrossfadePage(context, const MapScreen()),
             ),
-          ),
+          ],
         ),
-        GoRoute(
-          path: AppRoutes.zones,
-          pageBuilder: (context, state) => danderCrossfadePage(
-            context,
-            ZonesScreen(
-              repository: GetIt.instance<ZoneRepository>(),
-              onZoneTapped: (id) => router.push('/zones/$id'),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: AppRoutes.discoveries,
+              pageBuilder: (context, state) =>
+                  danderCrossfadePage(context, _DiscoveriesLoader()),
             ),
-          ),
+          ],
         ),
-        GoRoute(
-          path: AppRoutes.profile,
-          pageBuilder: (context, state) =>
-              danderCrossfadePage(context, _ProfileLoader()),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: AppRoutes.quiz,
+              pageBuilder: (context, state) => danderCrossfadePage(
+                context,
+                const QuizHomeScreen(
+                  walkedStreets: [],
+                  records: [],
+                  onStartReview: _noop,
+                  onPracticeAll: _noop,
+                ),
+              ),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: AppRoutes.zones,
+              pageBuilder: (context, state) => danderCrossfadePage(
+                context,
+                ZonesScreen(
+                  repository: GetIt.instance<ZoneRepository>(),
+                  onZoneTapped: (id) => router.push('/zones/$id'),
+                ),
+              ),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: AppRoutes.profile,
+              pageBuilder: (context, state) =>
+                  danderCrossfadePage(context, _ProfileLoader()),
+            ),
+          ],
         ),
       ],
     ),

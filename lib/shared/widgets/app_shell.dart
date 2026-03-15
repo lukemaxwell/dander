@@ -4,52 +4,34 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:dander/core/haptics/haptic_service.dart';
-import 'package:dander/core/navigation/app_router.dart';
 import 'package:dander/core/theme/app_theme.dart';
 import 'package:dander/shared/widgets/pressable.dart';
 
 /// Persistent shell wrapping all top-level routes with a bottom navigation bar.
 ///
-/// The nav bar uses a [BackdropFilter] blur so the map content bleeds through.
+/// Uses [StatefulNavigationShell] from GoRouter so each tab's widget tree is
+/// preserved in an [IndexedStack] — switching tabs no longer rebuilds screens.
 class AppShell extends StatelessWidget {
-  const AppShell({super.key, required this.child});
+  const AppShell({super.key, required this.navigationShell});
 
-  final Widget child;
+  final StatefulNavigationShell navigationShell;
 
-  int _currentIndex(BuildContext context) {
-    final location = GoRouterState.of(context).uri.toString();
-    if (location.startsWith(AppRoutes.discoveries)) return 1;
-    if (location.startsWith(AppRoutes.quiz)) return 2;
-    if (location.startsWith(AppRoutes.zones)) return 3;
-    if (location.startsWith(AppRoutes.profile)) return 4;
-    return 0;
-  }
-
-  void _onTap(BuildContext context, int index) {
+  void _onTap(int index) {
     HapticService.navTabSwitch();
-    switch (index) {
-      case 0:
-        context.go(AppRoutes.home);
-      case 1:
-        context.go(AppRoutes.discoveries);
-      case 2:
-        context.go(AppRoutes.quiz);
-      case 3:
-        context.go(AppRoutes.zones);
-      case 4:
-        context.go(AppRoutes.profile);
-    }
+    navigationShell.goBranch(
+      index,
+      initialLocation: index == navigationShell.currentIndex,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentIndex = _currentIndex(context);
     return Scaffold(
       extendBody: true,
-      body: child,
+      body: navigationShell,
       bottomNavigationBar: _BlurredNavBar(
-        currentIndex: currentIndex,
-        onTap: (index) => _onTap(context, index),
+        currentIndex: navigationShell.currentIndex,
+        onTap: _onTap,
       ),
     );
   }

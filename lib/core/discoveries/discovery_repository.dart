@@ -27,6 +27,13 @@ abstract class DiscoveryRepository {
   /// Returns every cached [Discovery] across all stored bounds, regardless of
   /// discovery status.  Useful for computing per-category totals.
   Future<List<Discovery>> getAllCached();
+
+  /// Persists a single [Discovery] as discovered.
+  ///
+  /// Stores the full discovery data so [getDiscovered] can return it, and
+  /// marks the ID as discovered.  Use this when a discovery originates from
+  /// outside the POI-bounds cache (e.g. from [MysteryPoiService]).
+  Future<void> saveDiscovered(Discovery discovery);
 }
 
 /// Hive-backed implementation of [DiscoveryRepository].
@@ -155,6 +162,27 @@ class HiveDiscoveryRepository implements DiscoveryRepository {
       result.addAll(_decodeList(raw as String));
     }
     return result;
+  }
+
+  @override
+  Future<void> saveDiscovered(Discovery discovery) async {
+    final box = await _openBox();
+
+    // Store the full discovery data under a dedicated key so getDiscovered()
+    // can find it when scanning pois_* entries.
+    const key = 'pois___discovered_singles__';
+    final rawExisting = box.get(key);
+    final existing =
+        rawExisting != null ? _decodeList(rawExisting as String) : <Discovery>[];
+
+    // Avoid duplicates.
+    if (existing.any((d) => d.id == discovery.id)) return;
+
+    final updated = [...existing, discovery];
+    await box.put(key, jsonEncode(updated.map((d) => d.toJson()).toList()));
+
+    // Also record the ID in the discovered set.
+    await markDiscovered(discovery.id, discovery.discoveredAt ?? DateTime.now());
   }
 
   // ---------------------------------------------------------------------------
