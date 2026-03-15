@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:latlong2/latlong.dart';
 
 import 'package:dander/core/debug/fixtures/mid_progress_fixture.dart';
 import 'package:dander/core/debug/fixtures/high_payoff_fixture.dart';
@@ -22,27 +21,41 @@ void main() {
       expect(fixture.seedPosition!.latitude, closeTo(51.477, 0.01));
     });
 
-    test('has walked paths with interesting shape (not a straight line)', () {
-      expect(fixture.walkedPaths, isNotEmpty);
-      final path = fixture.walkedPaths.first;
-      expect(path.length, greaterThan(5));
+    test('has multiple walked paths for good fog coverage', () {
+      expect(fixture.walkedPaths.length, greaterThanOrEqualTo(2));
+      final totalPoints = fixture.walkedPaths
+          .fold<int>(0, (sum, path) => sum + path.length);
+      expect(totalPoints, greaterThan(30));
     });
 
-    test('has at least 1 revealed POI', () {
+    test('has at least 2 revealed POIs with names', () {
       final revealed = MidProgressFixture.mysteryPois
           .where((p) => p.state == PoiState.revealed)
           .toList();
-      expect(revealed.length, greaterThanOrEqualTo(1));
+      expect(revealed.length, greaterThanOrEqualTo(2));
       for (final poi in revealed) {
         expect(poi.name, isNotNull);
       }
     });
 
-    test('has unrevealed POIs for ? markers', () {
-      final unrevealed = MidProgressFixture.mysteryPois
-          .where((p) => p.state == PoiState.unrevealed)
+    test('has at least 3 hinted POIs (visible ? markers)', () {
+      final hinted = MidProgressFixture.mysteryPois
+          .where((p) => p.state == PoiState.hinted)
           .toList();
-      expect(unrevealed.length, greaterThanOrEqualTo(2));
+      expect(hinted.length, greaterThanOrEqualTo(3));
+    });
+
+    test('has Discovery entries matching revealed POIs', () {
+      final revealed = MidProgressFixture.mysteryPois
+          .where((p) => p.state == PoiState.revealed)
+          .toList();
+      expect(
+        MidProgressFixture.discoveries.length,
+        equals(revealed.length),
+      );
+      for (final d in MidProgressFixture.discoveries) {
+        expect(d.discoveredAt, isNotNull);
+      }
     });
 
     test('zone has moderate XP', () {
@@ -67,10 +80,11 @@ void main() {
       expect(fixture.seedPosition!.latitude, closeTo(51.477, 0.01));
     });
 
-    test('has multiple walked paths or a longer route', () {
+    test('has multiple walked paths for wide fog coverage', () {
+      expect(fixture.walkedPaths.length, greaterThanOrEqualTo(3));
       final totalPoints = fixture.walkedPaths
           .fold<int>(0, (sum, path) => sum + path.length);
-      expect(totalPoints, greaterThan(15));
+      expect(totalPoints, greaterThan(50));
     });
 
     test('has more revealed POIs than mid_progress', () {
@@ -97,15 +111,25 @@ void main() {
       );
     });
 
-    test('has multiple discoveries with names', () {
+    test('has Discovery entries matching revealed POIs', () {
       final revealed = HighPayoffFixture.mysteryPois
           .where((p) => p.state == PoiState.revealed)
           .toList();
-      expect(revealed.length, greaterThanOrEqualTo(3));
-      for (final poi in revealed) {
-        expect(poi.name, isNotNull);
-        expect(poi.name, isNotEmpty);
+      expect(
+        HighPayoffFixture.discoveries.length,
+        equals(revealed.length),
+      );
+      for (final d in HighPayoffFixture.discoveries) {
+        expect(d.discoveredAt, isNotNull);
+        expect(d.name, isNotEmpty);
       }
+    });
+
+    test('has at least 4 hinted POIs (visible ? markers)', () {
+      final hinted = HighPayoffFixture.mysteryPois
+          .where((p) => p.state == PoiState.hinted)
+          .toList();
+      expect(hinted.length, greaterThanOrEqualTo(4));
     });
   });
 }

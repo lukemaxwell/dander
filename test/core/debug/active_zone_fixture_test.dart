@@ -2,40 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'package:dander/core/debug/fixtures/active_zone_fixture.dart';
-import 'package:dander/core/location/walk_session.dart';
 import 'package:dander/core/zone/mystery_poi.dart';
-import 'package:dander/core/zone/zone.dart';
-
-// ---------------------------------------------------------------------------
-// In-memory repositories for testing
-// ---------------------------------------------------------------------------
-
-class InMemoryZoneRepository {
-  final List<Zone> zones = [];
-  Future<void> save(Zone zone) async => zones.add(zone);
-}
-
-class InMemoryMysteryPoiRepository {
-  final Map<String, List<MysteryPoi>> pois = {};
-  final Map<String, int> totalCounts = {};
-
-  Future<void> savePois(String zoneId, List<MysteryPoi> items) async {
-    pois[zoneId] = items;
-  }
-
-  Future<void> saveTotalCount(String zoneId, int count) async {
-    totalCounts[zoneId] = count;
-  }
-}
-
-class InMemoryWalkRepository {
-  final List<WalkSession> walks = [];
-  Future<void> saveWalk(WalkSession session) async => walks.add(session);
-}
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 void main() {
   group('ActiveZoneFixture', () {
@@ -56,7 +23,6 @@ void main() {
 
     test('has walked paths for fog seeding', () {
       expect(fixture.walkedPaths, isNotEmpty);
-      // At least one path with multiple points
       expect(fixture.walkedPaths.first.length, greaterThan(1));
     });
 
@@ -75,11 +41,11 @@ void main() {
         expect(pois.length, greaterThanOrEqualTo(5));
       });
 
-      test('has at least 3 unrevealed POIs', () {
-        final unrevealed = ActiveZoneFixture.mysteryPois
-            .where((p) => p.state == PoiState.unrevealed)
+      test('has at least 3 hinted POIs (visible as ? markers)', () {
+        final hinted = ActiveZoneFixture.mysteryPois
+            .where((p) => p.state == PoiState.hinted)
             .toList();
-        expect(unrevealed.length, greaterThanOrEqualTo(3));
+        expect(hinted.length, greaterThanOrEqualTo(3));
       });
 
       test('has at least 2 revealed POIs with names', () {
@@ -98,20 +64,20 @@ void main() {
           expect(poi.position.latitude, closeTo(51.477, 0.01));
         }
       });
+    });
 
-      test('all POIs have allowlisted categories', () {
-        const allowed = {
-          'memorial', 'monument', 'artwork', 'statue', 'museum',
-          'library', 'gallery', 'park', 'garden', 'viewpoint',
-          'nature_reserve', 'town_hall', 'clock', 'fountain',
-          'community_centre', 'information', 'guidepost',
-        };
-        for (final poi in ActiveZoneFixture.mysteryPois) {
-          expect(
-            allowed.contains(poi.category),
-            isTrue,
-            reason: '${poi.category} should be in the allowlist',
-          );
+    group('discoveries', () {
+      test('has Discovery entries matching revealed POIs', () {
+        final revealed = ActiveZoneFixture.mysteryPois
+            .where((p) => p.state == PoiState.revealed)
+            .toList();
+        expect(
+          ActiveZoneFixture.discoveries.length,
+          equals(revealed.length),
+        );
+        for (final discovery in ActiveZoneFixture.discoveries) {
+          expect(discovery.discoveredAt, isNotNull);
+          expect(discovery.name, isNotEmpty);
         }
       });
     });

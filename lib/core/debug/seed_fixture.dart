@@ -1,5 +1,6 @@
 import 'package:latlong2/latlong.dart';
 
+import '../discoveries/discovery_repository.dart';
 import '../location/walk_repository.dart';
 import '../storage/app_state_repository.dart';
 import '../zone/mystery_poi_repository.dart';
@@ -45,5 +46,6 @@ abstract class SeedFixture {
     required ZoneRepository zoneRepository,
     required MysteryPoiRepository mysteryPoiRepository,
     required WalkRepository walkRepository,
+    required DiscoveryRepository discoveryRepository,
   }) async {}
 }

@@ -1,5 +1,7 @@
 import 'package:latlong2/latlong.dart';
 
+import '../../discoveries/discovery.dart';
+import '../../discoveries/discovery_repository.dart';
 import '../../location/walk_repository.dart';
 import '../../location/walk_session.dart';
 import '../../storage/app_state_repository.dart';
@@ -36,7 +38,7 @@ class ActiveZoneFixture extends SeedFixture {
     createdAt: DateTime(2025, 3, 1),
   );
 
-  /// Mystery POIs: 3 unrevealed, 2 revealed.
+  /// Mystery POIs: 2 revealed, 3 hinted (visible as ? markers).
   static const mysteryPois = <MysteryPoi>[
     // Revealed POIs (user has visited these)
     MysteryPoi(
@@ -53,42 +55,64 @@ class ActiveZoneFixture extends SeedFixture {
       name: 'Royal Observatory',
       state: PoiState.revealed,
     ),
-    // Unrevealed POIs (? markers on map)
+    // Hinted POIs (amber ? markers on map)
     MysteryPoi(
       id: 'node/seed-3',
       position: LatLng(51.4780, 0.0005),
       category: 'memorial',
-      state: PoiState.unrevealed,
+      state: PoiState.hinted,
     ),
     MysteryPoi(
       id: 'node/seed-4',
       position: LatLng(51.4765, -0.0025),
       category: 'viewpoint',
-      state: PoiState.unrevealed,
+      state: PoiState.hinted,
     ),
     MysteryPoi(
       id: 'node/seed-5',
       position: LatLng(51.4775, 0.0020),
       category: 'artwork',
-      state: PoiState.unrevealed,
+      state: PoiState.hinted,
+    ),
+  ];
+
+  /// Corresponding Discovery entries for the revealed POIs.
+  static final discoveries = <Discovery>[
+    Discovery(
+      id: 'node/seed-1',
+      name: 'General Wolfe Statue',
+      category: 'monument',
+      rarity: RarityTier.uncommon,
+      position: const LatLng(51.4773, -0.0010),
+      osmTags: const {'historic': 'monument', 'name': 'General Wolfe Statue'},
+      discoveredAt: DateTime(2025, 3, 10, 14, 4),
+    ),
+    Discovery(
+      id: 'node/seed-2',
+      name: 'Royal Observatory',
+      category: 'museum',
+      rarity: RarityTier.rare,
+      position: const LatLng(51.4770, -0.0015),
+      osmTags: const {'tourism': 'museum', 'name': 'Royal Observatory'},
+      discoveredAt: DateTime(2025, 3, 10, 14, 6),
     ),
   ];
 
   /// A realistic walked route through Greenwich Park.
-  static final _walkedRoute = <LatLng>[
-    const LatLng(51.4769, -0.0005),
-    const LatLng(51.4770, -0.0007),
-    const LatLng(51.4771, -0.0009),
-    const LatLng(51.4772, -0.0010),
-    const LatLng(51.4773, -0.0010),
-    const LatLng(51.4773, -0.0012),
-    const LatLng(51.4772, -0.0014),
-    const LatLng(51.4771, -0.0015),
-    const LatLng(51.4770, -0.0015),
-    const LatLng(51.4769, -0.0014),
-    const LatLng(51.4768, -0.0012),
-    const LatLng(51.4768, -0.0009),
-    const LatLng(51.4769, -0.0005),
+  static const _walkedRoute = <LatLng>[
+    LatLng(51.4769, -0.0005),
+    LatLng(51.4770, -0.0007),
+    LatLng(51.4771, -0.0009),
+    LatLng(51.4772, -0.0010),
+    LatLng(51.4773, -0.0010),
+    LatLng(51.4773, -0.0012),
+    LatLng(51.4772, -0.0014),
+    LatLng(51.4771, -0.0015),
+    LatLng(51.4770, -0.0015),
+    LatLng(51.4769, -0.0014),
+    LatLng(51.4768, -0.0012),
+    LatLng(51.4768, -0.0009),
+    LatLng(51.4769, -0.0005),
   ];
 
   /// Completed walk session matching the walked route.
@@ -123,10 +147,15 @@ class ActiveZoneFixture extends SeedFixture {
     required ZoneRepository zoneRepository,
     required MysteryPoiRepository mysteryPoiRepository,
     required WalkRepository walkRepository,
+    required DiscoveryRepository discoveryRepository,
   }) async {
     await zoneRepository.save(zone);
     await mysteryPoiRepository.savePois(_zoneId, mysteryPois);
     await mysteryPoiRepository.saveTotalCount(_zoneId, mysteryPois.length);
+    await mysteryPoiRepository.saveWaveState(_zoneId, 1, 2);
     await walkRepository.saveWalk(walkSession);
+    for (final discovery in discoveries) {
+      await discoveryRepository.saveDiscovered(discovery);
+    }
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 
+import '../discoveries/discovery_repository.dart';
 import '../fog/fog_repository.dart';
 import '../location/walk_repository.dart';
 import '../storage/app_state_repository.dart';
@@ -82,6 +83,9 @@ class SeedProfileLoader {
         ),
         walkRepository: HiveWalkRepository.withBox(
           Hive.box<dynamic>(HiveBoxes.walks),
+        ),
+        discoveryRepository: HiveDiscoveryRepository.withBox(
+          Hive.box<dynamic>(HiveBoxes.discoveries),
         ),
       );
     }
