@@ -71,37 +71,50 @@ class ZoneCard extends StatelessWidget {
           boxShadow: DanderElevation.level1,
         ),
         padding: DanderSpacing.cardPadding,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            _Header(
-              zone: zone,
-              isMaxLevel: isMaxLevel,
-              onDelete: onDelete,
-              onRename: onRename,
-            ),
-            const SizedBox(height: DanderSpacing.sm),
-            _XpRow(
-              zone: zone,
-              nextXp: nextXp,
-              isMaxLevel: isMaxLevel,
-            ),
-            const SizedBox(height: DanderSpacing.xs),
-            LinearProgressIndicator(
-              value: progress,
-              backgroundColor:
-                  DanderColors.onSurfaceDisabled.withValues(alpha: 0.3),
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                DanderColors.accent,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _Header(
+                    zone: zone,
+                    isMaxLevel: isMaxLevel,
+                    onDelete: onDelete,
+                    onRename: onRename,
+                  ),
+                  const SizedBox(height: DanderSpacing.sm),
+                  _XpRow(
+                    zone: zone,
+                    nextXp: nextXp,
+                    isMaxLevel: isMaxLevel,
+                  ),
+                  const SizedBox(height: DanderSpacing.xs),
+                  LinearProgressIndicator(
+                    value: progress,
+                    backgroundColor:
+                        DanderColors.onSurfaceDisabled.withValues(alpha: 0.3),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      DanderColors.accent,
+                    ),
+                    minHeight: 6,
+                    borderRadius:
+                        BorderRadius.circular(DanderSpacing.borderRadiusFull),
+                  ),
+                  const SizedBox(height: DanderSpacing.sm),
+                  _LevelExplainer(zone: zone),
+                  const SizedBox(height: DanderSpacing.sm),
+                  _Footer(zone: zone),
+                ],
               ),
-              minHeight: 6,
-              borderRadius:
-                  BorderRadius.circular(DanderSpacing.borderRadiusFull),
             ),
-            const SizedBox(height: DanderSpacing.sm),
-            _LevelExplainer(zone: zone),
-            const SizedBox(height: DanderSpacing.sm),
-            _Footer(zone: zone),
+            const SizedBox(width: DanderSpacing.sm),
+            Icon(
+              Icons.chevron_right,
+              color: DanderColors.onSurfaceMuted,
+              size: 22,
+            ),
           ],
         ),
       ),
@@ -221,11 +234,6 @@ class _Header extends StatelessWidget {
             ),
           ),
         ],
-        Icon(
-          Icons.chevron_right,
-          color: DanderColors.onSurfaceMuted,
-          size: 20,
-        ),
       ],
     );
   }
