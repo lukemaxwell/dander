@@ -3,6 +3,7 @@ import 'package:get_it/get_it.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import 'core/app/app_initializer.dart';
+import 'core/config/app_config.dart';
 import 'core/di/service_locator.dart';
 import 'core/navigation/app_router.dart';
 import 'core/network/connectivity_service.dart';
@@ -11,6 +12,7 @@ import 'core/quiz/quiz_repository.dart';
 import 'core/storage/app_state_repository.dart';
 import 'core/storage/hive_boxes.dart';
 import 'core/streets/street_repository.dart';
+import 'core/subscription/subscription_service.dart';
 import 'core/sync/sync_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/zone/zone_migration.dart';
@@ -38,6 +40,7 @@ Future<void> main() async {
     Hive.openBox<dynamic>(HiveBoxes.mysteryPois),
     Hive.openBox<dynamic>(HiveBoxes.poiCooldowns),
     Hive.openBox<dynamic>(HiveBoxes.challenges),
+    Hive.openBox<dynamic>(HiveBoxes.subscription),
   ]);
 
   // ------------------------------------------------------------------
@@ -66,9 +69,21 @@ Future<void> main() async {
   );
 
   // ------------------------------------------------------------------
+  // Config validation — fails loudly in debug if API keys are missing
+  // ------------------------------------------------------------------
+  AppConfig.validate();
+
+  // ------------------------------------------------------------------
   // Dependency injection
   // ------------------------------------------------------------------
   await setupLocator();
+
+  // ------------------------------------------------------------------
+  // Subscription service initialisation — loads cached state and fetches
+  // live entitlement from RevenueCat in the background.
+  // ------------------------------------------------------------------
+  // ignore: unawaited_futures
+  sl<SubscriptionService>().initialize();
 
   // ------------------------------------------------------------------
   // Zone migration — convert legacy data into zone model (one-shot)

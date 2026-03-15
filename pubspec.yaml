@@ -25,6 +25,7 @@ dependencies:
   connectivity_plus: ^6.0.0
   google_fonts: ^8.0.2
   flutter_svg: ^2.2.4
+  purchases_flutter: ^8.0.0
 
 dev_dependencies:
   flutter_test:

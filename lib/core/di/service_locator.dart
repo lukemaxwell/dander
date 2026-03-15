@@ -1,7 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
+import 'package:hive/hive.dart';
 
 import '../challenges/challenge_repository.dart';
 import '../compass/compass_charges_repository.dart';
+import '../config/app_config.dart';
 import '../discoveries/discovery_repository.dart';
 import '../discoveries/discovery_service.dart';
 import '../discoveries/overpass_client.dart';
@@ -11,8 +14,13 @@ import '../location/walk_service.dart';
 import '../progress/progress_repository.dart';
 import '../progress/progress_service.dart';
 import '../quiz/quiz_repository.dart';
+import '../storage/hive_boxes.dart';
 import '../streets/street_overpass_client.dart';
 import '../streets/street_repository.dart';
+import '../subscription/purchases_adapter.dart';
+import '../subscription/revenuecat_purchases_adapter.dart';
+import '../subscription/subscription_service.dart';
+import '../subscription/subscription_storage.dart';
 import '../zone/mystery_poi_repository.dart';
 import '../zone/mystery_poi_service.dart';
 import '../zone/poi_cooldown_repository.dart';
@@ -42,6 +50,9 @@ final GetIt sl = serviceLocator;
 /// - [ProgressService]              — singleton: exploration %, badges, and streak logic.
 /// - [HttpStreetOverpassClient]     — singleton: shared HTTP client for street Overpass queries.
 /// - [HiveStreetRepository]         — singleton: single Hive box reference for street cache.
+/// - [RevenueCatPurchasesAdapter]   — singleton: one RevenueCat SDK instance.
+/// - [HiveSubscriptionStorage]      — singleton: single Hive box reference for subscription cache.
+/// - [SubscriptionService]          — singleton: subscription state manager.
 Future<void> setupLocator() async {
   // Infrastructure
   sl.registerLazySingleton<LocationService>(GeolocatorLocationService.new);
@@ -106,6 +117,23 @@ Future<void> setupLocator() async {
       repository: sl<MysteryPoiRepository>(),
       overpassClient: sl<OverpassClient>(),
       zoneDetector: sl<ZoneDetector>(),
+    ),
+  );
+
+  // Subscription
+  sl.registerLazySingleton<PurchasesAdapter>(
+    RevenueCatPurchasesAdapter.new,
+  );
+  sl.registerLazySingleton<SubscriptionStorage>(
+    () => HiveSubscriptionStorage(Hive.box<dynamic>(HiveBoxes.subscription)),
+  );
+  sl.registerLazySingleton<SubscriptionService>(
+    () => SubscriptionService(
+      adapter: sl<PurchasesAdapter>(),
+      storage: sl<SubscriptionStorage>(),
+      revenueCatApiKey: defaultTargetPlatform == TargetPlatform.iOS
+          ? AppConfig.revenueCatIosApiKey
+          : AppConfig.revenueCatAndroidApiKey,
     ),
   );
 }
