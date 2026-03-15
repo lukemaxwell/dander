@@ -36,7 +36,10 @@ class HttpOverpassClient implements OverpassClient {
   static final Uri _endpoint =
       Uri.parse('https://overpass-api.de/api/interpreter');
 
-  static const Duration _requestTimeout = Duration(seconds: 30);
+  /// HTTP deadline — intentionally longer than the Overpass `[timeout:30]`
+  /// directive so the server can complete or return a clean error before the
+  /// client kills the connection.
+  static const Duration _requestTimeout = Duration(seconds: 40);
 
   final http.Client _http;
 
@@ -82,7 +85,11 @@ class HttpOverpassClient implements OverpassClient {
   // Private helpers
   // ---------------------------------------------------------------------------
 
-  /// Builds an Overpass QL query for nodes within [bounds].
+  /// Builds an Overpass QL query for nodes, ways, and relations within [bounds].
+  ///
+  /// Nodes are fetched for all amenity/tourism/historic/leisure tags.
+  /// Ways and relations use targeted tag queries to avoid fetching thousands
+  /// of residential garden polygons (which cause timeouts in dense areas).
   ///
   /// Bounding box order: south, west, north, east.
   String _buildQuery(LatLngBounds bounds) {
@@ -93,14 +100,21 @@ class HttpOverpassClient implements OverpassClient {
     final bbox = '$s,$w,$n,$e';
 
     return '''
-[out:json][timeout:25];
+[out:json][timeout:30];
 (
   node["amenity"]($bbox);
   node["tourism"]($bbox);
   node["historic"]($bbox);
   node["leisure"]($bbox);
+  way["historic"]($bbox);
+  way["tourism"~"artwork|museum|gallery|viewpoint|information"]($bbox);
+  way["amenity"~"place_of_worship|community_centre|library"]($bbox);
+  way["leisure"~"park|nature_reserve"]($bbox);
+  relation["historic"]($bbox);
+  relation["leisure"~"park|nature_reserve"]($bbox);
+  relation["amenity"~"place_of_worship"]($bbox);
 );
-out body;
+out body center;
 ''';
   }
 
@@ -117,25 +131,39 @@ out body;
 
     for (final element in elements) {
       final map = element as Map<String, dynamic>;
+      final type = map['type'] as String;
 
-      // Only process node elements.
-      if (map['type'] != 'node') continue;
+      // Extract coordinates based on element type.
+      final double lat;
+      final double lon;
+
+      if (type == 'node') {
+        lat = (map['lat'] as num).toDouble();
+        lon = (map['lon'] as num).toDouble();
+      } else if (type == 'way' || type == 'relation') {
+        // Ways and relations use the computed centre from `out center`.
+        final center = map['center'] as Map<String, dynamic>?;
+        if (center == null) continue;
+        lat = (center['lat'] as num).toDouble();
+        lon = (center['lon'] as num).toDouble();
+      } else {
+        continue;
+      }
 
       final id = map['id'] as int;
-      final lat = (map['lat'] as num).toDouble();
-      final lon = (map['lon'] as num).toDouble();
       final rawTags = (map['tags'] as Map<String, dynamic>?) ?? {};
       final tags = Map<String, String>.from(
         rawTags.map((k, v) => MapEntry(k, v.toString())),
       );
 
       discoveries.add(Discovery(
-        id: 'node/$id',
+        id: '$type/$id',
         name: tags['name'] ?? '',
         category: RarityClassifier.inferCategory(tags),
         rarity: RarityClassifier.classify(tags),
         position: LatLng(lat, lon),
         osmTags: tags,
+        osmType: type,
         discoveredAt: null,
       ));
     }

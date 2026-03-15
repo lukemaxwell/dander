@@ -33,7 +33,7 @@ MysteryPoi makeMysteryPoi({
   String id = 'poi_1',
   double lat = 51.5074,
   double lng = -0.1278,
-  String category = 'pub',
+  String category = 'memorial',
   String? name,
   PoiState state = PoiState.unrevealed,
 }) =>
@@ -47,8 +47,8 @@ MysteryPoi makeMysteryPoi({
 
 Discovery makeDiscovery({
   String id = 'node/1',
-  String name = 'The Crown',
-  String category = 'pub',
+  String name = 'War Memorial',
+  String category = 'memorial',
   double lat = 51.5074,
   double lng = -0.1278,
 }) =>
@@ -103,7 +103,7 @@ void main() {
     test('returns only unrevealed pois', () async {
       final pois = [
         makeMysteryPoi(id: 'poi_1'),                                                      // unrevealed
-        makeMysteryPoi(id: 'poi_2', name: 'The Crown', state: PoiState.revealed), // revealed
+        makeMysteryPoi(id: 'poi_2', name: 'War Memorial', state: PoiState.revealed), // revealed
         makeMysteryPoi(id: 'poi_3'),                                                      // unrevealed
       ];
       when(() => repo.loadPois('zone_1')).thenAnswer((_) async => pois);
@@ -155,7 +155,7 @@ void main() {
     test('returns GenerateResult from overpass discoveries', () async {
       final centre = LatLng(51.5074, -0.1278);
       final discoveries = [
-        makeDiscovery(id: 'node/1', name: 'The Crown', category: 'pub'),
+        makeDiscovery(id: 'node/1', name: 'War Memorial', category: 'memorial'),
         makeDiscovery(id: 'node/2', name: 'Victoria Park', category: 'park'),
       ];
       when(() => overpass.fetchPOIs(any())).thenAnswer((_) async => discoveries);
@@ -171,7 +171,7 @@ void main() {
       final centre = LatLng(51.5074, -0.1278);
       // Place each POI >100 m apart (0.001° lat ≈ 111 m) so spacing filter keeps all.
       final discoveries = [
-        makeDiscovery(id: 'node/1', name: 'The Crown', category: 'pub',
+        makeDiscovery(id: 'node/1', name: 'War Memorial', category: 'memorial',
             lat: 51.50, lng: -0.10),
         makeDiscovery(id: 'node/2', name: 'Victoria Park', category: 'park',
             lat: 51.51, lng: -0.10),
@@ -188,7 +188,7 @@ void main() {
     test('generated pois have names null (unrevealed)', () async {
       final centre = LatLng(51.5074, -0.1278);
       final discoveries = [
-        makeDiscovery(id: 'node/1', name: 'The Crown'),
+        makeDiscovery(id: 'node/1', name: 'War Memorial'),
       ];
       when(() => overpass.fetchPOIs(any())).thenAnswer((_) async => discoveries);
 
@@ -212,7 +212,7 @@ void main() {
 
     test('totalCount reflects curated count (after PoiCurator filters)', () async {
       final centre = LatLng(51.5074, -0.1278);
-      // 10 POIs all same category 'pub' → category diversity cap limits to 3.
+      // 10 POIs all same category 'memorial' → category diversity cap limits to 3.
       // totalCount = curated count (3), not raw Overpass count (10).
       final discoveries = List.generate(
         10,
@@ -222,7 +222,7 @@ void main() {
 
       final result = await service.generatePois(centre, 500.0);
 
-      // After curation: category diversity cap leaves ≤3 (all are 'pub').
+      // After curation: category diversity cap leaves ≤3 (all are 'memorial').
       expect(result.totalCount, lessThanOrEqualTo(3));
       expect(result.activePois.length, lessThanOrEqualTo(3));
     });
@@ -253,13 +253,13 @@ void main() {
     test('generated pois inherit category from discovery', () async {
       final centre = LatLng(51.5074, -0.1278);
       final discoveries = [
-        makeDiscovery(id: 'node/1', category: 'historic'),
+        makeDiscovery(id: 'node/1', category: 'monument'),
       ];
       when(() => overpass.fetchPOIs(any())).thenAnswer((_) async => discoveries);
 
       final result = await service.generatePois(centre, 500.0);
 
-      expect(result.activePois.first.category, 'historic');
+      expect(result.activePois.first.category, 'monument');
     });
 
     test('generated pois have unique ids matching discovery ids', () async {
@@ -450,7 +450,7 @@ void main() {
 
       // Space POIs >100 m apart so spacing filter keeps both.
       final discoveries = [
-        makeDiscovery(id: 'node/1', category: 'pub', lat: 51.50, lng: -0.10),
+        makeDiscovery(id: 'node/1', category: 'memorial', lat: 51.50, lng: -0.10),
         makeDiscovery(id: 'node/2', category: 'park', lat: 51.51, lng: -0.10),
       ];
       when(() => overpass.fetchPOIs(any())).thenAnswer((_) async => discoveries);
@@ -475,9 +475,18 @@ void main() {
       when(() => repo.saveTotalCount(any(), any())).thenAnswer((_) async {});
       when(() => repo.saveWaveState(any(), any(), any())).thenAnswer((_) async {});
 
-      final discoveries = [
-        makeDiscovery(id: 'node/1', category: 'pub'),
-      ];
+      // Provide enough POIs (≥15) to satisfy density floor and avoid adaptive
+      // radius expansion (which would cause multiple Overpass calls).
+      final categories = ['memorial', 'monument', 'park', 'museum', 'library'];
+      final discoveries = List.generate(
+        16,
+        (i) => makeDiscovery(
+          id: 'node/$i',
+          name: 'POI $i',
+          category: categories[i % categories.length],
+          lat: 51.50 + i * 0.002,
+        ),
+      );
       when(() => overpass.fetchPOIs(any())).thenAnswer((_) async => discoveries);
 
       final result = await service.loadOrGenerate(
@@ -487,7 +496,7 @@ void main() {
       );
 
       verify(() => overpass.fetchPOIs(any())).called(1);
-      expect(result.totalCount, 1);
+      expect(result.totalCount, greaterThan(0));
     });
 
     test('caps cached active POIs at 3', () async {
@@ -569,7 +578,7 @@ void main() {
       final centre = LatLng(51.5074, -0.1278);
       // 2 named discoveries, different categories, >100 m apart → both survive.
       final discoveries = [
-        makeDiscovery(id: 'node/1', name: 'The Crown', category: 'pub',
+        makeDiscovery(id: 'node/1', name: 'War Memorial', category: 'memorial',
             lat: 51.50, lng: -0.10),
         makeDiscovery(id: 'node/2', name: 'Victoria Park', category: 'park',
             lat: 51.51, lng: -0.10),
@@ -586,7 +595,7 @@ void main() {
       final centre = LatLng(51.5074, -0.1278);
       // One named, one unnamed (empty name).
       final discoveries = [
-        makeDiscovery(id: 'node/1', name: 'The Crown', category: 'pub'),
+        makeDiscovery(id: 'node/1', name: 'War Memorial', category: 'memorial'),
         makeDiscovery(id: 'node/2', name: '', category: 'park'),
       ];
       when(() => overpass.fetchPOIs(any())).thenAnswer((_) async => discoveries);
@@ -602,11 +611,11 @@ void main() {
       final centre = LatLng(51.5074, -0.1278);
       // 5 named POIs with different categories, well spaced → survive curation.
       final discoveries = [
-        makeDiscovery(id: 'node/1', name: 'Pub A', category: 'pub', lat: 51.50),
+        makeDiscovery(id: 'node/1', name: 'Memorial A', category: 'memorial', lat: 51.50),
         makeDiscovery(id: 'node/2', name: 'Park B', category: 'park', lat: 51.51),
-        makeDiscovery(id: 'node/3', name: 'Cafe C', category: 'cafe', lat: 51.52),
+        makeDiscovery(id: 'node/3', name: 'Artwork C', category: 'artwork', lat: 51.52),
         makeDiscovery(id: 'node/4', name: 'Library D', category: 'library', lat: 51.53),
-        makeDiscovery(id: 'node/5', name: 'Historic E', category: 'historic', lat: 51.54),
+        makeDiscovery(id: 'node/5', name: 'Monument E', category: 'monument', lat: 51.54),
       ];
       when(() => overpass.fetchPOIs(any())).thenAnswer((_) async => discoveries);
 
@@ -633,7 +642,7 @@ void main() {
       when(() => repo.saveWaveState(any(), any(), any())).thenAnswer((_) async {});
 
       final discoveries = [
-        makeDiscovery(id: 'node/1', name: 'Pub A', category: 'pub'),
+        makeDiscovery(id: 'node/1', name: 'Memorial A', category: 'memorial'),
         makeDiscovery(id: 'node/2', name: 'Park B', category: 'park'),
       ];
       when(() => overpass.fetchPOIs(any())).thenAnswer((_) async => discoveries);
@@ -785,6 +794,89 @@ void main() {
       expect(result, isA<GenerateResult>());
       // Should have saved wave state with wave 1.
       verify(() => repo.saveWaveState('zone_1', 1, any())).called(1);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Adaptive radius (loadOrGenerate)
+  // ---------------------------------------------------------------------------
+
+  group('adaptive radius', () {
+    test('expands radius when curated count is below density floor', () async {
+      when(() => repo.loadPois('zone_1')).thenAnswer((_) async => []);
+      when(() => repo.loadTotalCount('zone_1')).thenAnswer((_) async => null);
+      when(() => repo.savePois(any(), any())).thenAnswer((_) async {});
+      when(() => repo.saveTotalCount(any(), any())).thenAnswer((_) async {});
+      when(() => repo.saveWaveState(any(), any(), any())).thenAnswer((_) async {});
+
+      // Return only 5 POIs — below density floor of 15 → triggers expansion.
+      final fewPois = List.generate(
+        5,
+        (i) => makeDiscovery(
+          id: 'node/$i',
+          name: 'POI $i',
+          category: 'memorial',
+          lat: 51.50 + i * 0.002,
+        ),
+      );
+      when(() => overpass.fetchPOIs(any())).thenAnswer((_) async => fewPois);
+
+      await service.loadOrGenerate('zone_1', LatLng(51.5074, -0.1278));
+
+      // Should have made multiple calls due to adaptive expansion.
+      verify(() => overpass.fetchPOIs(any())).called(greaterThan(1));
+    });
+
+    test('does not expand when curated count meets density floor', () async {
+      when(() => repo.loadPois('zone_1')).thenAnswer((_) async => []);
+      when(() => repo.loadTotalCount('zone_1')).thenAnswer((_) async => null);
+      when(() => repo.savePois(any(), any())).thenAnswer((_) async {});
+      when(() => repo.saveTotalCount(any(), any())).thenAnswer((_) async {});
+      when(() => repo.saveWaveState(any(), any(), any())).thenAnswer((_) async {});
+
+      // 16 diverse POIs — above density floor of 15 → no expansion.
+      final categories = ['memorial', 'monument', 'park', 'museum', 'library'];
+      final enoughPois = List.generate(
+        16,
+        (i) => makeDiscovery(
+          id: 'node/$i',
+          name: 'POI $i',
+          category: categories[i % categories.length],
+          lat: 51.50 + i * 0.002,
+        ),
+      );
+      when(() => overpass.fetchPOIs(any())).thenAnswer((_) async => enoughPois);
+
+      await service.loadOrGenerate('zone_1', LatLng(51.5074, -0.1278));
+
+      // Only 1 call — no expansion needed.
+      verify(() => overpass.fetchPOIs(any())).called(1);
+    });
+
+    test('uses default 750m radius when no radius provided', () async {
+      when(() => repo.loadPois('zone_1')).thenAnswer((_) async => []);
+      when(() => repo.loadTotalCount('zone_1')).thenAnswer((_) async => null);
+      when(() => repo.savePois(any(), any())).thenAnswer((_) async {});
+      when(() => repo.saveTotalCount(any(), any())).thenAnswer((_) async {});
+      when(() => repo.saveWaveState(any(), any(), any())).thenAnswer((_) async {});
+
+      final categories = ['memorial', 'monument', 'park', 'museum', 'library'];
+      final pois = List.generate(
+        16,
+        (i) => makeDiscovery(
+          id: 'node/$i',
+          name: 'POI $i',
+          category: categories[i % categories.length],
+          lat: 51.50 + i * 0.002,
+        ),
+      );
+      when(() => overpass.fetchPOIs(any())).thenAnswer((_) async => pois);
+
+      // No radius argument — should use defaultSearchRadius (750m).
+      final result = await service.loadOrGenerate('zone_1', LatLng(51.5074, -0.1278));
+
+      expect(result.activePois, isNotEmpty);
+      verify(() => overpass.fetchPOIs(any())).called(1);
     });
   });
 }

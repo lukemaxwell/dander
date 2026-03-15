@@ -1,15 +1,19 @@
 import 'package:latlong2/latlong.dart';
 
 import 'package:dander/core/discoveries/discovery.dart';
+import 'package:dander/core/discoveries/rarity_classifier.dart';
 
 /// Pure, stateless curator that filters and ranks raw OSM discoveries into a
 /// small, high-quality set suitable for presentation in a single zone.
 ///
 /// Pipeline (applied in order):
+///   0. Allowlist + business exclusion — reject non-allowlisted categories
+///      and commercial businesses.
+///   0b. Garden noise filter — reject gardens without wikipedia/wikidata.
 ///   1. Name filter — reject unnamed / blank POIs.
 ///   2. Quality scoring — rank by OSM metadata richness.
 ///   3. Tier budget allocation — prefer rarer tiers within the total budget.
-///   4. Category diversity cap — at most 3 POIs per category.
+///   4. Category diversity cap — at most 3 POIs per category (5 for worship).
 ///   5. Minimum spacing — no two curated POIs within 100 m of each other.
 class PoiCurator {
   PoiCurator._();
@@ -19,6 +23,7 @@ class PoiCurator {
   // ---------------------------------------------------------------------------
 
   static const int _categoryMax = 3;
+  static const int _worshipMax = 5;
   static const double _minSpacingMeters = 100.0;
 
   /// Target slot counts for each tier within the default budget of 20.
@@ -45,8 +50,22 @@ class PoiCurator {
   ///
   /// Returns a new list; the original [raw] list is never mutated.
   static List<Discovery> curate(List<Discovery> raw, {int budget = 20}) {
+    // Step 0 — allowlist + business exclusion.
+    final allowed = raw.where((d) {
+      if (RarityClassifier.isBusiness(d.osmTags)) return false;
+      if (!RarityClassifier.isAllowlisted(d.category)) return false;
+      return true;
+    }).toList();
+
+    // Step 0b — garden noise filter: exclude gardens without wikipedia/wikidata.
+    final gardenFiltered = allowed.where((d) {
+      if (d.category != 'garden') return true;
+      return d.osmTags.containsKey('wikipedia') ||
+          d.osmTags.containsKey('wikidata');
+    }).toList();
+
     // Step 1 — name filter.
-    final named = raw.where((d) => d.name.trim().isNotEmpty).toList();
+    final named = gardenFiltered.where((d) => d.name.trim().isNotEmpty).toList();
 
     if (named.isEmpty) return const [];
 
@@ -179,7 +198,8 @@ class PoiCurator {
     for (final item in sorted) {
       final cat = item.discovery.category;
       final current = countByCategory[cat] ?? 0;
-      if (current < _categoryMax) {
+      final cap = cat == 'place_of_worship' ? _worshipMax : _categoryMax;
+      if (current < cap) {
         result.add(item);
         countByCategory[cat] = current + 1;
       }

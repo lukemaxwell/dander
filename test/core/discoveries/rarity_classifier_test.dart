@@ -330,4 +330,79 @@ void main() {
       );
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // RarityClassifier.isAllowlisted
+  // ---------------------------------------------------------------------------
+  group('RarityClassifier.isAllowlisted', () {
+    test('allowlisted categories return true', () {
+      for (final cat in [
+        'monument', 'memorial', 'castle', 'ruins', 'artwork',
+        'museum', 'gallery', 'viewpoint', 'park', 'garden',
+        'library', 'place_of_worship', 'fountain', 'information',
+      ]) {
+        expect(RarityClassifier.isAllowlisted(cat), isTrue,
+            reason: '$cat should be allowlisted');
+      }
+    });
+
+    test('non-allowlisted categories return false', () {
+      for (final cat in [
+        'cafe', 'pub', 'restaurant', 'bar', 'bank', 'pharmacy',
+        'hotel', 'shop', 'unknown', 'fast_food',
+      ]) {
+        expect(RarityClassifier.isAllowlisted(cat), isFalse,
+            reason: '$cat should NOT be allowlisted');
+      }
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // RarityClassifier.isBusiness
+  // ---------------------------------------------------------------------------
+  group('RarityClassifier.isBusiness', () {
+    test('cafe amenity is a business', () {
+      expect(RarityClassifier.isBusiness({'amenity': 'cafe'}), isTrue);
+    });
+
+    test('restaurant amenity is a business', () {
+      expect(RarityClassifier.isBusiness({'amenity': 'restaurant'}), isTrue);
+    });
+
+    test('shop tag is a business', () {
+      expect(RarityClassifier.isBusiness({'shop': 'supermarket'}), isTrue);
+    });
+
+    test('brand tag is a business', () {
+      expect(RarityClassifier.isBusiness({'brand': 'Starbucks'}), isTrue);
+    });
+
+    test('hotel tourism is a business', () {
+      expect(RarityClassifier.isBusiness({'tourism': 'hotel'}), isTrue);
+    });
+
+    test('guest_house tourism is a business', () {
+      expect(RarityClassifier.isBusiness({'tourism': 'guest_house'}), isTrue);
+    });
+
+    test('memorial is NOT a business', () {
+      expect(RarityClassifier.isBusiness({'historic': 'memorial'}), isFalse);
+    });
+
+    test('library is NOT a business', () {
+      expect(RarityClassifier.isBusiness({'amenity': 'library'}), isFalse);
+    });
+
+    test('park is NOT a business', () {
+      expect(RarityClassifier.isBusiness({'leisure': 'park'}), isFalse);
+    });
+
+    test('viewpoint is NOT a business', () {
+      expect(RarityClassifier.isBusiness({'tourism': 'viewpoint'}), isFalse);
+    });
+
+    test('empty tags is NOT a business', () {
+      expect(RarityClassifier.isBusiness({}), isFalse);
+    });
+  });
 }

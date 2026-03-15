@@ -211,7 +211,7 @@ void main() {
         expect(result, hasLength(3));
       });
 
-      test('skips non-node elements (e.g. ways)', () async {
+      test('skips ways without center coordinates', () async {
         final response = {
           'elements': [
             {
@@ -227,6 +227,45 @@ void main() {
         final result = await overpassClient.fetchPOIs(bounds);
         expect(result, hasLength(1));
         expect(result.first.id, equals('node/1'));
+      });
+
+      test('parses way elements with center coordinates', () async {
+        final response = {
+          'elements': [
+            {
+              'type': 'way',
+              'id': 555,
+              'center': {'lat': 51.515, 'lon': -0.125},
+              'tags': {'leisure': 'park', 'name': 'Hyde Park'},
+            },
+          ],
+        };
+        stubSuccess(response);
+
+        final result = await overpassClient.fetchPOIs(bounds);
+        expect(result, hasLength(1));
+        expect(result.first.id, equals('way/555'));
+        expect(result.first.name, equals('Hyde Park'));
+        expect(result.first.position.latitude, closeTo(51.515, 0.0001));
+      });
+
+      test('parses relation elements with center coordinates', () async {
+        final response = {
+          'elements': [
+            {
+              'type': 'relation',
+              'id': 777,
+              'center': {'lat': 51.505, 'lon': -0.115},
+              'tags': {'leisure': 'nature_reserve', 'name': 'Wetlands'},
+            },
+          ],
+        };
+        stubSuccess(response);
+
+        final result = await overpassClient.fetchPOIs(bounds);
+        expect(result, hasLength(1));
+        expect(result.first.id, equals('relation/777'));
+        expect(result.first.name, equals('Wetlands'));
       });
 
       test('all discoveries have null discoveredAt initially', () async {

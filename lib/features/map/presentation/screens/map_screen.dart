@@ -273,7 +273,7 @@ class _MapScreenState extends State<MapScreen>
     try {
       final poiService = GetIt.instance<MysteryPoiService>();
       final zoneId = _activeZone?.id ?? 'default';
-      final result = await poiService.loadOrGenerate(zoneId, position, 500.0);
+      final result = await poiService.loadOrGenerate(zoneId, position);
       _mysteryPoisNotifier.value = result.activePois;
       _discoveriesWaitingNotifier.value = result.totalCount;
     } catch (_) {

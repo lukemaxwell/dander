@@ -20,9 +20,11 @@ class Discovery {
     required this.position,
     required this.osmTags,
     required this.discoveredAt,
+    this.osmType = 'node',
   });
 
-  /// The OSM node ID formatted as `"node/<id>"`.
+  /// The OSM element ID formatted as `"<type>/<id>"` (e.g. `"node/123"`,
+  /// `"way/456"`, `"relation/789"`).
   final String id;
 
   /// Display name taken from the OSM `name` tag, or empty string if absent.
@@ -34,11 +36,15 @@ class Discovery {
   /// Rarity tier derived from the OSM tags.
   final RarityTier rarity;
 
-  /// Geographic position of the POI.
+  /// Geographic position of the POI.  For `way` and `relation` elements this
+  /// is the computed centre point returned by Overpass `out center`.
   final LatLng position;
 
-  /// The full set of OSM tags on the node.
+  /// The full set of OSM tags on the element.
   final Map<String, String> osmTags;
+
+  /// The OSM element type: `"node"`, `"way"`, or `"relation"`.
+  final String osmType;
 
   /// UTC timestamp when the user first discovered this POI.
   ///
@@ -59,6 +65,7 @@ class Discovery {
         rarity: rarity,
         position: position,
         osmTags: osmTags,
+        osmType: osmType,
         discoveredAt: at,
       );
 
@@ -71,6 +78,7 @@ class Discovery {
         'lat': position.latitude,
         'lng': position.longitude,
         'osmTags': osmTags,
+        'osmType': osmType,
         if (discoveredAt != null)
           'discoveredAt': discoveredAt!.toIso8601String(),
       };
@@ -91,6 +99,7 @@ class Discovery {
         (json['lng'] as num).toDouble(),
       ),
       osmTags: Map<String, String>.from(rawTags),
+      osmType: (json['osmType'] as String?) ?? 'node',
       discoveredAt: json['discoveredAt'] != null
           ? DateTime.parse(json['discoveredAt'] as String)
           : null,
