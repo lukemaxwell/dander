@@ -17,7 +17,9 @@ import '../quiz/quiz_repository.dart';
 import '../storage/hive_boxes.dart';
 import '../streets/street_overpass_client.dart';
 import '../streets/street_repository.dart';
+import '../subscription/banner_cooldown_repository.dart';
 import '../subscription/purchases_adapter.dart';
+import '../subscription/quiz_daily_limit_repository.dart';
 import '../subscription/revenuecat_purchases_adapter.dart';
 import '../subscription/subscription_service.dart';
 import '../subscription/subscription_storage.dart';
@@ -134,6 +136,18 @@ Future<void> setupLocator() async {
       revenueCatApiKey: defaultTargetPlatform == TargetPlatform.iOS
           ? AppConfig.revenueCatIosApiKey
           : AppConfig.revenueCatAndroidApiKey,
+    ),
+  );
+  sl.registerLazySingleton<QuizDailyLimitRepository>(
+    () => QuizDailyLimitRepository(
+      storage: HiveQuizLimitStorage(Hive.box<dynamic>(HiveBoxes.quizDailyLimit)),
+      clock: DateTime.now,
+      subscriptionState: () => sl<SubscriptionService>().state.value,
+    ),
+  );
+  sl.registerLazySingleton<BannerCooldownRepository>(
+    () => BannerCooldownRepository.withBox(
+      Hive.box<dynamic>(HiveBoxes.bannerCooldown),
     ),
   );
 }

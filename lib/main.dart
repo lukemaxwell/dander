@@ -41,6 +41,8 @@ Future<void> main() async {
     Hive.openBox<dynamic>(HiveBoxes.poiCooldowns),
     Hive.openBox<dynamic>(HiveBoxes.challenges),
     Hive.openBox<dynamic>(HiveBoxes.subscription),
+    Hive.openBox<dynamic>(HiveBoxes.quizDailyLimit),
+    Hive.openBox<dynamic>(HiveBoxes.bannerCooldown),
   ]);
 
   // ------------------------------------------------------------------
