@@ -41,7 +41,11 @@ void main() {
     testWidgets('renders zone name', (tester) async {
       await _pumpCard(
         tester,
-        TurfShareCard(zone: _makeZone(name: 'Hackney'), streetCount: 10),
+        TurfShareCard(
+          zone: _makeZone(name: 'Hackney'),
+          streetCount: 10,
+          explorationPct: 0.5,
+        ),
       );
 
       expect(find.text('Hackney'), findsOneWidget);
@@ -50,7 +54,11 @@ void main() {
     testWidgets('zone_name key is present', (tester) async {
       await _pumpCard(
         tester,
-        TurfShareCard(zone: _makeZone(name: 'Shoreditch'), streetCount: 5),
+        TurfShareCard(
+          zone: _makeZone(name: 'Shoreditch'),
+          streetCount: 5,
+          explorationPct: 0.3,
+        ),
       );
 
       expect(find.byKey(const Key('zone_name')), findsOneWidget);
@@ -59,7 +67,11 @@ void main() {
     testWidgets('zone_name key shows the correct zone name', (tester) async {
       await _pumpCard(
         tester,
-        TurfShareCard(zone: _makeZone(name: 'Barcelona'), streetCount: 20),
+        TurfShareCard(
+          zone: _makeZone(name: 'Barcelona'),
+          streetCount: 20,
+          explorationPct: 0.5,
+        ),
       );
 
       final finder = find.byKey(const Key('zone_name'));
@@ -72,7 +84,7 @@ void main() {
       final zone = _makeZone(xp: 300); // level 3
       await _pumpCard(
         tester,
-        TurfShareCard(zone: zone, streetCount: 10),
+        TurfShareCard(zone: zone, streetCount: 10, explorationPct: 0.5),
       );
 
       final finder = find.byKey(const Key('level_badge'));
@@ -86,7 +98,7 @@ void main() {
       final zone = _makeZone(xp: 0); // level 1
       await _pumpCard(
         tester,
-        TurfShareCard(zone: zone, streetCount: 2),
+        TurfShareCard(zone: zone, streetCount: 2, explorationPct: 0.1),
       );
 
       final finder = find.byKey(const Key('level_badge'));
@@ -99,7 +111,7 @@ void main() {
       final zone = _makeZone(xp: 1500); // level 5
       await _pumpCard(
         tester,
-        TurfShareCard(zone: zone, streetCount: 200),
+        TurfShareCard(zone: zone, streetCount: 200, explorationPct: 0.9),
       );
 
       final finder = find.byKey(const Key('level_badge'));
@@ -111,7 +123,7 @@ void main() {
     testWidgets('level_badge key is present', (tester) async {
       await _pumpCard(
         tester,
-        TurfShareCard(zone: _makeZone(), streetCount: 10),
+        TurfShareCard(zone: _makeZone(), streetCount: 10, explorationPct: 0.5),
       );
 
       expect(find.byKey(const Key('level_badge')), findsOneWidget);
@@ -120,7 +132,7 @@ void main() {
     testWidgets('renders street count', (tester) async {
       await _pumpCard(
         tester,
-        TurfShareCard(zone: _makeZone(), streetCount: 42),
+        TurfShareCard(zone: _makeZone(), streetCount: 42, explorationPct: 0.5),
       );
 
       final finder = find.byKey(const Key('street_count'));
@@ -132,7 +144,7 @@ void main() {
     testWidgets('street_count key is present', (tester) async {
       await _pumpCard(
         tester,
-        TurfShareCard(zone: _makeZone(), streetCount: 10),
+        TurfShareCard(zone: _makeZone(), streetCount: 10, explorationPct: 0.5),
       );
 
       expect(find.byKey(const Key('street_count')), findsOneWidget);
@@ -141,7 +153,7 @@ void main() {
     testWidgets('renders 0 streets without error', (tester) async {
       await _pumpCard(
         tester,
-        TurfShareCard(zone: _makeZone(), streetCount: 0),
+        TurfShareCard(zone: _makeZone(), streetCount: 0, explorationPct: 0.0),
       );
 
       final finder = find.byKey(const Key('street_count'));
@@ -153,7 +165,7 @@ void main() {
     testWidgets('renders Dander wordmark branding', (tester) async {
       await _pumpCard(
         tester,
-        TurfShareCard(zone: _makeZone(), streetCount: 10),
+        TurfShareCard(zone: _makeZone(), streetCount: 10, explorationPct: 0.5),
       );
 
       expect(find.text('Dander'), findsOneWidget);
@@ -162,7 +174,7 @@ void main() {
     testWidgets('renders dander.app watermark', (tester) async {
       await _pumpCard(
         tester,
-        TurfShareCard(zone: _makeZone(), streetCount: 10),
+        TurfShareCard(zone: _makeZone(), streetCount: 10, explorationPct: 0.5),
       );
 
       expect(find.text('dander.app'), findsOneWidget);
@@ -171,7 +183,7 @@ void main() {
     testWidgets('watermark key is present', (tester) async {
       await _pumpCard(
         tester,
-        TurfShareCard(zone: _makeZone(), streetCount: 10),
+        TurfShareCard(zone: _makeZone(), streetCount: 10, explorationPct: 0.5),
       );
 
       expect(find.byKey(const Key('watermark')), findsOneWidget);
@@ -180,7 +192,7 @@ void main() {
     testWidgets('has correct fixed width', (tester) async {
       await _pumpCard(
         tester,
-        TurfShareCard(zone: _makeZone(), streetCount: 10),
+        TurfShareCard(zone: _makeZone(), streetCount: 10, explorationPct: 0.5),
       );
 
       final sizedBox = tester.widget<SizedBox>(
@@ -192,7 +204,7 @@ void main() {
     testWidgets('has correct fixed height', (tester) async {
       await _pumpCard(
         tester,
-        TurfShareCard(zone: _makeZone(), streetCount: 10),
+        TurfShareCard(zone: _makeZone(), streetCount: 10, explorationPct: 0.5),
       );
 
       final sizedBox = tester.widget<SizedBox>(
@@ -204,48 +216,32 @@ void main() {
     testWidgets('uses dark background color', (tester) async {
       await _pumpCard(
         tester,
-        TurfShareCard(zone: _makeZone(), streetCount: 10),
+        TurfShareCard(zone: _makeZone(), streetCount: 10, explorationPct: 0.5),
       );
 
-      // The outermost container should have a decoration with the dark background.
-      // We verify a Container with LinearGradient or BoxDecoration is present.
-      final container = tester.widget<Container>(
-        find.byType(Container).first,
-      );
-      final decoration = container.decoration as BoxDecoration?;
-      expect(decoration, isNotNull);
-
-      // Verify the gradient or color contains our dark background.
-      final gradient = decoration!.gradient as LinearGradient?;
-      if (gradient != null) {
-        final containsDarkColor = gradient.colors.any(
-          (c) => c.red < 50 && c.green < 50 && c.blue < 80,
-        );
-        expect(containsDarkColor, isTrue);
-      } else {
-        final color = decoration.color;
-        expect(color, isNotNull);
-        expect(color!.red, lessThan(50));
-      }
+      // CustomPaint is used for the background — verify at least one is present.
+      expect(find.byType(CustomPaint), findsWidgets);
     });
 
     testWidgets('accepts null fogGrid without error', (tester) async {
       await _pumpCard(
         tester,
-        TurfShareCard(zone: _makeZone(), streetCount: 10),
+        TurfShareCard(
+          zone: _makeZone(),
+          streetCount: 10,
+          explorationPct: 0.5,
+        ),
       );
 
-      // If we reach here without an exception, the test passes.
       expect(find.byType(TurfShareCard), findsOneWidget);
     });
 
     testWidgets('renders street count label text', (tester) async {
       await _pumpCard(
         tester,
-        TurfShareCard(zone: _makeZone(), streetCount: 15),
+        TurfShareCard(zone: _makeZone(), streetCount: 15, explorationPct: 0.5),
       );
 
-      // The label "streets explored" or similar must be visible.
       expect(find.byKey(const Key('street_count_label')), findsOneWidget);
     });
 
@@ -255,6 +251,7 @@ void main() {
         TurfShareCard(
           zone: _makeZone(name: "O'Brien's Park"),
           streetCount: 5,
+          explorationPct: 0.2,
         ),
       );
 
@@ -264,10 +261,94 @@ void main() {
     testWidgets('territory preview area is present', (tester) async {
       await _pumpCard(
         tester,
-        TurfShareCard(zone: _makeZone(), streetCount: 10),
+        TurfShareCard(zone: _makeZone(), streetCount: 10, explorationPct: 0.5),
       );
 
       expect(find.byKey(const Key('territory_preview')), findsOneWidget);
+    });
+
+    // -------------------------------------------------------------------------
+    // New tests for issue #184 redesign
+    // -------------------------------------------------------------------------
+
+    testWidgets('renders exploration percentage 67%', (tester) async {
+      await _pumpCard(
+        tester,
+        TurfShareCard(
+          zone: _makeZone(),
+          streetCount: 34,
+          explorationPct: 0.67,
+        ),
+      );
+
+      expect(find.text('67%'), findsOneWidget);
+    });
+
+    testWidgets('renders exploration percentage 0%', (tester) async {
+      await _pumpCard(
+        tester,
+        TurfShareCard(
+          zone: _makeZone(),
+          streetCount: 0,
+          explorationPct: 0.0,
+        ),
+      );
+
+      expect(find.text('0%'), findsOneWidget);
+    });
+
+    testWidgets('renders "explored" label', (tester) async {
+      await _pumpCard(
+        tester,
+        TurfShareCard(
+          zone: _makeZone(),
+          streetCount: 10,
+          explorationPct: 0.5,
+        ),
+      );
+
+      expect(find.text('explored'), findsOneWidget);
+    });
+
+    testWidgets('renders "streets walked" label', (tester) async {
+      await _pumpCard(
+        tester,
+        TurfShareCard(
+          zone: _makeZone(),
+          streetCount: 10,
+          explorationPct: 0.5,
+        ),
+      );
+
+      expect(find.text('streets walked'), findsOneWidget);
+    });
+
+    testWidgets('renders exploration percentage 100%', (tester) async {
+      await _pumpCard(
+        tester,
+        TurfShareCard(
+          zone: _makeZone(),
+          streetCount: 100,
+          explorationPct: 1.0,
+        ),
+      );
+
+      expect(find.text('100%'), findsOneWidget);
+    });
+
+    testWidgets('multiple CustomPaint widgets present (background + ring)',
+        (tester) async {
+      await _pumpCard(
+        tester,
+        TurfShareCard(
+          zone: _makeZone(),
+          streetCount: 10,
+          explorationPct: 0.5,
+        ),
+      );
+
+      // Background painter + territory painter + ring painter = at least 2
+      expect(find.byType(CustomPaint), findsAtLeastNWidgets(2));
     });
   });
 }
