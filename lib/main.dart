@@ -43,6 +43,7 @@ Future<void> main() async {
     Hive.openBox<dynamic>(HiveBoxes.subscription),
     Hive.openBox<dynamic>(HiveBoxes.quizDailyLimit),
     Hive.openBox<dynamic>(HiveBoxes.bannerCooldown),
+    Hive.openBox<dynamic>(HiveBoxes.milestoneProFrequency),
   ]);
 
   // ------------------------------------------------------------------

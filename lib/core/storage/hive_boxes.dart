@@ -48,4 +48,7 @@ abstract final class HiveBoxes {
 
   /// Stores the last-dismissed timestamp for the zone-expansion banner.
   static const String bannerCooldown = 'banner_cooldown';
+
+  /// Stores the milestone counter used to alternate Pro-suggestion visibility.
+  static const String milestoneProFrequency = 'milestone_pro_frequency';
 }

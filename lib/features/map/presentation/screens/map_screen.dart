@@ -26,6 +26,8 @@ import 'package:dander/core/location/walk_repository.dart';
 import 'package:dander/core/location/walk_session.dart';
 import 'package:dander/core/theme/app_theme.dart';
 import 'package:dander/core/subscription/banner_cooldown_repository.dart';
+import 'package:dander/core/subscription/milestone_pro_suggestion_frequency.dart';
+import 'package:dander/core/subscription/milestone_type.dart';
 import 'package:dander/core/subscription/outside_zone_detector.dart';
 import 'package:dander/core/subscription/subscription_service.dart';
 import 'package:dander/core/zone/level_up_detector.dart';
@@ -88,6 +90,9 @@ class _MapScreenState extends State<MapScreen>
   zone_model.Zone? _activeZone;
   LevelUpEvent? _levelUpEvent;
   bool _zonePromptShown = false;
+
+  // Pro-suggestion state for level-up overlay.
+  bool _showLevelUpProSuggestion = false;
 
   // Zone-expansion banner state (shown to free users outside all zones).
   bool _showZoneExpansionBanner = false;
@@ -354,7 +359,10 @@ class _MapScreenState extends State<MapScreen>
         setState(() {
           _sessionXp += ZoneLevel.xpPerPoi;
           _activeZone = after;
-          if (event != null) _levelUpEvent = event;
+          if (event != null) {
+            _levelUpEvent = event;
+            _showLevelUpProSuggestion = _computeProSuggestion();
+          }
         });
       }
     } catch (_) {
@@ -427,6 +435,23 @@ class _MapScreenState extends State<MapScreen>
   /// Returns true when first-launch onboarding overlays are visible.
   bool get _showBannerOnboarding =>
       _showWalkPreview || _showFirstWalkContract || _showPostFirstWalkOverlay;
+
+  /// Determines whether the Pro-suggestion card should appear in the level-up
+  /// overlay. Records the milestone and returns true only when the user is not
+  /// a Pro subscriber and the frequency utility says to show it.
+  bool _computeProSuggestion() {
+    try {
+      final subService = GetIt.instance<SubscriptionService>();
+      if (subService.state.value.isPro) return false;
+
+      final freq = GetIt.instance<MilestoneProSuggestionFrequency>();
+      freq.record();
+      return freq.shouldShow();
+    } catch (_) {
+      // Services not registered in tests — skip.
+      return false;
+    }
+  }
 
   void _dismissZoneExpansionBanner() {
     setState(() => _showZoneExpansionBanner = false);
@@ -533,7 +558,10 @@ class _MapScreenState extends State<MapScreen>
         setState(() {
           _sessionXp += ZoneLevel.xpPerStreet;
           _activeZone = after;
-          if (event != null) _levelUpEvent = event;
+          if (event != null) {
+            _levelUpEvent = event;
+            _showLevelUpProSuggestion = _computeProSuggestion();
+          }
         });
       }
     } catch (_) {
@@ -776,7 +804,26 @@ class _MapScreenState extends State<MapScreen>
       extendBody: true,
       body: LevelUpOverlay(
         event: _levelUpEvent,
-        onDismissed: () => setState(() => _levelUpEvent = null),
+        onDismissed: () => setState(() {
+          _levelUpEvent = null;
+          _showLevelUpProSuggestion = false;
+        }),
+        showProSuggestion: _showLevelUpProSuggestion,
+        milestoneType: MilestoneType.zoneLevelUp,
+        onLearnAboutPro: () {
+          setState(() {
+            _levelUpEvent = null;
+            _showLevelUpProSuggestion = false;
+          });
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const PaywallScreen(
+                trigger: PaywallTrigger.milestone,
+              ),
+              fullscreenDialog: true,
+            ),
+          );
+        },
         child: Stack(
           children: [
             _buildMap(),
