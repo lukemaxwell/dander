@@ -489,7 +489,8 @@ class _MapScreenState extends State<MapScreen>
   }
 
   Future<void> _showNewZonePrompt(LatLng position) async {
-    final nameController = TextEditingController(text: 'New Zone');
+    final nameController = TextEditingController(text: 'New Zone')
+      ..selection = TextSelection.collapsed(offset: 'New Zone'.length);
     try {
       final result = await showDialog<String>(
         context: context,
@@ -499,7 +500,9 @@ class _MapScreenState extends State<MapScreen>
               style: DanderTextStyles.titleMedium),
           content: TextField(
             controller: nameController,
+            autofocus: true,
             style: DanderTextStyles.bodyMedium,
+            cursorColor: DanderColors.accent,
             decoration: InputDecoration(
               labelText: 'Zone name',
               labelStyle: DanderTextStyles.bodySmall,
