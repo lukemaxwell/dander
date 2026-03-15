@@ -67,12 +67,13 @@ class _DiscoveryNotificationState extends State<DiscoveryNotification>
 
   @override
   Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
     return GestureDetector(
       onTap: widget.onDismiss,
       child: SlideTransition(
         position: _slideAnimation,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomPadding),
           child: DiscoveryCard(
             discovery: widget.discovery,
             onDismiss: widget.onDismiss,
