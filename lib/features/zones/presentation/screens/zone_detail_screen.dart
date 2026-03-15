@@ -1,17 +1,20 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 
 import 'package:dander/core/discoveries/discovery.dart';
+import 'package:dander/core/fog/fog_repository.dart';
+import 'package:dander/core/haptics/haptic_service.dart';
 import 'package:dander/core/quiz/street_memory_record.dart';
 import 'package:dander/core/theme/app_theme.dart';
-import 'package:dander/core/theme/dander_elevation.dart';
 import 'package:dander/core/theme/rarity_colors.dart';
 import 'package:dander/core/zone/zone.dart';
 import 'package:dander/core/zone/zone_level.dart';
 import 'package:dander/core/zone/zone_stats.dart';
 import 'package:dander/core/zone/zone_stats_service.dart';
 import 'package:dander/core/motion/dander_motion.dart';
+import 'package:dander/features/sharing/presentation/widgets/turf_share_preview_sheet.dart';
 import 'package:dander/shared/widgets/count_up_text.dart';
 
 /// Detail screen for a single zone, showing progression, stats, discoveries,
@@ -40,6 +43,24 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen>
     _statsFuture = widget.statsService.getStats(widget.zone);
   }
 
+  Future<void> _openShareSheet(ZoneStats stats) async {
+    HapticService.discoveryCardTap();
+    final fogRepo = GetIt.instance<FogRepository>();
+    final fogGrid = await fogRepo.load();
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => TurfSharePreviewSheet(
+        zone: widget.zone,
+        streetCount: stats.streetsWalkedCount,
+        explorationPct: stats.explorationPct,
+        fogGrid: fogGrid,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -57,7 +78,41 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen>
           }
 
           final stats = snapshot.data!;
-          return _ZoneDetailBody(zone: widget.zone, stats: stats);
+          return Column(
+            children: [
+              Expanded(child: _ZoneDetailBody(zone: widget.zone, stats: stats)),
+              SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    DanderSpacing.lg,
+                    0,
+                    DanderSpacing.lg,
+                    DanderSpacing.md,
+                  ),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _openShareSheet(stats),
+                      icon: const Icon(Icons.ios_share, size: 20),
+                      label: const Text('Share your turf'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: DanderColors.secondary,
+                        foregroundColor: DanderColors.onSecondary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                            DanderSpacing.borderRadiusMd,
+                          ),
+                        ),
+                        elevation: 0,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
         },
       ),
     );
