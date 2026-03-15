@@ -4,12 +4,14 @@ import 'package:get_it/get_it.dart';
 import 'package:dander/core/haptics/haptic_service.dart';
 import 'package:dander/core/quiz/quiz_result.dart';
 import 'package:dander/core/quiz/quiz_session.dart';
+import 'package:dander/core/subscription/quiz_daily_limit_repository.dart';
 import 'package:dander/core/theme/app_theme.dart';
 import 'package:dander/core/zone/zone_repository.dart';
 import 'package:dander/core/zone/zone_service.dart';
 import 'package:dander/features/quiz/presentation/widgets/choice_button.dart';
 import 'package:dander/features/quiz/presentation/widgets/quiz_map_snippet.dart';
 import 'package:dander/features/quiz/presentation/widgets/quiz_streak_badge.dart';
+import 'package:dander/features/subscription/presentation/screens/quiz_limit_screen.dart';
 import 'package:dander/shared/widgets/floating_xp_text.dart';
 
 /// Screen displaying a single quiz question.
@@ -44,6 +46,7 @@ class _QuizQuestionScreenState extends State<QuizQuestionScreen> {
   late QuizSession _session;
   final FloatingXpController _xpController = FloatingXpController();
   int _quizStreak = 0;
+  bool _checkingLimit = false;
 
   @override
   void initState() {
@@ -79,6 +82,44 @@ class _QuizQuestionScreenState extends State<QuizQuestionScreen> {
     _awardQuizXp(result);
 
     final updated = _session.answerCurrent(result);
+
+    // Increment daily limit counter and check whether the limit has been
+    // reached before advancing to the next question.
+    _checkDailyLimit(updated, result);
+  }
+
+  Future<void> _checkDailyLimit(
+    QuizSession updated,
+    QuizResult result,
+  ) async {
+    if (_checkingLimit) return;
+    _checkingLimit = true;
+    try {
+      final limitRepo = GetIt.instance<QuizDailyLimitRepository>();
+      await limitRepo.increment();
+
+      if (!mounted) return;
+
+      final limitReached = await limitRepo.isLimitReached();
+
+      if (!mounted) return;
+
+      if (limitReached) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute<void>(
+            builder: (_) => QuizLimitScreen(
+              correct: updated.correctCount,
+              total: updated.currentIndex,
+            ),
+          ),
+        );
+        return;
+      }
+    } catch (_) {
+      // Limit service unavailable — continue without enforcing.
+    } finally {
+      if (mounted) setState(() => _checkingLimit = false);
+    }
 
     if (updated.isComplete) {
       widget.onComplete(updated);
