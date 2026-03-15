@@ -773,7 +773,7 @@ class _MapScreenState extends State<MapScreen>
             // First walk contract — 200m prompt with live counter.
             if (_showFirstWalkContract)
               Positioned(
-                bottom: 140,
+                bottom: 230,
                 left: DanderSpacing.md,
                 right: DanderSpacing.md,
                 child: FirstWalkContractOverlay(
