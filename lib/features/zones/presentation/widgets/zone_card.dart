@@ -2,19 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:dander/core/zone/zone.dart';
 import 'package:dander/core/zone/zone_level.dart';
 import 'package:dander/core/theme/app_theme.dart';
+import 'package:dander/core/theme/dander_elevation.dart';
 import 'package:dander/shared/widgets/pressable.dart';
-
-// ---------------------------------------------------------------------------
-// Month name helper (immutable constant — no mutation)
-// ---------------------------------------------------------------------------
-
-const _monthNames = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-];
-
-String _formatDate(DateTime dt) =>
-    '${dt.day} ${_monthNames[dt.month - 1]} ${dt.year}';
 
 /// Computes the XP progress fraction toward the next level.
 ///
@@ -75,12 +64,11 @@ class ZoneCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: DanderColors.cardBackground,
           borderRadius: BorderRadius.circular(DanderSpacing.borderRadiusLg),
-          border: isActive
-              ? Border.all(
-                  color: DanderColors.accent,
-                  width: 1.5,
-                )
-              : null,
+          border: Border.all(
+            color: isActive ? DanderColors.accent : DanderColors.cardBorder,
+            width: isActive ? 1.5 : 1,
+          ),
+          boxShadow: DanderElevation.level1,
         ),
         padding: DanderSpacing.cardPadding,
         child: Column(
@@ -106,7 +94,7 @@ class ZoneCard extends StatelessWidget {
               valueColor: const AlwaysStoppedAnimation<Color>(
                 DanderColors.accent,
               ),
-              minHeight: 4,
+              minHeight: 6,
               borderRadius:
                   BorderRadius.circular(DanderSpacing.borderRadiusFull),
             ),
@@ -199,35 +187,43 @@ class _Header extends StatelessWidget {
         const SizedBox(width: DanderSpacing.sm),
         _LevelBadge(level: zone.level),
         if (onRename != null) ...[
-          const SizedBox(width: DanderSpacing.sm),
-          GestureDetector(
-            onTap: () => _showRenameDialog(context),
-            behavior: HitTestBehavior.opaque,
-            child: Padding(
-              padding: const EdgeInsets.all(DanderSpacing.xs),
-              child: Icon(
-                Icons.edit_outlined,
-                color: DanderColors.onSurfaceMuted,
-                size: 20,
+          const SizedBox(width: DanderSpacing.xs),
+          SizedBox(
+            width: 44,
+            height: 44,
+            child: Pressable(
+              onTap: () => _showRenameDialog(context),
+              child: Center(
+                child: Icon(
+                  Icons.edit_outlined,
+                  color: DanderColors.onSurfaceMuted,
+                  size: 20,
+                ),
               ),
             ),
           ),
         ],
         if (onDelete != null) ...[
-          const SizedBox(width: DanderSpacing.sm),
-          GestureDetector(
-            onTap: onDelete,
-            behavior: HitTestBehavior.opaque,
-            child: Padding(
-              padding: const EdgeInsets.all(DanderSpacing.xs),
-              child: Icon(
-                Icons.delete_outline,
-                color: DanderColors.onSurfaceMuted,
-                size: 20,
+          SizedBox(
+            width: 44,
+            height: 44,
+            child: Pressable(
+              onTap: onDelete,
+              child: Center(
+                child: Icon(
+                  Icons.delete_outline,
+                  color: DanderColors.onSurfaceMuted,
+                  size: 20,
+                ),
               ),
             ),
           ),
         ],
+        Icon(
+          Icons.chevron_right,
+          color: DanderColors.onSurfaceMuted,
+          size: 20,
+        ),
       ],
     );
   }
@@ -250,7 +246,7 @@ class _LevelBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(DanderSpacing.borderRadiusSm),
       ),
       child: Text(
-        'L$level',
+        'Lv.$level',
         style: DanderTextStyles.labelMedium.copyWith(
           color: DanderColors.accent,
         ),
@@ -276,20 +272,7 @@ class _XpRow extends StatelessWidget {
         ? '${zone.xp} XP · Max level'
         : '${zone.xp} / $nextXp XP';
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(xpLabel, style: DanderTextStyles.bodySmall),
-        // Streets explored placeholder (will be wired to real data later)
-        Row(
-          children: [
-            Text('—', style: DanderTextStyles.bodySmall),
-            const SizedBox(width: DanderSpacing.xs),
-            Text('streets', style: DanderTextStyles.bodySmall),
-          ],
-        ),
-      ],
-    );
+    return Text(xpLabel, style: DanderTextStyles.bodySmall);
   }
 }
 
@@ -308,25 +291,22 @@ class _LevelExplainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currentRadius = _formatRadius(zone.radiusMeters);
     final nextLevelXp = zone.xpForNextLevel;
 
     if (nextLevelXp == null) {
-      // Max level
       return Text(
-        'L${zone.level}: $currentRadius radius (max)',
+        'Max level reached',
         style: DanderTextStyles.labelSmall.copyWith(
           color: DanderColors.accent,
         ),
       );
     }
 
-    final nextLevel = zone.level + 1;
     final nextRadius = _formatRadius(ZoneLevel.radiusForXp(nextLevelXp));
     final xpNeeded = nextLevelXp - zone.xp;
 
     return Text(
-      'L${zone.level}: $currentRadius → L$nextLevel: $nextRadius ($xpNeeded XP needed)',
+      '$nextRadius radius at next level · $xpNeeded XP to go',
       style: DanderTextStyles.labelSmall.copyWith(
         color: DanderColors.onSurfaceMuted,
       ),
@@ -339,11 +319,29 @@ class _Footer extends StatelessWidget {
 
   final Zone zone;
 
+  String _formatRadius(double meters) {
+    if (meters >= 1000) {
+      final km = meters / 1000;
+      return km == km.truncateToDouble() ? '${km.toInt()}km' : '${km}km';
+    }
+    return '${meters.toInt()}m';
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Text(
-      'Created ${_formatDate(zone.createdAt)}',
-      style: DanderTextStyles.labelSmall,
+    return Row(
+      children: [
+        Icon(
+          Icons.radar,
+          size: 14,
+          color: DanderColors.onSurfaceMuted,
+        ),
+        const SizedBox(width: DanderSpacing.xs),
+        Text(
+          '${_formatRadius(zone.radiusMeters)} radius',
+          style: DanderTextStyles.labelSmall,
+        ),
+      ],
     );
   }
 }

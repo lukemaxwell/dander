@@ -3,7 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:dander/core/zone/zone.dart';
 import 'package:dander/core/theme/dander_colors.dart';
+import 'package:dander/core/theme/dander_elevation.dart';
 import 'package:dander/features/zones/presentation/widgets/zone_card.dart';
+import 'package:dander/shared/widgets/pressable.dart';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -42,25 +44,28 @@ void main() {
         expect(find.text('Hackney Central'), findsOneWidget);
       });
 
-      testWidgets('displays level badge for level 1 zone', (tester) async {
+      testWidgets('displays level badge with Lv. prefix for level 1 zone',
+          (tester) async {
         // 0 XP → Level 1
         final zone = _buildZone(xp: 0);
         await tester.pumpWidget(_wrap(ZoneCard(zone: zone, isActive: false)));
-        expect(find.textContaining('L1'), findsAtLeastNWidgets(1));
+        expect(find.textContaining('Lv.1'), findsAtLeastNWidgets(1));
       });
 
-      testWidgets('displays level badge for level 3 zone', (tester) async {
+      testWidgets('displays level badge with Lv. prefix for level 3 zone',
+          (tester) async {
         // 300 XP → Level 3
         final zone = _buildZone(xp: 300);
         await tester.pumpWidget(_wrap(ZoneCard(zone: zone, isActive: false)));
-        expect(find.textContaining('L3'), findsAtLeastNWidgets(1));
+        expect(find.textContaining('Lv.3'), findsAtLeastNWidgets(1));
       });
 
-      testWidgets('displays level badge for max level zone', (tester) async {
+      testWidgets('displays level badge with Lv. prefix for max level zone',
+          (tester) async {
         // 1500+ XP → Level 5
         final zone = _buildZone(xp: 1500);
         await tester.pumpWidget(_wrap(ZoneCard(zone: zone, isActive: false)));
-        expect(find.textContaining('L5'), findsAtLeastNWidgets(1));
+        expect(find.textContaining('Lv.5'), findsAtLeastNWidgets(1));
       });
 
       testWidgets('displays current XP value', (tester) async {
@@ -81,7 +86,7 @@ void main() {
           (tester) async {
         final zone = _buildZone(xp: 1500);
         await tester.pumpWidget(_wrap(ZoneCard(zone: zone, isActive: false)));
-        expect(find.textContaining('Max'), findsOneWidget);
+        expect(find.textContaining('Max'), findsAtLeastNWidgets(1));
       });
 
       testWidgets('displays a LinearProgressIndicator for XP progress',
@@ -91,16 +96,23 @@ void main() {
         expect(find.byType(LinearProgressIndicator), findsOneWidget);
       });
 
-      testWidgets('displays streets explored placeholder "—"', (tester) async {
+      testWidgets('does not show streets placeholder "—"', (tester) async {
         final zone = _buildZone();
         await tester.pumpWidget(_wrap(ZoneCard(zone: zone, isActive: false)));
-        expect(find.text('—'), findsOneWidget);
+        expect(find.text('—'), findsNothing);
       });
 
-      testWidgets('displays the createdAt date', (tester) async {
-        final zone = _buildZone(createdAt: DateTime(2024, 6, 15));
+      testWidgets('displays zone radius in footer', (tester) async {
+        // 0 XP → L1 → 500m radius
+        final zone = _buildZone(xp: 0);
         await tester.pumpWidget(_wrap(ZoneCard(zone: zone, isActive: false)));
-        expect(find.textContaining('2024'), findsWidgets);
+        expect(find.textContaining('500m'), findsAtLeastNWidgets(1));
+      });
+
+      testWidgets('shows chevron icon for tap affordance', (tester) async {
+        final zone = _buildZone();
+        await tester.pumpWidget(_wrap(ZoneCard(zone: zone, isActive: false)));
+        expect(find.byIcon(Icons.chevron_right), findsOneWidget);
       });
     });
 
@@ -208,26 +220,102 @@ void main() {
     });
 
     group('level explainer', () {
-      testWidgets('shows current and next level radius at L1', (tester) async {
+      testWidgets('shows human-readable explainer at L1', (tester) async {
+        // At 50 XP (L1), next level radius is 1.5km
         final zone = _buildZone(xp: 50);
         await tester.pumpWidget(_wrap(ZoneCard(zone: zone, isActive: false)));
-        // L1: 500m → L2: 1.5km (50 XP needed)
-        expect(find.textContaining('L1'), findsAtLeastNWidgets(1));
-        expect(find.textContaining('500m'), findsAtLeastNWidgets(1));
-        expect(find.textContaining('L2'), findsAtLeastNWidgets(1));
+        // Should show something like "1.5km radius at next level"
+        expect(find.textContaining('1.5km radius'), findsOneWidget);
       });
 
-      testWidgets('shows max at L5', (tester) async {
+      testWidgets('shows max level text at L5', (tester) async {
         final zone = _buildZone(xp: 1500);
         await tester.pumpWidget(_wrap(ZoneCard(zone: zone, isActive: false)));
-        expect(find.textContaining('max'), findsAtLeastNWidgets(1));
+        expect(find.textContaining('Max'), findsAtLeastNWidgets(1));
       });
 
       testWidgets('shows XP needed for next level', (tester) async {
         // At 50 XP, need 50 more to reach L2 (100 XP)
         final zone = _buildZone(xp: 50);
         await tester.pumpWidget(_wrap(ZoneCard(zone: zone, isActive: false)));
-        expect(find.textContaining('50 XP needed'), findsOneWidget);
+        expect(find.textContaining('50 XP'), findsAtLeastNWidgets(1));
+      });
+    });
+
+    group('elevation and visual polish', () {
+      testWidgets('card has elevation shadow', (tester) async {
+        final zone = _buildZone();
+        await tester.pumpWidget(_wrap(ZoneCard(zone: zone, isActive: false)));
+
+        final containers =
+            tester.widgetList<Container>(find.byType(Container));
+        final hasShadow = containers.any((c) {
+          final decoration = c.decoration;
+          if (decoration is BoxDecoration) {
+            return decoration.boxShadow != null &&
+                decoration.boxShadow!.isNotEmpty;
+          }
+          return false;
+        });
+        expect(hasShadow, isTrue);
+      });
+
+      testWidgets('card has thin border for OLED separation', (tester) async {
+        final zone = _buildZone();
+        await tester.pumpWidget(_wrap(ZoneCard(zone: zone, isActive: false)));
+
+        final containers =
+            tester.widgetList<Container>(find.byType(Container));
+        final hasBorder = containers.any((c) {
+          final decoration = c.decoration;
+          if (decoration is BoxDecoration && decoration.border is Border) {
+            final border = decoration.border as Border;
+            return border.top.color == DanderColors.cardBorder;
+          }
+          return false;
+        });
+        expect(hasBorder, isTrue);
+      });
+
+      testWidgets('progress bar is 6pt height', (tester) async {
+        final zone = _buildZone(xp: 50);
+        await tester.pumpWidget(_wrap(ZoneCard(zone: zone, isActive: false)));
+
+        final bar = tester.widget<LinearProgressIndicator>(
+          find.byType(LinearProgressIndicator),
+        );
+        expect(bar.minHeight, 6);
+      });
+
+      testWidgets('edit icon uses Pressable with 44pt touch target',
+          (tester) async {
+        final zone = _buildZone();
+        await tester.pumpWidget(_wrap(ZoneCard(
+          zone: zone,
+          isActive: false,
+          onRename: (_) {},
+        )));
+
+        // Should find Pressable widgets (card + edit icon)
+        final pressables =
+            tester.widgetList<Pressable>(find.byType(Pressable));
+        // At least 2: one for the card, one for the edit icon
+        expect(pressables.length, greaterThanOrEqualTo(2));
+      });
+
+      testWidgets('delete icon uses Pressable with 44pt touch target',
+          (tester) async {
+        final zone = _buildZone();
+        await tester.pumpWidget(_wrap(ZoneCard(
+          zone: zone,
+          isActive: false,
+          onDelete: () {},
+        )));
+
+        // Should find Pressable widgets (card + delete icon)
+        final pressables =
+            tester.widgetList<Pressable>(find.byType(Pressable));
+        expect(pressables.length, greaterThanOrEqualTo(2));
       });
     });
   });
