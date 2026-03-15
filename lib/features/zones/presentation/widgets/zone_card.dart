@@ -192,6 +192,7 @@ class _Header extends StatelessWidget {
             width: 44,
             height: 44,
             child: Pressable(
+              behavior: HitTestBehavior.opaque,
               onTap: () => _showRenameDialog(context),
               child: Center(
                 child: Icon(
@@ -208,6 +209,7 @@ class _Header extends StatelessWidget {
             width: 44,
             height: 44,
             child: Pressable(
+              behavior: HitTestBehavior.opaque,
               onTap: onDelete,
               child: Center(
                 child: Icon(

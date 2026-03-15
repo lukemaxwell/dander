@@ -26,6 +26,7 @@ class Pressable extends StatefulWidget {
     required this.child,
     this.onTap,
     this.enabled = true,
+    this.behavior,
   });
 
   /// Widget to display and make pressable.
@@ -36,6 +37,13 @@ class Pressable extends StatefulWidget {
 
   /// When false, ignores all tap events and shows no press feedback.
   final bool enabled;
+
+  /// How the gesture detector should behave during hit testing.
+  ///
+  /// Set to [HitTestBehavior.opaque] when the pressable area should be
+  /// larger than its visible child (e.g. a 44pt touch target around a
+  /// small icon).
+  final HitTestBehavior? behavior;
 
   @override
   State<Pressable> createState() => _PressableState();
@@ -87,12 +95,14 @@ class _PressableState extends State<Pressable>
   Widget build(BuildContext context) {
     if (DanderMotion.isReduced(context) || !widget.enabled) {
       return GestureDetector(
+        behavior: widget.behavior,
         onTap: widget.enabled ? widget.onTap : null,
         child: widget.child,
       );
     }
 
     return GestureDetector(
+      behavior: widget.behavior,
       onTapDown: _onTapDown,
       onTapUp: _onTapUp,
       onTapCancel: _onTapCancel,
