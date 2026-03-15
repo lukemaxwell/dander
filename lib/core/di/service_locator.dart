@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:hive/hive.dart';
 
+import '../analytics/analytics_service.dart';
+import '../analytics/install_date_repository.dart';
 import '../challenges/challenge_repository.dart';
 import '../compass/compass_charges_repository.dart';
 import '../config/app_config.dart';
@@ -153,5 +155,15 @@ Future<void> setupLocator() async {
   );
   sl.registerLazySingleton<MilestoneProSuggestionFrequency>(
     () => MilestoneProSuggestionFrequency(),
+  );
+
+  // Analytics
+  sl.registerLazySingleton<AnalyticsService>(
+    () => kDebugMode
+        ? DebugAnalyticsService()
+        : const NoOpAnalyticsService(),
+  );
+  sl.registerLazySingleton<InstallDateRepository>(
+    () => InstallDateRepository(Hive.box<dynamic>(HiveBoxes.analytics)),
   );
 }

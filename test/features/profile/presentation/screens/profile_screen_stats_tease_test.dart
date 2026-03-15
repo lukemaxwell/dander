@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
 import 'package:mocktail/mocktail.dart';
 
+import 'package:dander/core/analytics/analytics_service.dart';
+import 'package:dander/core/analytics/install_date_repository.dart';
 import 'package:dander/core/discoveries/discovery.dart';
 import 'package:dander/core/progress/badge.dart';
 import 'package:dander/core/progress/streak_tracker.dart';
@@ -22,6 +24,15 @@ import 'package:dander/features/subscription/presentation/widgets/stats_tease_ca
 class _MockPurchasesAdapter extends Mock implements PurchasesAdapter {}
 
 class _MockSubscriptionStorage extends Mock implements SubscriptionStorage {}
+
+// ---------------------------------------------------------------------------
+// Fakes
+// ---------------------------------------------------------------------------
+
+class _FakeInstallDateRepository implements InstallDateRepository {
+  @override
+  Future<DateTime> getOrCreate() async => DateTime(2024, 1, 1);
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -45,15 +56,29 @@ SubscriptionService _makeServiceWithState(SubscriptionState initialState) {
 }
 
 void _register(SubscriptionService svc) {
-  if (GetIt.instance.isRegistered<SubscriptionService>()) {
-    GetIt.instance.unregister<SubscriptionService>();
+  final gi = GetIt.instance;
+  if (gi.isRegistered<SubscriptionService>()) {
+    gi.unregister<SubscriptionService>();
   }
-  GetIt.instance.registerSingleton<SubscriptionService>(svc);
+  gi.registerSingleton<SubscriptionService>(svc);
+  if (!gi.isRegistered<AnalyticsService>()) {
+    gi.registerSingleton<AnalyticsService>(const NoOpAnalyticsService());
+  }
+  if (!gi.isRegistered<InstallDateRepository>()) {
+    gi.registerSingleton<InstallDateRepository>(_FakeInstallDateRepository());
+  }
 }
 
 void _unregister() {
-  if (GetIt.instance.isRegistered<SubscriptionService>()) {
-    GetIt.instance.unregister<SubscriptionService>();
+  final gi = GetIt.instance;
+  if (gi.isRegistered<SubscriptionService>()) {
+    gi.unregister<SubscriptionService>();
+  }
+  if (gi.isRegistered<AnalyticsService>()) {
+    gi.unregister<AnalyticsService>();
+  }
+  if (gi.isRegistered<InstallDateRepository>()) {
+    gi.unregister<InstallDateRepository>();
   }
 }
 

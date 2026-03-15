@@ -1,7 +1,10 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 
+import 'package:dander/core/analytics/analytics_event.dart';
+import 'package:dander/core/analytics/analytics_service.dart';
 import 'package:dander/core/theme/app_theme.dart';
 
 /// A card that teases a Pro-only stats feature with a blurred decorative
@@ -26,13 +29,30 @@ class StatsTeaseCard extends StatelessWidget {
   /// Card height in logical pixels. Defaults to 120.
   final double height;
 
+  /// Maps the human-readable [title] to a normalised analytics card type.
+  static String _cardTypeFor(String title) {
+    switch (title) {
+      case 'Heat Map':
+        return 'heatmap';
+      case 'Monthly Trends':
+        return 'trends';
+      default:
+        return 'other';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Semantics(
       label: 'Pro feature: $title. Double-tap to learn more',
       button: true,
       child: GestureDetector(
-        onTap: onTap,
+        onTap: () {
+          GetIt.instance<AnalyticsService>().track(
+            StatsTeaseCardTapped(cardType: _cardTypeFor(title)),
+          );
+          onTap();
+        },
         behavior: HitTestBehavior.opaque,
         child: Container(
           height: height,

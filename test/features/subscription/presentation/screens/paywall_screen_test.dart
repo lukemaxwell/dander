@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
 import 'package:mocktail/mocktail.dart';
 
+import 'package:dander/core/analytics/analytics_service.dart';
+import 'package:dander/core/analytics/install_date_repository.dart';
 import 'package:dander/core/subscription/purchase_result.dart';
 import 'package:dander/core/subscription/subscription_service.dart';
 import 'package:dander/core/subscription/purchases_adapter.dart';
@@ -22,6 +24,15 @@ import 'package:dander/features/subscription/presentation/widgets/paywall_hero.d
 class _MockPurchasesAdapter extends Mock implements PurchasesAdapter {}
 
 class _MockSubscriptionStorage extends Mock implements SubscriptionStorage {}
+
+// ---------------------------------------------------------------------------
+// Fakes
+// ---------------------------------------------------------------------------
+
+class _FakeInstallDateRepository implements InstallDateRepository {
+  @override
+  Future<DateTime> getOrCreate() async => DateTime(2024, 1, 1);
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -61,11 +72,20 @@ Widget _wrap(
   Widget child, {
   SubscriptionService? service,
 }) {
+  final gi = GetIt.instance;
   final svc = service ?? _makeService();
-  if (GetIt.instance.isRegistered<SubscriptionService>()) {
-    GetIt.instance.unregister<SubscriptionService>();
+
+  if (gi.isRegistered<SubscriptionService>()) {
+    gi.unregister<SubscriptionService>();
   }
-  GetIt.instance.registerSingleton<SubscriptionService>(svc);
+  gi.registerSingleton<SubscriptionService>(svc);
+
+  if (!gi.isRegistered<AnalyticsService>()) {
+    gi.registerSingleton<AnalyticsService>(const NoOpAnalyticsService());
+  }
+  if (!gi.isRegistered<InstallDateRepository>()) {
+    gi.registerSingleton<InstallDateRepository>(_FakeInstallDateRepository());
+  }
 
   return MediaQuery(
     // Disable animations so pumpAndSettle can settle looping heroes.
@@ -79,8 +99,15 @@ Widget _wrap(
 
 void main() {
   tearDown(() {
-    if (GetIt.instance.isRegistered<SubscriptionService>()) {
-      GetIt.instance.unregister<SubscriptionService>();
+    final gi = GetIt.instance;
+    if (gi.isRegistered<SubscriptionService>()) {
+      gi.unregister<SubscriptionService>();
+    }
+    if (gi.isRegistered<AnalyticsService>()) {
+      gi.unregister<AnalyticsService>();
+    }
+    if (gi.isRegistered<InstallDateRepository>()) {
+      gi.unregister<InstallDateRepository>();
     }
   });
 
@@ -188,11 +215,18 @@ void main() {
 
     group('close button', () {
       testWidgets('close button pops the screen', (tester) async {
-        if (GetIt.instance.isRegistered<SubscriptionService>()) {
-          GetIt.instance.unregister<SubscriptionService>();
+        final gi = GetIt.instance;
+        if (gi.isRegistered<SubscriptionService>()) {
+          gi.unregister<SubscriptionService>();
         }
-        GetIt.instance
-            .registerSingleton<SubscriptionService>(_makeService());
+        gi.registerSingleton<SubscriptionService>(_makeService());
+        if (!gi.isRegistered<AnalyticsService>()) {
+          gi.registerSingleton<AnalyticsService>(const NoOpAnalyticsService());
+        }
+        if (!gi.isRegistered<InstallDateRepository>()) {
+          gi.registerSingleton<InstallDateRepository>(
+              _FakeInstallDateRepository());
+        }
 
         await tester.pumpWidget(
           const MediaQuery(

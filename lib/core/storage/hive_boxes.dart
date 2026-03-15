@@ -51,4 +51,7 @@ abstract final class HiveBoxes {
 
   /// Stores the milestone counter used to alternate Pro-suggestion visibility.
   static const String milestoneProFrequency = 'milestone_pro_frequency';
+
+  /// Stores analytics metadata (e.g. install date).
+  static const String analytics = 'analytics';
 }

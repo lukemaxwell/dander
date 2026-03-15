@@ -2,12 +2,28 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get_it/get_it.dart';
 
+import 'package:dander/core/analytics/analytics_service.dart';
 import 'package:dander/features/subscription/presentation/widgets/stats_tease_card.dart';
 
 Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
 
 void main() {
+  setUp(() {
+    final gi = GetIt.instance;
+    if (!gi.isRegistered<AnalyticsService>()) {
+      gi.registerSingleton<AnalyticsService>(const NoOpAnalyticsService());
+    }
+  });
+
+  tearDown(() {
+    final gi = GetIt.instance;
+    if (gi.isRegistered<AnalyticsService>()) {
+      gi.unregister<AnalyticsService>();
+    }
+  });
+
   group('StatsTeaseCard', () {
     testWidgets('renders lock icon', (tester) async {
       await tester.pumpWidget(_wrap(

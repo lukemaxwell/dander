@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 
+import 'package:dander/core/analytics/analytics_event.dart';
+import 'package:dander/core/analytics/analytics_service.dart';
+import 'package:dander/core/analytics/install_date_repository.dart';
+import 'package:dander/core/analytics/session_day_calculator.dart';
 import 'package:dander/core/subscription/purchase_result.dart';
 import 'package:dander/core/subscription/subscription_service.dart';
 import 'package:dander/core/theme/dander_colors.dart';
@@ -40,11 +44,22 @@ class _PaywallScreenState extends State<PaywallScreen>
   String? _annualError;
   String? _monthlyError;
 
+  /// Timestamp recorded when the screen first appears, used to compute
+  /// [PaywallDismissed.timeOnScreenMs].
+  late DateTime _openedAt;
+
+  /// Session day number resolved asynchronously from [InstallDateRepository].
+  /// Defaults to 1 so the viewed event can fire even if resolution is slow.
+  int _sessionDay = 1;
+
   SubscriptionService get _service => GetIt.instance<SubscriptionService>();
+  AnalyticsService get _analytics => GetIt.instance<AnalyticsService>();
 
   @override
   void initState() {
     super.initState();
+    _openedAt = DateTime.now();
+
     _fadeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -62,11 +77,26 @@ class _PaywallScreenState extends State<PaywallScreen>
       );
     });
 
-    // Start stagger after the first frame so the slide-in transition
-    // has time to begin. WidgetsBinding.addPostFrameCallback is testable
-    // with pumpAndSettle; a hard Future.delayed is not.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _fadeController.forward();
+    // Resolve session day and fire PaywallViewed after the first frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+
+      // Resolve session day asynchronously; default 1 is used if unavailable.
+      final repo = GetIt.instance<InstallDateRepository>();
+      final installDate = await repo.getOrCreate();
+      if (mounted) {
+        setState(() {
+          _sessionDay = SessionDayCalculator.calculate(installDate, DateTime.now());
+        });
+      }
+
+      if (mounted) {
+        _analytics.track(PaywallViewed(
+          trigger: widget.trigger,
+          sessionDay: _sessionDay,
+        ));
+        _fadeController.forward();
+      }
     });
   }
 
@@ -99,6 +129,10 @@ class _PaywallScreenState extends State<PaywallScreen>
   void _handleResult(PurchaseResult result, {required bool isAnnual}) {
     switch (result) {
       case PurchaseSuccess():
+        _analytics.track(SubscriptionStarted(
+          trigger: widget.trigger,
+          plan: isAnnual ? 'annual' : 'monthly',
+        ));
         // Capture messenger before pop — context becomes detached after pop.
         final messenger = ScaffoldMessenger.of(context);
         Navigator.of(context).pop();
@@ -126,6 +160,14 @@ class _PaywallScreenState extends State<PaywallScreen>
     }
   }
 
+  void _dismiss() {
+    _analytics.track(PaywallDismissed(
+      trigger: widget.trigger,
+      timeOnScreenMs: DateTime.now().difference(_openedAt).inMilliseconds,
+    ));
+    Navigator.of(context).pop();
+  }
+
   Future<void> _restorePurchases() async {
     final stateBefore = _service.state.value;
     await _service.restorePurchases();
@@ -150,7 +192,7 @@ class _PaywallScreenState extends State<PaywallScreen>
             // Swipe down to dismiss
             if (details.primaryVelocity != null &&
                 details.primaryVelocity! > 200) {
-              Navigator.of(context).pop();
+              _dismiss();
             }
           },
           child: Stack(
@@ -249,7 +291,7 @@ class _PaywallScreenState extends State<PaywallScreen>
                     width: 44,
                     height: 44,
                     child: IconButton(
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: _dismiss,
                       icon: const Icon(Icons.close),
                       color: DanderColors.onSurfaceMuted,
                       iconSize: 24,
