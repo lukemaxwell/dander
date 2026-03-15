@@ -1,6 +1,9 @@
 import 'package:latlong2/latlong.dart';
 
+import '../location/walk_repository.dart';
 import '../storage/app_state_repository.dart';
+import '../zone/mystery_poi_repository.dart';
+import '../zone/zone_repository.dart';
 
 /// Abstract base for seed fixtures that populate repositories with
 /// deterministic data for testing, debugging, and marketing screenshots.
@@ -33,4 +36,14 @@ abstract class SeedFixture {
 
   /// Populates the app state repository (onboarding flags, last position).
   Future<void> seedAppState(AppStateRepository repo) async {}
+
+  /// Seeds zone, mystery POI, and walk data into their respective repositories.
+  ///
+  /// Override in fixtures that need zone/POI/walk seeding (e.g. active_zone).
+  /// Default is a no-op.
+  Future<void> seedData({
+    required ZoneRepository zoneRepository,
+    required MysteryPoiRepository mysteryPoiRepository,
+    required WalkRepository walkRepository,
+  }) async {}
 }

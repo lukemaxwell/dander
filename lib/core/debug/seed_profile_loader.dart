@@ -2,8 +2,12 @@ import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 
 import '../fog/fog_repository.dart';
+import '../location/walk_repository.dart';
 import '../storage/app_state_repository.dart';
 import '../storage/hive_boxes.dart';
+import '../zone/mystery_poi_repository.dart';
+import '../zone/zone_repository.dart';
+import 'fixtures/active_zone_fixture.dart';
 import 'fixtures/empty_fixture.dart';
 import 'fixtures/onboarding_complete_fixture.dart';
 import 'fog_seeder.dart';
@@ -28,8 +32,7 @@ class SeedProfileLoader {
       case SeedProfile.onboardingComplete:
         return const OnboardingCompleteFixture();
       case SeedProfile.activeZone:
-        // TODO: implement in #197
-        return const OnboardingCompleteFixture();
+        return const ActiveZoneFixture();
       case SeedProfile.midProgress:
         // TODO: implement in #198
         return const OnboardingCompleteFixture();
@@ -67,16 +70,33 @@ class SeedProfileLoader {
     // Let the fixture seed any additional state.
     await fixture.seedAppState(appStateRepository);
 
+    // Seed zone, POI, and walk data when Hive boxes are available.
+    // In unit tests that only provide AppStateRepository, boxes may not be open.
+    if (Hive.isBoxOpen(HiveBoxes.zones)) {
+      await fixture.seedData(
+        zoneRepository: HiveZoneRepository.withBox(
+          Hive.box<dynamic>(HiveBoxes.zones),
+        ),
+        mysteryPoiRepository: HiveMysteryPoiRepository.withBox(
+          Hive.box<dynamic>(HiveBoxes.mysteryPois),
+        ),
+        walkRepository: HiveWalkRepository.withBox(
+          Hive.box<dynamic>(HiveBoxes.walks),
+        ),
+      );
+    }
+
     // Seed fog grid if the fixture provides walked paths and a position.
     final position = fixture.seedPosition;
-    if (position != null && fixture.walkedPaths.isNotEmpty) {
+    if (position != null &&
+        fixture.walkedPaths.isNotEmpty &&
+        Hive.isBoxOpen(HiveBoxes.fogState)) {
       final fogGrid = FogSeeder.seed(
         origin: position,
         walkedPaths: fixture.walkedPaths,
       );
-      final fogBox = Hive.box<dynamic>(HiveBoxes.fogState);
       final fogRepo = FogRepository.withBox(
-        fogBox,
+        Hive.box<dynamic>(HiveBoxes.fogState),
         origin: position,
       );
       await fogRepo.save(fogGrid);
