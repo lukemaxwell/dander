@@ -195,8 +195,12 @@ class _ZoneList extends StatelessWidget {
   final void Function(Zone zone) onZoneDelete;
   final void Function(Zone zone, String newName) onZoneRename;
 
+  int get _totalXp => zones.fold(0, (sum, z) => sum + z.xp);
+
   @override
   Widget build(BuildContext context) {
+    final totalXp = _totalXp;
+
     return CustomScrollView(
       slivers: [
         SliverToBoxAdapter(
@@ -205,7 +209,31 @@ class _ZoneList extends StatelessWidget {
             subtitle: '${zones.length} zone${zones.length == 1 ? '' : 's'}',
           ),
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: DanderSpacing.lg)),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: DanderSpacing.lg,
+              vertical: DanderSpacing.sm,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.bolt,
+                  size: 18,
+                  color: DanderColors.accent,
+                ),
+                const SizedBox(width: DanderSpacing.xs),
+                Text(
+                  'Total $totalXp XP',
+                  style: DanderTextStyles.labelLarge.copyWith(
+                    color: DanderColors.onSurface,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SliverToBoxAdapter(child: SizedBox(height: DanderSpacing.sm)),
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: DanderSpacing.lg),
           sliver: SliverList.separated(

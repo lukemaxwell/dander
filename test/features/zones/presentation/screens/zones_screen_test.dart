@@ -238,6 +238,31 @@ void main() {
       });
     });
 
+    group('summary header', () {
+      testWidgets('shows total XP across all zones', (tester) async {
+        final zones = [
+          _buildZone(id: 'z1', name: 'Zone A', xp: 100),
+          _buildZone(id: 'z2', name: 'Zone B', xp: 250),
+        ];
+        final repo = _FakeZoneRepository(zones);
+        await tester.pumpWidget(_wrap(ZonesScreen(repository: repo)));
+        await tester.pumpAndSettle();
+
+        // Total XP = 100 + 250 = 350
+        expect(find.textContaining('350'), findsAtLeastNWidgets(1));
+        expect(find.textContaining('XP'), findsAtLeastNWidgets(1));
+      });
+
+      testWidgets('summary header not shown in empty state', (tester) async {
+        final repo = _FakeZoneRepository([]);
+        await tester.pumpWidget(_wrap(ZonesScreen(repository: repo)));
+        await tester.pumpAndSettle();
+
+        // No XP summary when no zones exist
+        expect(find.textContaining('Total'), findsNothing);
+      });
+    });
+
     group('large data', () {
       testWidgets('handles 20 zones without error', (tester) async {
         final zones = List.generate(
