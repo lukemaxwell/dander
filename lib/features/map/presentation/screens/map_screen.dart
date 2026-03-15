@@ -743,8 +743,9 @@ class _MapScreenState extends State<MapScreen>
                 onStop: _stopWalk,
                 sessionXp: _sessionXp,
               ),
-            // First-launch exploration chip — replaces walk control.
-            if (_showExplorationChip)
+            // First-launch exploration chip — only visible between
+            // preview dismissal and walk contract appearing.
+            if (_showExplorationChip && !_showWalkPreview)
               Positioned(
                 bottom: 180,
                 left: 0,
