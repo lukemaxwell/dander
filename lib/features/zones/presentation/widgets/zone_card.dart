@@ -141,6 +141,8 @@ class _Header extends StatelessWidget {
 
   void _showRenameDialog(BuildContext context) {
     final controller = TextEditingController(text: zone.name);
+    // Place cursor at end of existing text so the user can edit immediately.
+    controller.selection = TextSelection.collapsed(offset: zone.name.length);
     showDialog<String>(
       context: context,
       useRootNavigator: true,
@@ -151,6 +153,7 @@ class _Header extends StatelessWidget {
           controller: controller,
           autofocus: true,
           style: DanderTextStyles.bodyMedium,
+          cursorColor: DanderColors.accent,
           decoration: InputDecoration(
             hintText: 'Zone name',
             hintStyle: DanderTextStyles.bodyMediumMuted,

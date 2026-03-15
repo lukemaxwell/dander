@@ -27,12 +27,14 @@ void main() {
           level: 3,
           streetCount: 42,
           exploredCellCount: 150,
+          exploredPct: 0.42,
         );
 
         expect(data.zoneName, equals('Hackney'));
         expect(data.level, equals(3));
         expect(data.streetCount, equals(42));
         expect(data.exploredCellCount, equals(150));
+        expect(data.exploredPct, equals(0.42));
       });
 
       test('stores zero values without error', () {
@@ -41,10 +43,12 @@ void main() {
           level: 1,
           streetCount: 0,
           exploredCellCount: 0,
+          exploredPct: 0.0,
         );
 
         expect(data.streetCount, equals(0));
         expect(data.exploredCellCount, equals(0));
+        expect(data.exploredPct, equals(0.0));
       });
 
       test('stores large values without error', () {
@@ -53,21 +57,36 @@ void main() {
           level: 5,
           streetCount: 99999,
           exploredCellCount: 500000,
+          exploredPct: 0.99,
         );
 
         expect(data.streetCount, equals(99999));
         expect(data.exploredCellCount, equals(500000));
+        expect(data.exploredPct, equals(0.99));
       });
 
       test('stores special characters in zone name', () {
         const data = TurfShareCardData(
-          zoneName: "O'Brien's & Co. – Caf\u00e9",
+          zoneName: "O'Brien's & Co. \u2013 Caf\u00e9",
           level: 2,
           streetCount: 10,
           exploredCellCount: 50,
+          exploredPct: 0.5,
         );
 
         expect(data.zoneName, equals("O'Brien's & Co. \u2013 Caf\u00e9"));
+      });
+
+      test('exploredPct stores 1.0 (fully explored)', () {
+        const data = TurfShareCardData(
+          zoneName: 'Full Zone',
+          level: 5,
+          streetCount: 100,
+          exploredCellCount: 1000,
+          exploredPct: 1.0,
+        );
+
+        expect(data.exploredPct, equals(1.0));
       });
     });
 
@@ -78,6 +97,7 @@ void main() {
           zone,
           streetCount: 10,
           exploredCellCount: 80,
+          exploredPct: 0.3,
         );
 
         expect(data.zoneName, equals('Shoreditch'));
@@ -89,6 +109,7 @@ void main() {
           zone,
           streetCount: 5,
           exploredCellCount: 20,
+          exploredPct: 0.1,
         );
 
         expect(data.level, equals(1));
@@ -100,6 +121,7 @@ void main() {
           zone,
           streetCount: 5,
           exploredCellCount: 20,
+          exploredPct: 0.2,
         );
 
         expect(data.level, equals(2));
@@ -111,6 +133,7 @@ void main() {
           zone,
           streetCount: 5,
           exploredCellCount: 20,
+          exploredPct: 0.3,
         );
 
         expect(data.level, equals(3));
@@ -122,6 +145,7 @@ void main() {
           zone,
           streetCount: 5,
           exploredCellCount: 20,
+          exploredPct: 0.5,
         );
 
         expect(data.level, equals(5));
@@ -133,6 +157,7 @@ void main() {
           zone,
           streetCount: 77,
           exploredCellCount: 100,
+          exploredPct: 0.5,
         );
 
         expect(data.streetCount, equals(77));
@@ -144,9 +169,22 @@ void main() {
           zone,
           streetCount: 10,
           exploredCellCount: 999,
+          exploredPct: 0.6,
         );
 
         expect(data.exploredCellCount, equals(999));
+      });
+
+      test('passes through exploredPct', () {
+        final zone = _makeZone();
+        final data = TurfShareCardData.fromZone(
+          zone,
+          streetCount: 10,
+          exploredCellCount: 100,
+          exploredPct: 0.67,
+        );
+
+        expect(data.exploredPct, closeTo(0.67, 0.001));
       });
 
       test('zero streetCount is valid', () {
@@ -155,10 +193,12 @@ void main() {
           zone,
           streetCount: 0,
           exploredCellCount: 0,
+          exploredPct: 0.0,
         );
 
         expect(data.streetCount, equals(0));
         expect(data.exploredCellCount, equals(0));
+        expect(data.exploredPct, equals(0.0));
       });
     });
 
@@ -169,12 +209,14 @@ void main() {
           level: 3,
           streetCount: 42,
           exploredCellCount: 150,
+          exploredPct: 0.5,
         );
         const b = TurfShareCardData(
           zoneName: 'Hackney',
           level: 3,
           streetCount: 42,
           exploredCellCount: 150,
+          exploredPct: 0.5,
         );
 
         expect(a, equals(b));
@@ -186,12 +228,33 @@ void main() {
           level: 3,
           streetCount: 42,
           exploredCellCount: 150,
+          exploredPct: 0.5,
         );
         const b = TurfShareCardData(
           zoneName: 'Shoreditch',
           level: 3,
           streetCount: 42,
           exploredCellCount: 150,
+          exploredPct: 0.5,
+        );
+
+        expect(a, isNot(equals(b)));
+      });
+
+      test('instances with different exploredPct are not equal', () {
+        const a = TurfShareCardData(
+          zoneName: 'Hackney',
+          level: 3,
+          streetCount: 42,
+          exploredCellCount: 150,
+          exploredPct: 0.4,
+        );
+        const b = TurfShareCardData(
+          zoneName: 'Hackney',
+          level: 3,
+          streetCount: 42,
+          exploredCellCount: 150,
+          exploredPct: 0.8,
         );
 
         expect(a, isNot(equals(b)));
@@ -203,12 +266,14 @@ void main() {
           level: 2,
           streetCount: 10,
           exploredCellCount: 50,
+          exploredPct: 0.3,
         );
         const b = TurfShareCardData(
           zoneName: 'Hackney',
           level: 2,
           streetCount: 10,
           exploredCellCount: 50,
+          exploredPct: 0.3,
         );
 
         expect(a.hashCode, equals(b.hashCode));
