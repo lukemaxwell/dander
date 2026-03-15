@@ -60,6 +60,7 @@ class QuizHomeScreen extends StatelessWidget {
     required this.records,
     required this.onStartReview,
     required this.onPracticeAll,
+    this.knowledgeScore,
   });
 
   /// All streets the user has walked.
@@ -73,6 +74,11 @@ class QuizHomeScreen extends StatelessWidget {
 
   /// Called when the user taps "Practice All".
   final VoidCallback onPracticeAll;
+
+  /// Neighbourhood knowledge score (0–100%), calculated across all question
+  /// types. When non-null, displayed as "X% neighbourhood knowledge" on the
+  /// stats header.
+  final double? knowledgeScore;
 
   // ---------------------------------------------------------------------------
   // Private helpers
@@ -168,8 +174,12 @@ class QuizHomeScreen extends StatelessWidget {
                       : DanderColors.onSurfaceMuted,
                 ),
                 _StatChip(
-                  label: 'Mastery',
-                  value: '${masteryPct.toStringAsFixed(0)}%',
+                  label: knowledgeScore != null
+                      ? 'Knowledge'
+                      : 'Mastery',
+                  value: knowledgeScore != null
+                      ? '${knowledgeScore!.toStringAsFixed(0)}%'
+                      : '${masteryPct.toStringAsFixed(0)}%',
                   color: DanderColors.success,
                 ),
                 _StatChip(
