@@ -9,6 +9,7 @@ class TurfShareCardData {
     required this.level,
     required this.streetCount,
     required this.exploredCellCount,
+    required this.exploredPct,
   });
 
   /// Human-readable zone name (e.g. "Hackney").
@@ -23,17 +24,22 @@ class TurfShareCardData {
   /// Number of fog grid cells the user has explored in this zone.
   final int exploredCellCount;
 
+  /// Fraction of zone cells explored, from 0.0 to 1.0.
+  final double exploredPct;
+
   /// Creates [TurfShareCardData] from a [Zone] and additional counters.
   factory TurfShareCardData.fromZone(
     Zone zone, {
     required int streetCount,
     required int exploredCellCount,
+    required double exploredPct,
   }) {
     return TurfShareCardData(
       zoneName: zone.name,
       level: zone.level,
       streetCount: streetCount,
       exploredCellCount: exploredCellCount,
+      exploredPct: exploredPct,
     );
   }
 
@@ -45,19 +51,22 @@ class TurfShareCardData {
           zoneName == other.zoneName &&
           level == other.level &&
           streetCount == other.streetCount &&
-          exploredCellCount == other.exploredCellCount;
+          exploredCellCount == other.exploredCellCount &&
+          exploredPct == other.exploredPct;
 
   @override
   int get hashCode =>
       zoneName.hashCode ^
       level.hashCode ^
       streetCount.hashCode ^
-      exploredCellCount.hashCode;
+      exploredCellCount.hashCode ^
+      exploredPct.hashCode;
 
   @override
   String toString() => 'TurfShareCardData('
       'zoneName: $zoneName, '
       'level: $level, '
       'streetCount: $streetCount, '
-      'exploredCellCount: $exploredCellCount)';
+      'exploredCellCount: $exploredCellCount, '
+      'exploredPct: $exploredPct)';
 }
