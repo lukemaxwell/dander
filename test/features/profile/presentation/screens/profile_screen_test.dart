@@ -1,15 +1,62 @@
 import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get_it/get_it.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:dander/core/discoveries/discovery.dart';
 import 'package:dander/core/progress/badge.dart';
 import 'package:dander/core/progress/streak_shield.dart';
 import 'package:dander/core/progress/streak_tracker.dart';
+import 'package:dander/core/subscription/purchase_result.dart';
+import 'package:dander/core/subscription/purchases_adapter.dart';
+import 'package:dander/core/subscription/subscription_service.dart';
+import 'package:dander/core/subscription/subscription_state.dart';
+import 'package:dander/core/subscription/subscription_storage.dart';
 import 'package:dander/features/profile/presentation/screens/profile_screen.dart';
+
+// ---------------------------------------------------------------------------
+// Mocks for SubscriptionService
+// ---------------------------------------------------------------------------
+
+class _MockPurchasesAdapter extends Mock implements PurchasesAdapter {}
+
+class _MockSubscriptionStorage extends Mock implements SubscriptionStorage {}
+
+SubscriptionService _makeService() {
+  final adapter = _MockPurchasesAdapter();
+  final storage = _MockSubscriptionStorage();
+
+  when(() => storage.get(any())).thenReturn(null);
+  when(() => storage.put(any(), any())).thenAnswer((_) async {});
+  when(() => adapter.configure(any())).thenAnswer((_) async {});
+  when(() => adapter.fetchProEntitlement()).thenAnswer((_) async => null);
+  when(() => adapter.purchaseProduct(any()))
+      .thenAnswer((_) async => const PurchaseCancelled());
+  when(() => adapter.restorePurchases()).thenAnswer((_) async => null);
+
+  final svc = SubscriptionService(adapter: adapter, storage: storage);
+  svc.state.value = const SubscriptionStateFree();
+  return svc;
+}
+
+void _registerService() {
+  if (!GetIt.instance.isRegistered<SubscriptionService>()) {
+    GetIt.instance.registerSingleton<SubscriptionService>(_makeService());
+  }
+}
+
+void _unregisterService() {
+  if (GetIt.instance.isRegistered<SubscriptionService>()) {
+    GetIt.instance.unregister<SubscriptionService>();
+  }
+}
 
 Widget _wrap(Widget child) => MaterialApp(home: child);
 
 void main() {
+  setUp(_registerService);
+  tearDown(_unregisterService);
+
   final noDiscoveries = <Discovery>[];
 
   const sampleBadges = BadgeDefinitions.badges;
