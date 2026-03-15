@@ -7,12 +7,16 @@ import 'package:dander/core/subscription/purchases_adapter.dart';
 import 'package:dander/core/subscription/subscription_service.dart';
 import 'package:dander/core/subscription/subscription_state.dart';
 import 'package:dander/core/subscription/subscription_storage.dart';
+import 'package:dander/core/subscription/trial_notification_scheduler.dart';
 
 // ---------------------------------------------------------------------------
 // Fakes / Mocks
 // ---------------------------------------------------------------------------
 
 class MockPurchasesAdapter extends Mock implements PurchasesAdapter {}
+
+class MockTrialNotificationScheduler extends Mock
+    implements TrialNotificationScheduler {}
 
 /// Minimal in-memory [SubscriptionStorage] for use in tests.
 class FakeSubscriptionStorage implements SubscriptionStorage {
@@ -558,6 +562,76 @@ void main() {
           .thenAnswer((_) async => _trialEntitlement());
       await service.initialize();
       expect(service.isPro, isTrue);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // TrialNotificationScheduler integration
+  // ---------------------------------------------------------------------------
+
+  group('notification scheduler integration', () {
+    late MockTrialNotificationScheduler scheduler;
+    late SubscriptionService serviceWithScheduler;
+
+    setUp(() {
+      scheduler = MockTrialNotificationScheduler();
+      when(() => scheduler.scheduleForTrialStart(any()))
+          .thenAnswer((_) async {});
+      when(() => scheduler.cancelAll()).thenAnswer((_) async {});
+
+      serviceWithScheduler = SubscriptionService(
+        adapter: adapter,
+        storage: box,
+        revenueCatApiKey: 'test_key',
+        clock: _clock,
+        notificationScheduler: scheduler,
+      );
+    });
+
+    test('scheduleForTrialStart called when state transitions to Trial',
+        () async {
+      when(() => adapter.configure(any())).thenAnswer((_) async {});
+      when(() => adapter.fetchProEntitlement())
+          .thenAnswer((_) async => _trialEntitlement(daysLeft: 7));
+
+      await serviceWithScheduler.initialize();
+
+      verify(() => scheduler.scheduleForTrialStart(any())).called(1);
+    });
+
+    test('cancelAll called when state transitions to Pro', () async {
+      when(() => adapter.configure(any())).thenAnswer((_) async {});
+      when(() => adapter.fetchProEntitlement())
+          .thenAnswer((_) async => _proEntitlement());
+
+      await serviceWithScheduler.initialize();
+
+      verify(() => scheduler.cancelAll()).called(1);
+    });
+
+    test('scheduler not called when state is Free', () async {
+      when(() => adapter.configure(any())).thenAnswer((_) async {});
+      when(() => adapter.fetchProEntitlement()).thenAnswer((_) async => null);
+
+      await serviceWithScheduler.initialize();
+
+      verifyNever(() => scheduler.scheduleForTrialStart(any()));
+      verifyNever(() => scheduler.cancelAll());
+    });
+
+    test('scheduler errors do not propagate — service remains stable',
+        () async {
+      when(() => adapter.configure(any())).thenAnswer((_) async {});
+      when(() => adapter.fetchProEntitlement())
+          .thenAnswer((_) async => _trialEntitlement());
+      when(() => scheduler.scheduleForTrialStart(any()))
+          .thenAnswer((_) => Future.error(Exception('notification error')));
+
+      await expectLater(serviceWithScheduler.initialize(), completes);
+      expect(
+        serviceWithScheduler.state.value,
+        isA<SubscriptionStateTrial>(),
+      );
     });
   });
 }

@@ -85,6 +85,21 @@ class ProfileScreen extends StatelessWidget {
             subtitle: zoneName,
             trailing: const ProBadge(),
           ),
+          ValueListenableBuilder<SubscriptionState>(
+            valueListenable: GetIt.instance<SubscriptionService>().state,
+            builder: (context, state, _) {
+              if (state is! SubscriptionStateTrial) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(top: DanderSpacing.xs),
+                child: Text(
+                  'Pro trial · ${state.daysLeft} days left',
+                  style: DanderTextStyles.labelSmall.copyWith(
+                    color: DanderColors.secondary,
+                  ),
+                ),
+              );
+            },
+          ),
           const SizedBox(height: DanderSpacing.lg),
           _ExplorationRing(pct: explorationPct, zoneName: zoneName),
           const SizedBox(height: DanderSpacing.lg),

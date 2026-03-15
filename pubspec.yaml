@@ -26,6 +26,8 @@ dependencies:
   google_fonts: ^8.0.2
   flutter_svg: ^2.2.4
   purchases_flutter: ^8.0.0
+  flutter_local_notifications: ^18.0.1
+  timezone: ^0.9.4
 
 dev_dependencies:
   flutter_test:
