@@ -13,6 +13,7 @@ import 'package:dander/core/theme/app_theme.dart';
 import 'package:dander/core/theme/rarity_colors.dart';
 import 'package:dander/features/profile/presentation/widgets/badge_detail_sheet.dart';
 import 'package:dander/features/profile/presentation/widgets/weekly_challenges_card.dart';
+import 'package:dander/features/subscription/presentation/widgets/pro_badge.dart';
 import 'package:dander/shared/widgets/bottom_sheet_handle.dart';
 import 'package:dander/shared/widgets/screen_header.dart';
 
@@ -72,7 +73,11 @@ class ProfileScreen extends StatelessWidget {
               kBottomNavigationBarHeight,
         ),
         children: [
-          ScreenHeader(title: 'Profile', subtitle: zoneName),
+          ScreenHeader(
+            title: 'Profile',
+            subtitle: zoneName,
+            trailing: const ProBadge(),
+          ),
           const SizedBox(height: DanderSpacing.lg),
           _ExplorationRing(pct: explorationPct, zoneName: zoneName),
           const SizedBox(height: DanderSpacing.lg),
