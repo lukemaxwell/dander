@@ -15,6 +15,9 @@ abstract final class DanderColors {
   /// Bold amber — action-only CTA color: walk start/stop, primary buttons.
   static const Color secondary = Color(0xFFFF8F00);
 
+  /// Text/icon color rendered on top of [secondary] (amber) surfaces.
+  static const Color onSecondary = Color(0xFF0F172A);
+
   /// Sky blue — information/state color: nav active, progress, XP, links.
   static const Color accent = Color(0xFF4FC3F7);
 
