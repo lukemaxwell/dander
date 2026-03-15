@@ -194,6 +194,44 @@ void main() {
     });
   });
 
+  group('ZoneTurfShared', () {
+    test('name is zone_turf_shared', () {
+      const event = ZoneTurfShared(
+        zoneName: 'Downtown',
+        level: 3,
+        streetCount: 42,
+      );
+      expect(event.name, equals('zone_turf_shared'));
+    });
+
+    test('properties contains zone_name with correct value', () {
+      const event = ZoneTurfShared(
+        zoneName: 'Midtown',
+        level: 1,
+        streetCount: 10,
+      );
+      expect(event.properties['zone_name'], equals('Midtown'));
+    });
+
+    test('properties contains level with correct value', () {
+      const event = ZoneTurfShared(
+        zoneName: 'Uptown',
+        level: 5,
+        streetCount: 20,
+      );
+      expect(event.properties['level'], equals(5));
+    });
+
+    test('properties contains street_count with correct value', () {
+      const event = ZoneTurfShared(
+        zoneName: 'Old Town',
+        level: 2,
+        streetCount: 99,
+      );
+      expect(event.properties['street_count'], equals(99));
+    });
+  });
+
   group('MilestoneProShown', () {
     test('name is milestone_pro_shown', () {
       const event = MilestoneProShown(

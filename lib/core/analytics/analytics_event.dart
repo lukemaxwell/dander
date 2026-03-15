@@ -162,6 +162,29 @@ final class StatsTeaseCardTapped extends AnalyticsEvent {
       };
 }
 
+/// Fired when the user shares their zone turf card.
+final class ZoneTurfShared extends AnalyticsEvent {
+  const ZoneTurfShared({
+    required this.zoneName,
+    required this.level,
+    required this.streetCount,
+  });
+
+  final String zoneName;
+  final int level;
+  final int streetCount;
+
+  @override
+  String get name => 'zone_turf_shared';
+
+  @override
+  Map<String, Object?> get properties => {
+        'zone_name': zoneName,
+        'level': level,
+        'street_count': streetCount,
+      };
+}
+
 /// Fired when a Pro upgrade suggestion is shown at a milestone moment.
 final class MilestoneProShown extends AnalyticsEvent {
   const MilestoneProShown({
